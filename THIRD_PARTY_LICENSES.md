@@ -15,6 +15,14 @@ Because Ciqiao does not distribute the data, it does not publish a derived
 CC-CEDICT database. If you fork Ciqiao and choose to bundle or host the data,
 you must comply with CC BY-SA 4.0, including attribution and share-alike.
 
+## ECDICT
+
+- Source: <https://github.com/skywind3000/ECDICT>
+- Used for: bundled English→Chinese core (`public/data/ecdict-core.json.gz`)
+- License: MIT
+
+Copyright (c) 2025 Linwei
+
 ## HSK 3.0 word list
 
 - Source: <https://github.com/ivankra/hsk30>

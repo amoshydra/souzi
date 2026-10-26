@@ -4,33 +4,71 @@ import {
   CheckCircle2,
   Clock3,
   Library,
+  Loader2,
   Search,
   ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
-import type { DictionaryMeta, Entry, HistoryWord, MatchKind, SearchIndex } from "../types";
-import { getEntriesByIds, listHistory } from "../lib/db";
+import type {
+  DictionaryMeta,
+  EnglishEntry,
+  EnglishHistoryWord,
+  EnglishMatchKind,
+  EnglishSearchIndex,
+  Entry,
+  HistoryWord,
+  MatchKind,
+  SearchIndex,
+} from "../types";
+import {
+  getEnglishEntriesByIds,
+  getEntriesByIds,
+  listEnglishHistory,
+  listHistory,
+} from "../lib/db";
+import { englishFrequency, searchEnglishIndex } from "../lib/english";
 import { formatCount, formatDate } from "../lib/format";
 import { searchIndex } from "../lib/search";
+import { EnglishResultCard } from "./EnglishResultCard";
 import { ResultCard } from "./ResultCard";
 
-type Hit = {
+type ChineseHit = {
   entry: Entry;
   match: MatchKind;
   rank: number;
 };
 
+type EnglishHit = {
+  entry: EnglishEntry;
+  match: EnglishMatchKind;
+  rank: number;
+};
+
+type RecentItem =
+  | { kind: "zh"; data: HistoryWord }
+  | { kind: "en"; data: EnglishHistoryWord };
+
+const HAN = /[\u3400-\u9fff]/;
+const TONE_MARK = /[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]/i;
+const NUMERIC_PINYIN = /^[a-zü:\s]+[1-5][a-zü:\s1-5]*$/i;
+
 export function SearchPage({
   index,
+  englishIndex,
+  englishStatus,
   meta,
   onOpenEntry,
+  onOpenEnglish,
   onOpenSimp,
   onImport,
 }: {
   index: SearchIndex | null;
+  englishIndex: EnglishSearchIndex | null;
+  englishStatus: "loading" | "ready" | "error";
   meta: DictionaryMeta | null;
   onOpenEntry: (id: number) => void;
+  onOpenEnglish: (id: number) => void;
   onOpenSimp: (simp: string) => void;
   onImport: () => void;
 }) {
@@ -41,18 +79,25 @@ export function SearchPage({
       return "";
     }
   });
-  const [hits, setHits] = useState<Hit[]>([]);
+  const [chineseHits, setChineseHits] = useState<ChineseHit[]>([]);
+  const [englishHits, setEnglishHits] = useState<EnglishHit[]>([]);
   const [searching, setSearching] = useState(false);
-  const [history, setHistory] = useState<HistoryWord[]>([]);
+  const [history, setHistory] = useState<RecentItem[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const tokenRef = useRef(0);
 
-  const hasQuery = query.trim().length > 0;
+  const trimmedQuery = query.trim();
+  const hasQuery = trimmedQuery.length > 0;
+  const isHanQuery = HAN.test(trimmedQuery);
+  const isPinyinHint =
+    TONE_MARK.test(trimmedQuery) || NUMERIC_PINYIN.test(trimmedQuery);
+  const isLatinQuery = hasQuery && !isHanQuery && !isPinyinHint;
+  const total = chineseHits.length + englishHits.length;
   const resultLabel = searching
     ? "Looking…"
-    : `${formatCount(hits.length)}${hits.length >= 60 ? "+" : ""} result${
-        hits.length === 1 && hits.length < 60 ? "" : "s"
-      }`;
+    : total === 0
+      ? "No results"
+      : `${formatCount(total)} result${total === 1 ? "" : "s"}`;
 
   useEffect(() => {
     try {
@@ -64,8 +109,15 @@ export function SearchPage({
 
   useEffect(() => {
     let active = true;
-    listHistory().then((items) => {
-      if (active) setHistory(items);
+    Promise.all([listHistory(), listEnglishHistory()]).then(([zh, en]) => {
+      if (!active) return;
+      const items: RecentItem[] = [
+        ...zh.map((data) => ({ kind: "zh" as const, data })),
+        ...en.map((data) => ({ kind: "en" as const, data })),
+      ]
+        .sort((a, b) => b.data.viewedAt - a.data.viewedAt)
+        .slice(0, 6);
+      setHistory(items);
     });
     return () => {
       active = false;
@@ -87,7 +139,8 @@ export function SearchPage({
   useEffect(() => {
     const trimmed = query.trim();
     if (!index || !trimmed) {
-      setHits([]);
+      setChineseHits([]);
+      setEnglishHits([]);
       setSearching(false);
       return;
     }
@@ -96,11 +149,26 @@ export function SearchPage({
     setSearching(true);
 
     const timer = window.setTimeout(async () => {
-      const candidates = searchIndex(index, trimmed);
-      const entries = await getEntriesByIds(candidates.map((candidate) => candidate.id));
+      const han = HAN.test(trimmed);
+      const pinyinHint =
+        TONE_MARK.test(trimmed) || NUMERIC_PINYIN.test(trimmed);
+      const chineseOnly = han || pinyinHint;
+      const chineseCandidates = searchIndex(index, trimmed);
+      const englishCandidates =
+        !chineseOnly && englishIndex
+          ? searchEnglishIndex(englishIndex, trimmed)
+          : [];
+
+      const [chineseEntries, englishEntries] = await Promise.all([
+        getEntriesByIds(chineseCandidates.map((candidate) => candidate.id)),
+        englishCandidates.length > 0
+          ? getEnglishEntriesByIds(
+              englishCandidates.map((candidate) => candidate.id),
+            )
+          : Promise.resolve([]),
+      ]);
       if (token !== tokenRef.current) return;
 
-      const byId = new Map(entries.map((entry) => [entry.id, entry]));
       const normalizedQuery = trimmed.toLowerCase();
       const phraseBoost = (entry: Entry): number => {
         const first = entry.definitions[0]?.toLowerCase().trim();
@@ -115,18 +183,23 @@ export function SearchPage({
         return 0;
       };
 
-      const nextHits = candidates.flatMap((candidate) => {
-        const entry = byId.get(candidate.id);
+      const chineseById = new Map(
+        chineseEntries.map((entry) => [entry.id, entry]),
+      );
+      const nextChinese = chineseCandidates.flatMap((candidate) => {
+        const entry = chineseById.get(candidate.id);
         return entry
-          ? [{
-              entry,
-              match: candidate.match,
-              rank: candidate.rank + phraseBoost(entry),
-            }]
+          ? [
+              {
+                entry,
+                match: candidate.match,
+                rank: candidate.rank + phraseBoost(entry),
+              },
+            ]
           : [];
       });
 
-      nextHits.sort((a, b) => {
+      nextChinese.sort((a, b) => {
         const lengthA = a.rank >= 2 ? a.entry.simp.length : 0;
         const lengthB = b.rank >= 2 ? b.entry.simp.length : 0;
         return (
@@ -134,21 +207,44 @@ export function SearchPage({
           lengthA - lengthB ||
           (a.entry.frequency ?? 1e9) - (b.entry.frequency ?? 1e9) ||
           (a.entry.hsk ?? 99) - (b.entry.hsk ?? 99) ||
+          a.entry.simp.length - b.entry.simp.length ||
           a.entry.id - b.entry.id
         );
       });
 
-      setHits(nextHits.slice(0, 60));
+      const englishById = new Map(
+        englishEntries.map((entry) => [entry.id, entry]),
+      );
+      const nextEnglish = englishCandidates.flatMap((candidate) => {
+        const entry = englishById.get(candidate.id);
+        return entry
+          ? [{ entry, match: candidate.match, rank: candidate.rank }]
+          : [];
+      });
+
+      nextEnglish.sort(
+        (a, b) =>
+          a.rank - b.rank ||
+          englishFrequency(a.entry) - englishFrequency(b.entry) ||
+          a.entry.word.length - b.entry.word.length ||
+          a.entry.id - b.entry.id,
+      );
+
+      setChineseHits(nextChinese.slice(0, chineseOnly ? 40 : 12));
+      setEnglishHits(nextEnglish.slice(0, 10));
       setSearching(false);
     }, 120);
 
     return () => window.clearTimeout(timer);
-  }, [query, index]);
+  }, [query, index, englishIndex]);
 
   const setExample = (value: string) => {
     setQuery(value);
     inputRef.current?.focus();
   };
+
+  const englishLoading = isLatinQuery && englishStatus === "loading";
+  const englishError = isLatinQuery && englishStatus === "error";
 
   return (
     <div className="page search-page">
@@ -159,10 +255,14 @@ export function SearchPage({
             English ↔ Chinese
             <span className="eyebrow-line" />
           </div>
-          <h1>Every word,<br />both ways.</h1>
+          <h1>
+            Every word,
+            <br />
+            both ways.
+          </h1>
           <p className="hero-sub">
-            Look up Mandarin by character, pinyin, or English. Import once,
-            then it works offline.
+            Look up Mandarin by character, pinyin, or English. Works offline,
+            with no account.
           </p>
         </section>
       )}
@@ -200,7 +300,7 @@ export function SearchPage({
         {!hasQuery && (
           <div className="search-hint">
             <span className="hint-label">Try</span>
-            {["银行", "nǐ hǎo", "bank", "学习"].map((example) => (
+            {["银行", "nǐ hǎo", "bank", "serendipity"].map((example) => (
               <button
                 type="button"
                 className="hint-chip"
@@ -221,10 +321,24 @@ export function SearchPage({
               <div className="section-kicker">Search</div>
               <h2 className="section-title">{resultLabel}</h2>
             </div>
-            {hits.length > 0 && !searching && (
+            {total > 0 && !searching && (
               <span className="result-caption">Best matches first</span>
             )}
           </div>
+
+          {englishLoading && (
+            <div className="english-note">
+              <Loader2 size={15} className="spin" />
+              Loading the English–Chinese core…
+            </div>
+          )}
+
+          {englishError && (
+            <div className="english-note english-note-error">
+              The bundled English core could not be loaded. English results may
+              be unavailable until you reload.
+            </div>
+          )}
 
           {searching && (
             <div className="result-list">
@@ -238,41 +352,69 @@ export function SearchPage({
             </div>
           )}
 
-          {!searching && hits.length === 0 && (
+          {!searching && total === 0 && (
             <div className="empty-card">
               <div className="empty-icon">
                 <Search size={22} />
               </div>
-              <h3>No entry found</h3>
+              <h3>{englishLoading ? "Loading the English dictionary" : "No entry found"}</h3>
               <p>
-                Try simplified or traditional characters, pinyin with or without
-                tones, or a single English word.
+                {englishLoading
+                  ? "The English–Chinese core is being installed. Try again in a moment."
+                  : "Try simplified or traditional characters, pinyin with or without tones, or a single English word."}
               </p>
-              <div className="empty-examples">
-                {["中国", "zhongguo", "hello"].map((example) => (
-                  <button
-                    type="button"
-                    className="hint-chip"
-                    key={example}
-                    onClick={() => setExample(example)}
-                  >
-                    {example}
-                  </button>
+              {!englishLoading && (
+                <div className="empty-examples">
+                  {["中国", "zhongguo", "hello"].map((example) => (
+                    <button
+                      type="button"
+                      className="hint-chip"
+                      key={example}
+                      onClick={() => setExample(example)}
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!searching && englishHits.length > 0 && (
+            <div className="result-group">
+              <div className="result-group-head">
+                <span>English → Chinese</span>
+                <span>{formatCount(englishHits.length)}</span>
+              </div>
+              <div className="result-list">
+                {englishHits.map((hit) => (
+                  <EnglishResultCard
+                    key={`en-${hit.entry.id}`}
+                    entry={hit.entry}
+                    match={hit.match}
+                    onOpen={onOpenEnglish}
+                  />
                 ))}
               </div>
             </div>
           )}
 
-          {!searching && hits.length > 0 && (
-            <div className="result-list">
-              {hits.map((hit) => (
-                <ResultCard
-                  key={hit.entry.id}
-                  entry={hit.entry}
-                  match={hit.match}
-                  onOpen={onOpenEntry}
-                />
-              ))}
+          {!searching && chineseHits.length > 0 && (
+            <div className="result-group">
+              <div className="result-group-head">
+                <span>Chinese → English</span>
+                <span>{formatCount(chineseHits.length)}</span>
+              </div>
+              <div className="result-list">
+                {chineseHits.map((hit) => (
+                  <ResultCard
+                    key={`zh-${hit.entry.id}`}
+                    entry={hit.entry}
+                    match={hit.match}
+                    onOpen={onOpenEntry}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </section>
@@ -286,8 +428,9 @@ export function SearchPage({
               <div className="banner-copy">
                 <div className="banner-title">You’re using the starter set</div>
                 <p>
-                  {formatCount(meta.count)} sample words, enough to explore. Add
-                  CC-CEDICT to unlock {formatCount(125320)} entries.
+                  {formatCount(meta.count)} Chinese sample words. Add CC-CEDICT
+                  for the full Chinese dictionary; English→Chinese is already
+                  included.
                 </p>
               </div>
               <button type="button" className="button button-primary" onClick={onImport}>
@@ -301,7 +444,7 @@ export function SearchPage({
             <section className="ready-banner">
               <CheckCircle2 size={20} />
               <div>
-                <strong>Full dictionary installed</strong>
+                <strong>Full Chinese dictionary installed</strong>
                 <span>
                   {formatCount(meta.count)} entries · {formatDate(meta.importedAt)}
                 </span>
@@ -320,47 +463,75 @@ export function SearchPage({
                 <Clock3 size={18} className="section-icon" />
               </div>
               <div className="history-list">
-                {history.slice(0, 6).map((item) => (
-                  <button
-                    type="button"
-                    className="history-item"
-                    key={item.simp}
-                    onClick={() => onOpenSimp(item.simp)}
-                  >
-                    <span className="hanzi history-hanzi">{item.simp}</span>
-                    <span className="history-copy">
-                      <span className="pinyin">{item.pinyin}</span>
-                      <span className="history-gloss">
-                        {item.definitions[0] ?? "View entry"}
+                {history.map((item) =>
+                  item.kind === "zh" ? (
+                    <button
+                      type="button"
+                      className="history-item"
+                      key={`zh:${item.data.simp}`}
+                      onClick={() => onOpenSimp(item.data.simp)}
+                    >
+                      <span className="hanzi history-hanzi">{item.data.simp}</span>
+                      <span className="history-copy">
+                        <span className="pinyin">{item.data.pinyin}</span>
+                        <span className="history-gloss">
+                          {item.data.definitions[0] ?? "View entry"}
+                        </span>
                       </span>
-                    </span>
-                  </button>
-                ))}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="history-item"
+                      key={`en:${item.data.key}`}
+                      onClick={() => onOpenEnglish(item.data.id)}
+                    >
+                      <span className="en-word history-en-word">
+                        {item.data.word}
+                      </span>
+                      <span className="history-copy">
+                        <span className="en-phonetic">
+                          {item.data.phonetic ? `/${item.data.phonetic}/` : "English"}
+                        </span>
+                        <span className="history-gloss">
+                          {item.data.translations[0] ?? "View entry"}
+                        </span>
+                      </span>
+                    </button>
+                  ),
+                )}
               </div>
             </section>
           )}
 
           <section className="how-grid">
             <article className="how-card">
-              <div className="how-icon"><BookOpen size={20} /></div>
-              <h3>Works offline</h3>
-              <p>Once installed, lookups never wait for a network request.</p>
+              <div className="how-icon">
+                <BookOpen size={20} />
+              </div>
+              <h3>Both directions</h3>
+              <p>English→Chinese is included. Import CC-CEDICT for full Chinese→English.</p>
             </article>
             <article className="how-card">
-              <div className="how-icon"><ShieldCheck size={20} /></div>
+              <div className="how-icon">
+                <ShieldCheck size={20} />
+              </div>
               <h3>Stays private</h3>
               <p>Your dictionary file is parsed on this device and never uploaded.</p>
             </article>
             <article className="how-card">
-              <div className="how-icon"><Sparkles size={20} /></div>
-              <h3>Yours to keep</h3>
-              <p>Import, replace, or remove the data whenever you want.</p>
+              <div className="how-icon">
+                <Sparkles size={20} />
+              </div>
+              <h3>Works offline</h3>
+              <p>Once installed, lookups never wait for a network request.</p>
             </article>
           </section>
 
           <p className="fine-print">
-            Ciqiao does not bundle CC-CEDICT. Download it from MDBG and import it
-            locally. The starter set is original sample content.
+            Ciqiao bundles a filtered ECDICT core (MIT) for English→Chinese.
+            CC-CEDICT is not bundled; download it from MDBG and import it locally
+            for the full Chinese→English dictionary.
           </p>
         </div>
       )}

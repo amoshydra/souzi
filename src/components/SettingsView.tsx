@@ -5,6 +5,7 @@ import {
   Download,
   HardDrive,
   Info,
+  Languages,
   Monitor,
   Moon,
   RotateCcw,
@@ -14,12 +15,19 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import type { BeforeInstallPromptEvent, DictionaryMeta, Theme } from "../types";
+import type {
+  BeforeInstallPromptEvent,
+  DictionaryMeta,
+  EnglishCoreMeta,
+  Theme,
+} from "../types";
 import { formatBytes, formatCount, formatDate } from "../lib/format";
 import { getStorageEstimate } from "../lib/db";
 
 export function SettingsView({
   meta,
+  englishMeta,
+  englishStatus,
   theme,
   onThemeChange,
   onImport,
@@ -30,6 +38,8 @@ export function SettingsView({
   onToast,
 }: {
   meta: DictionaryMeta | null;
+  englishMeta: EnglishCoreMeta | null;
+  englishStatus: "loading" | "ready" | "error";
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
   onImport: () => void;
@@ -61,7 +71,7 @@ export function SettingsView({
     return () => {
       active = false;
     };
-  }, [meta]);
+  }, [meta, englishMeta]);
 
   const usagePercent =
     storage && storage.quota > 0
@@ -86,7 +96,7 @@ export function SettingsView({
   const handleReset = async () => {
     setConfirmReset(false);
     await onReset();
-    onToast("Full dictionary removed; starter set restored");
+    onToast("Full Chinese dictionary removed; starter set restored");
   };
 
   return (
@@ -103,11 +113,11 @@ export function SettingsView({
             <Database size={18} />
           </div>
           <div>
-            <h2>Dictionary</h2>
+            <h2>Chinese dictionary</h2>
             <p>
               {meta?.kind === "cedict"
-                ? "Full CC-CEDICT dictionary, imported by you."
-                : "Starter sample set. Import CC-CEDICT for full coverage."}
+                ? "Full Chinese→English CC-CEDICT, imported by you."
+                : "Chinese starter sample set. Import CC-CEDICT for full coverage."}
             </p>
           </div>
           <span className={`status-pill ${meta?.kind === "cedict" ? "status-good" : ""}`}>
@@ -145,6 +155,44 @@ export function SettingsView({
               Remove full dictionary
             </button>
           )}
+        </div>
+      </section>
+
+      <section className="settings-card">
+        <div className="settings-card-head">
+          <div className="settings-icon">
+            <Languages size={18} />
+          </div>
+          <div>
+            <h2>English → Chinese</h2>
+            <p>Bundled ECDICT core. No download required.</p>
+          </div>
+          <span
+            className={`status-pill ${englishStatus === "ready" ? "status-good" : ""}`}
+          >
+            {englishStatus === "ready"
+              ? "Ready"
+              : englishStatus === "loading"
+                ? "Loading"
+                : "Error"}
+          </span>
+        </div>
+
+        <div className="settings-stat-grid">
+          <div>
+            <span>Entries</span>
+            <strong>
+              {englishMeta ? formatCount(englishMeta.count) : "—"}
+            </strong>
+          </div>
+          <div>
+            <span>Source</span>
+            <strong>ECDICT</strong>
+          </div>
+          <div>
+            <span>License</span>
+            <strong>MIT</strong>
+          </div>
         </div>
       </section>
 
@@ -297,6 +345,19 @@ export function SettingsView({
               rel="noreferrer"
             >
               CC BY-SA 4.0
+            </a>
+          </li>
+          <li>
+            <div>
+              <strong>ECDICT core</strong>
+              <span>Filtered English–Chinese entries bundled with Ciqiao.</span>
+            </div>
+            <a
+              href="https://github.com/skywind3000/ECDICT"
+              target="_blank"
+              rel="noreferrer"
+            >
+              MIT
             </a>
           </li>
           <li>

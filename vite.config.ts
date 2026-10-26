@@ -12,7 +12,7 @@ export default defineConfig({
         name: "Ciqiao — Chinese Dictionary",
         short_name: "Ciqiao",
         description:
-          "An offline-first English–Chinese dictionary. Import CC-CEDICT to add 125,000 entries.",
+          "An offline-first English–Chinese dictionary with a bundled ECDICT core. Import CC-CEDICT for full Chinese coverage.",
         id: "/",
         lang: "en",
         categories: ["education", "reference"],
@@ -41,7 +41,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2,gz}"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: "index.html",
         cleanupOutdatedCaches: true,
       },

@@ -1,6 +1,11 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type {
   DictionaryMeta,
+  EnglishCoreMeta,
+  EnglishEntry,
+  EnglishHistoryWord,
+  EnglishSavedWord,
+  EnglishSearchIndex,
   Entry,
   HistoryWord,
   SearchIndex,
@@ -32,14 +37,32 @@ interface CiqiaoDB extends DBSchema {
     key: string;
     value: HistoryWord;
   };
+  englishEntries: {
+    key: number;
+    value: EnglishEntry[];
+  };
+  englishIndex: {
+    key: string;
+    value: { name: string; data: unknown };
+  };
+  englishFavorites: {
+    key: string;
+    value: EnglishSavedWord;
+  };
+  englishHistory: {
+    key: string;
+    value: EnglishHistoryWord;
+  };
 }
 
 const DB_NAME = "ciqiao";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise: Promise<IDBPDatabase<CiqiaoDB>> | null = null;
 let cachedIndex: SearchIndex | null = null;
+let cachedEnglishIndex: EnglishSearchIndex | null = null;
 const chunkCache = new Map<number, Entry[]>();
+const englishChunkCache = new Map<number, EnglishEntry[]>();
 
 export function getDB(): Promise<IDBPDatabase<CiqiaoDB>> {
   if (!dbPromise) {
@@ -62,6 +85,18 @@ export function getDB(): Promise<IDBPDatabase<CiqiaoDB>> {
         }
         if (!db.objectStoreNames.contains("history")) {
           db.createObjectStore("history", { keyPath: "simp" });
+        }
+        if (!db.objectStoreNames.contains("englishEntries")) {
+          db.createObjectStore("englishEntries");
+        }
+        if (!db.objectStoreNames.contains("englishIndex")) {
+          db.createObjectStore("englishIndex", { keyPath: "name" });
+        }
+        if (!db.objectStoreNames.contains("englishFavorites")) {
+          db.createObjectStore("englishFavorites", { keyPath: "key" });
+        }
+        if (!db.objectStoreNames.contains("englishHistory")) {
+          db.createObjectStore("englishHistory", { keyPath: "key" });
         }
       },
     });
@@ -278,7 +313,171 @@ export async function listHistory(): Promise<HistoryWord[]> {
 
 export async function clearHistory(): Promise<void> {
   const db = await getDB();
-  await db.clear("history");
+  await Promise.all([db.clear("history"), db.clear("englishHistory")]);
+}
+
+export async function installEnglishCore(
+  entries: EnglishEntry[],
+  index: EnglishSearchIndex,
+  meta: EnglishCoreMeta,
+): Promise<void> {
+  const db = await getDB();
+
+  await db.clear("englishEntries");
+  await db.clear("englishIndex");
+  englishChunkCache.clear();
+  cachedEnglishIndex = null;
+
+  for (let i = 0; i < entries.length; i += ENTRY_CHUNK_SIZE) {
+    const chunk = entries.slice(i, i + ENTRY_CHUNK_SIZE);
+    await db.put("englishEntries", chunk, Math.floor(i / ENTRY_CHUNK_SIZE));
+  }
+
+  await db.put("englishIndex", { name: "words", data: index.words });
+  await db.put("englishIndex", { name: "variants", data: index.variants });
+  await db.put("meta", { key: "ecdict", value: meta });
+}
+
+export async function loadEnglishCore(): Promise<{
+  index: EnglishSearchIndex;
+  meta: EnglishCoreMeta;
+} | null> {
+  const db = await getDB();
+  const [metaRecord, records] = await Promise.all([
+    db.get("meta", "ecdict"),
+    db.getAll("englishIndex"),
+  ]);
+
+  if (!metaRecord) return null;
+
+  const byName = new Map(records.map((record) => [record.name, record.data]));
+  const words = byName.get("words") as Record<string, number[]> | undefined;
+  const variants =
+    (byName.get("variants") as Record<string, number[]> | undefined) ?? {};
+
+  if (!words) return null;
+
+  cachedEnglishIndex = {
+    words,
+    variants,
+    keys: Object.keys(words).sort(),
+  };
+
+  return {
+    index: cachedEnglishIndex,
+    meta: metaRecord.value as EnglishCoreMeta,
+  };
+}
+
+export async function getEnglishEntriesByIds(
+  ids: number[],
+): Promise<EnglishEntry[]> {
+  if (ids.length === 0) return [];
+
+  const chunkIds = [
+    ...new Set(ids.map((id) => Math.floor((id - 1) / ENTRY_CHUNK_SIZE))),
+  ];
+  const missing = chunkIds.filter(
+    (chunkId) => !englishChunkCache.has(chunkId),
+  );
+
+  if (missing.length > 0) {
+    const db = await getDB();
+    const tx = db.transaction("englishEntries", "readonly");
+    const values = await Promise.all(
+      missing.map((chunkId) => tx.store.get(chunkId)),
+    );
+    await tx.done;
+    missing.forEach((chunkId, index) => {
+      englishChunkCache.set(chunkId, values[index] ?? []);
+    });
+  }
+
+  const byId = new Map<number, EnglishEntry>();
+  for (const chunkId of chunkIds) {
+    for (const entry of englishChunkCache.get(chunkId) ?? []) {
+      byId.set(entry.id, entry);
+    }
+  }
+
+  return ids
+    .map((id) => byId.get(id))
+    .filter((entry): entry is EnglishEntry => Boolean(entry));
+}
+
+export async function getEnglishEntryByWord(
+  word: string,
+): Promise<EnglishEntry | undefined> {
+  const normalized = word.trim().toLowerCase();
+  const index = cachedEnglishIndex ?? (await loadEnglishCore())?.index;
+  const id = index?.words[normalized]?.[0];
+  if (!id) return undefined;
+  const [entry] = await getEnglishEntriesByIds([id]);
+  return entry;
+}
+
+export async function toggleEnglishFavorite(
+  entry: EnglishEntry,
+): Promise<boolean> {
+  const db = await getDB();
+  const key = entry.word.toLowerCase();
+  const existing = await db.get("englishFavorites", key);
+
+  if (existing) {
+    await db.delete("englishFavorites", key);
+    return false;
+  }
+
+  await db.put("englishFavorites", {
+    id: entry.id,
+    key,
+    word: entry.word,
+    phonetic: entry.phonetic,
+    translations: entry.translations.slice(0, 4),
+    tags: entry.tags,
+    savedAt: Date.now(),
+  });
+  return true;
+}
+
+export async function listEnglishFavorites(): Promise<EnglishSavedWord[]> {
+  const db = await getDB();
+  const favorites = await db.getAll("englishFavorites");
+  return favorites.sort((a, b) => b.savedAt - a.savedAt);
+}
+
+export async function removeEnglishFavorite(key: string): Promise<void> {
+  const db = await getDB();
+  await db.delete("englishFavorites", key);
+}
+
+export async function addEnglishHistory(entry: EnglishEntry): Promise<void> {
+  const db = await getDB();
+  const now = Date.now();
+  await db.put("englishHistory", {
+    id: entry.id,
+    key: entry.word.toLowerCase(),
+    word: entry.word,
+    phonetic: entry.phonetic,
+    translations: entry.translations.slice(0, 4),
+    tags: entry.tags,
+    savedAt: now,
+    viewedAt: now,
+  });
+
+  const all = await db.getAll("englishHistory");
+  if (all.length > 50) {
+    const sorted = all.sort((a, b) => b.viewedAt - a.viewedAt);
+    const tx = db.transaction("englishHistory", "readwrite");
+    for (const old of sorted.slice(50)) tx.store.delete(old.key);
+    await tx.done;
+  }
+}
+
+export async function listEnglishHistory(): Promise<EnglishHistoryWord[]> {
+  const db = await getDB();
+  const history = await db.getAll("englishHistory");
+  return history.sort((a, b) => b.viewedAt - a.viewedAt).slice(0, 20);
 }
 
 export async function getStorageEstimate(): Promise<{

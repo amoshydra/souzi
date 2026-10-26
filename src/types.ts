@@ -29,6 +29,58 @@ export interface ParsedEntry {
   classifiers: string[];
 }
 
+export interface EnglishEntry {
+  id: number;
+  word: string;
+  phonetic: string;
+  translations: string[];
+  definitions: string[];
+  pos: string;
+  tags: string[];
+  collins: number;
+  oxford: number;
+  bnc: number;
+  frq: number;
+  exchange: string;
+  source: "ecdict";
+}
+
+export interface EnglishSearchIndex {
+  words: Record<string, number[]>;
+  variants: Record<string, number[]>;
+  keys: string[];
+}
+
+export type EnglishMatchKind = "word" | "variant" | "lemma" | "prefix";
+
+export interface EnglishSearchCandidate {
+  id: number;
+  match: EnglishMatchKind;
+  rank: number;
+}
+
+export interface EnglishSavedWord {
+  id: number;
+  key: string;
+  word: string;
+  phonetic: string;
+  translations: string[];
+  tags: string[];
+  savedAt: number;
+}
+
+export interface EnglishHistoryWord extends EnglishSavedWord {
+  viewedAt: number;
+}
+
+export interface EnglishCoreMeta {
+  count: number;
+  installedAt: string;
+  source: string;
+  license: string;
+  version: number;
+}
+
 export interface DictionaryMeta {
   count: number;
   importedAt: string;

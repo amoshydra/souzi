@@ -15,3 +15,21 @@ export function speakChinese(text: string): boolean {
   window.speechSynthesis.speak(utterance);
   return true;
 }
+
+export function speakEnglish(text: string): boolean {
+  if (!("speechSynthesis" in window)) return false;
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+
+  const voices = window.speechSynthesis.getVoices();
+  const englishVoice =
+    voices.find((voice) => voice.lang === "en-US") ??
+    voices.find((voice) => voice.lang.startsWith("en"));
+  if (englishVoice) utterance.voice = englishVoice;
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+  return true;
+}

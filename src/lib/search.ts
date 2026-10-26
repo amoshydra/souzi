@@ -1,76 +1,13 @@
 import type { MatchKind, SearchCandidate, SearchIndex } from "../types";
+import { lemmaCandidates } from "./lemma";
 import { normalizePinyinQuery } from "./pinyin";
+import { prefixIds } from "./prefix";
 
 const HAN = /[\u3400-\u9fff]/;
 const PYHINT = /[1-5āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]/i;
 
 function hasHan(value: string): boolean {
   return HAN.test(value);
-}
-
-function lowerBound(keys: string[], target: string): number {
-  let low = 0;
-  let high = keys.length;
-  while (low < high) {
-    const mid = (low + high) >> 1;
-    if (keys[mid] < target) low = mid + 1;
-    else high = mid;
-  }
-  return low;
-}
-
-function prefixIds(
-  keys: string[],
-  map: Record<string, number[]>,
-  prefix: string,
-  limit: number,
-): number[] {
-  if (!prefix) return [];
-  const start = lowerBound(keys, prefix);
-  const ids: number[] = [];
-  for (let i = start; i < keys.length; i += 1) {
-    const key = keys[i];
-    if (!key.startsWith(prefix)) break;
-    for (const id of map[key] ?? []) {
-      ids.push(id);
-      if (ids.length >= limit) return ids;
-    }
-  }
-  return ids;
-}
-
-function lemmaCandidates(word: string): string[] {
-  const out = new Set<string>([word]);
-  const add = (candidate: string) => {
-    if (candidate.length > 1) out.add(candidate);
-  };
-
-  if (word.endsWith("'s")) add(word.slice(0, -2));
-
-  if (word.endsWith("ies")) add(`${word.slice(0, -3)}y`);
-  if (word.endsWith("ves")) add(`${word.slice(0, -3)}f`);
-  if (word.endsWith("es")) add(word.slice(0, -2));
-  if (word.endsWith("s") && !word.endsWith("ss")) add(word.slice(0, -1));
-
-  if (word.endsWith("ing")) {
-    const base = word.slice(0, -3);
-    add(base);
-    add(`${base}e`);
-    if (base.length > 2 && base.at(-1) === base.at(-2)) add(base.slice(0, -1));
-  }
-
-  if (word.endsWith("ed")) {
-    const base = word.slice(0, -2);
-    add(base);
-    add(`${base}e`);
-    if (base.length > 2 && base.at(-1) === base.at(-2)) add(base.slice(0, -1));
-  }
-
-  if (word.endsWith("ly")) add(word.slice(0, -2));
-  if (word.endsWith("er")) add(word.slice(0, -2));
-  if (word.endsWith("est")) add(word.slice(0, -3));
-
-  return [...out];
 }
 
 function sortCandidates(out: Map<number, SearchCandidate>): SearchCandidate[] {

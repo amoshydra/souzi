@@ -173,12 +173,13 @@ export function ImportView({
       </button>
 
       <header className="page-heading">
-        <div className="section-kicker">Dictionary data</div>
-        <h1>Add the full dictionary</h1>
+        <div className="section-kicker">Chinese dictionary data</div>
+        <h1>Add the full Chinese dictionary</h1>
         <p>
-          CC-CEDICT is free but share-alike, so Ciqiao does not bundle it.
-          Download it from MDBG, then import the file here. It stays on this
-          device.
+          English→Chinese is already included. CC-CEDICT adds the full
+          Chinese→English direction. It is free but share-alike, so Ciqiao does
+          not bundle it. Download it from MDBG, then import the file here. It
+          stays on this device.
         </p>
       </header>
 

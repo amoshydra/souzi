@@ -10,7 +10,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "data:ecdict": "node scripts/build-ecdict-core.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.2",
@@ -23,6 +24,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "csv-parse": "^7.0.3",
     "typescript": "^5.9.0",
     "vite": "^7.1.0",
     "vite-plugin-pwa": "^1.0.0",

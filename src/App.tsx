@@ -3,6 +3,9 @@ import { Search, Settings, Star } from "lucide-react";
 import type {
   BeforeInstallPromptEvent,
   DictionaryMeta,
+  EnglishCoreMeta,
+  EnglishSavedWord,
+  EnglishSearchIndex,
   SearchIndex,
   Theme,
   UserWord,
@@ -11,23 +14,29 @@ import {
   clearHistory as clearHistoryDb,
   getDictionaryMeta,
   getEntryBySimp,
+  listEnglishFavorites,
   listFavorites,
   loadSearchIndex,
+  removeEnglishFavorite,
   removeFavorite,
   resetToStarter,
   seedStarter,
 } from "./lib/db";
+import { ensureEnglishCore } from "./lib/english-core";
 import { SearchPage } from "./components/SearchPage";
 import { EntryView } from "./components/EntryView";
+import { EnglishEntryView } from "./components/EnglishEntryView";
 import { ImportView } from "./components/ImportView";
 import { SavedView } from "./components/SavedView";
 import { SettingsView } from "./components/SettingsView";
 import { Logo } from "./components/Logo";
 import { Toast, type ToastMessage } from "./components/Toast";
 
+type EntryKind = "zh" | "en";
+
 type Route =
   | { name: "search" }
-  | { name: "entry"; id: number }
+  | { name: "entry"; kind: EntryKind; id: number }
   | { name: "saved" }
   | { name: "settings" }
   | { name: "import" };
@@ -36,9 +45,11 @@ function parseHash(): Route {
   const hash = window.location.hash.replace(/^#\/?/, "");
   const [name, value] = hash.split("/");
 
-  if (name === "entry" && value) {
+  if ((name === "entry" || name === "zh" || name === "en") && value) {
     const id = Number(value);
-    if (Number.isFinite(id) && id > 0) return { name: "entry", id };
+    if (Number.isFinite(id) && id > 0) {
+      return { name: "entry", kind: name === "en" ? "en" : "zh", id };
+    }
   }
   if (name === "saved") return { name: "saved" };
   if (name === "settings") return { name: "settings" };
@@ -49,7 +60,7 @@ function parseHash(): Route {
 function routeToHash(route: Route): string {
   switch (route.name) {
     case "entry":
-      return `#/entry/${route.id}`;
+      return `#/${route.kind}/${route.id}`;
     case "saved":
       return "#/saved";
     case "settings":
@@ -75,6 +86,16 @@ export default function App() {
   const [meta, setMeta] = useState<DictionaryMeta | null>(null);
   const [index, setIndex] = useState<SearchIndex | null>(null);
   const [favorites, setFavorites] = useState<UserWord[]>([]);
+  const [englishIndex, setEnglishIndex] = useState<EnglishSearchIndex | null>(
+    null,
+  );
+  const [englishStatus, setEnglishStatus] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
+  const [englishMeta, setEnglishMeta] = useState<EnglishCoreMeta | null>(null);
+  const [englishFavorites, setEnglishFavorites] = useState<EnglishSavedWord[]>(
+    [],
+  );
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [installPrompt, setInstallPrompt] =
@@ -98,6 +119,10 @@ export default function App() {
 
   const refreshFavorites = useCallback(async () => {
     setFavorites(await listFavorites());
+  }, []);
+
+  const refreshEnglishFavorites = useCallback(async () => {
+    setEnglishFavorites(await listEnglishFavorites());
   }, []);
 
   const reloadDictionary = useCallback(async () => {
@@ -132,17 +157,32 @@ export default function App() {
         currentIndex = await loadSearchIndex();
       }
 
-      const currentFavorites = await listFavorites();
+      const [currentFavorites, currentEnglishFavorites] = await Promise.all([
+        listFavorites(),
+        listEnglishFavorites(),
+      ]);
       if (!active) return;
 
       setMeta(currentMeta);
       setIndex(currentIndex);
       setFavorites(currentFavorites);
+      setEnglishFavorites(currentEnglishFavorites);
       setReady(true);
 
       navigator.storage?.persist?.().catch(() => {
         // Persistence is best-effort.
       });
+
+      void ensureEnglishCore()
+        .then(({ index: nextEnglishIndex, meta: nextEnglishMeta }) => {
+          if (!active) return;
+          setEnglishIndex(nextEnglishIndex);
+          setEnglishMeta(nextEnglishMeta);
+          setEnglishStatus("ready");
+        })
+        .catch(() => {
+          if (active) setEnglishStatus("error");
+        });
     }
 
     void init();
@@ -194,7 +234,11 @@ export default function App() {
       showToast("That word is no longer in the dictionary", "error");
       return;
     }
-    navigate({ name: "entry", id: entry.id });
+    navigate({ name: "entry", kind: "zh", id: entry.id });
+  };
+
+  const openEnglish = (id: number) => {
+    navigate({ name: "entry", kind: "en", id });
   };
 
   const handleReset = async () => {
@@ -204,6 +248,7 @@ export default function App() {
     setFavorites(await listFavorites());
   };
 
+  const savedCount = favorites.length + englishFavorites.length;
   const isNavActive = (name: "search" | "saved" | "settings") =>
     route.name === name ||
     (name === "search" && (route.name === "entry" || route.name === "import"));
@@ -241,9 +286,7 @@ export default function App() {
             >
               <Star size={16} />
               Saved
-              {favorites.length > 0 && (
-                <span className="nav-count">{favorites.length}</span>
-              )}
+              {savedCount > 0 && <span className="nav-count">{savedCount}</span>}
             </button>
             <button
               type="button"
@@ -271,27 +314,51 @@ export default function App() {
           ) : route.name === "search" ? (
             <SearchPage
               index={index}
+              englishIndex={englishIndex}
+              englishStatus={englishStatus}
               meta={meta}
-              onOpenEntry={(id) => navigate({ name: "entry", id })}
+              onOpenEntry={(id) =>
+                navigate({ name: "entry", kind: "zh", id })
+              }
+              onOpenEnglish={openEnglish}
               onOpenSimp={openSimp}
               onImport={() => navigate({ name: "import" })}
             />
           ) : route.name === "entry" ? (
-            <EntryView
-              id={route.id}
-              favorites={favorites}
-              onBack={() => navigate({ name: "search" })}
-              onOpenEntry={(id) => navigate({ name: "entry", id })}
-              onFavoriteChange={() => void refreshFavorites()}
-              onToast={showToast}
-            />
+            route.kind === "zh" ? (
+              <EntryView
+                id={route.id}
+                favorites={favorites}
+                onBack={() => navigate({ name: "search" })}
+                onOpenEntry={(id) =>
+                  navigate({ name: "entry", kind: "zh", id })
+                }
+                onFavoriteChange={() => void refreshFavorites()}
+                onToast={showToast}
+              />
+            ) : (
+              <EnglishEntryView
+                id={route.id}
+                favorites={englishFavorites}
+                onBack={() => navigate({ name: "search" })}
+                onFavoriteChange={() => void refreshEnglishFavorites()}
+                onToast={showToast}
+              />
+            )
           ) : route.name === "saved" ? (
             <SavedView
               favorites={favorites}
+              englishFavorites={englishFavorites}
               onOpenSimp={openSimp}
+              onOpenEnglish={openEnglish}
               onRemove={async (simp) => {
                 await removeFavorite(simp);
                 await refreshFavorites();
+                showToast("Removed from saved words");
+              }}
+              onRemoveEnglish={async (key) => {
+                await removeEnglishFavorite(key);
+                await refreshEnglishFavorites();
                 showToast("Removed from saved words");
               }}
               onBrowse={() => navigate({ name: "search" })}
@@ -299,6 +366,8 @@ export default function App() {
           ) : route.name === "settings" ? (
             <SettingsView
               meta={meta}
+              englishMeta={englishMeta}
+              englishStatus={englishStatus}
               theme={theme}
               onThemeChange={setTheme}
               onImport={() => navigate({ name: "import" })}
@@ -336,7 +405,7 @@ export default function App() {
         >
           <Star size={21} />
           <span>Saved</span>
-          {favorites.length > 0 && <span className="bottom-dot" />}
+          {savedCount > 0 && <span className="bottom-dot" />}
         </button>
         <button
           type="button"
