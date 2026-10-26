@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ciqiao bridge mark">
+  <rect width="512" height="512" rx="112" fill="#1f4d40"/>
+  <circle cx="372" cy="148" r="34" fill="#c2553f"/>
+  <path d="M78 340H434" stroke="#f7f3e8" stroke-width="18" stroke-linecap="round"/>
+  <path d="M96 340C140 214 372 214 416 340" fill="none" stroke="#f7f3e8" stroke-width="18" stroke-linecap="round"/>
+  <path d="M128 340V298M192 340V268M256 340V250M320 340V268M384 340V298" stroke="#f7f3e8" stroke-width="10" stroke-linecap="round"/>
+  <path d="M64 394H448" stroke="#f7f3e8" stroke-width="10" stroke-linecap="round" opacity=".4"/>
+</svg>
