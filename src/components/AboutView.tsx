@@ -22,7 +22,7 @@ export function AboutView({
       <section className="hero about-hero">
         <div className="eyebrow">
           <span className="eyebrow-line" />
-          English ↔ Chinese
+          About Souzi
           <span className="eyebrow-line" />
         </div>
         <h1>
@@ -31,8 +31,7 @@ export function AboutView({
           both ways.
         </h1>
         <p className="hero-sub">
-          A simple dictionary for English and Chinese, made to be easy to read
-          and easy to use.
+          A simple dictionary made to be easy to read and easy to use.
         </p>
       </section>
 
@@ -40,8 +39,7 @@ export function AboutView({
         <section className="panel about-panel">
           <div className="panel-kicker">A dictionary first</div>
           <p>
-            Search is the first thing you see. Type a Chinese or English word
-            and tap the result to read the meaning.
+            Search is the first thing you see. Type a word and tap the result to read the meaning.
           </p>
           <p>
             Your dictionaries are saved on this device. There is no account and

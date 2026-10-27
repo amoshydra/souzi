@@ -340,13 +340,11 @@ export default function App() {
               index={index}
               englishIndex={englishIndex}
               englishStatus={englishStatus}
-              meta={meta}
               onOpenEntry={(id) =>
                 navigate({ name: "entry", kind: "zh", id })
               }
               onOpenEnglish={openEnglish}
               onOpenSimp={openSimp}
-              onImport={() => navigate({ name: "import" })}
               onAbout={() => navigate({ name: "about" })}
             />
           ) : route.name === "entry" ? (

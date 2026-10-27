@@ -1,15 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  CheckCircle2,
-  Clock3,
-  Library,
-  Loader2,
-  Search,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { Clock3, Loader2, Search, X } from "lucide-react";
 import type {
-  DictionaryMeta,
   EnglishCoreStatus,
   EnglishEntry,
   EnglishHistoryWord,
@@ -27,7 +18,7 @@ import {
   listHistory,
 } from "../lib/db";
 import { englishFrequency, searchEnglishIndex } from "../lib/english";
-import { formatCount, formatDate } from "../lib/format";
+import { formatCount } from "../lib/format";
 import { searchIndex } from "../lib/search";
 import { EnglishResultCard } from "./EnglishResultCard";
 import { ResultCard } from "./ResultCard";
@@ -56,21 +47,17 @@ export function SearchPage({
   index,
   englishIndex,
   englishStatus,
-  meta,
   onOpenEntry,
   onOpenEnglish,
   onOpenSimp,
-  onImport,
   onAbout,
 }: {
   index: SearchIndex | null;
   englishIndex: EnglishSearchIndex | null;
   englishStatus: EnglishCoreStatus;
-  meta: DictionaryMeta | null;
   onOpenEntry: (id: number) => void;
   onOpenEnglish: (id: number) => void;
   onOpenSimp: (simp: string) => void;
-  onImport: () => void;
   onAbout: () => void;
 }) {
   const [query, setQuery] = useState(() => {
@@ -253,11 +240,7 @@ export function SearchPage({
     <div className="page search-page">
       {!hasQuery && (
         <div className="dictionary-head">
-          <div>
-            <div className="section-kicker">Chinese ↔ English</div>
-            <h1 className="dictionary-title">Look up a word</h1>
-          </div>
-          <p>A Chinese or English word</p>
+          <h1 className="dictionary-title">Look up a word</h1>
         </div>
       )}
 
@@ -312,7 +295,6 @@ export function SearchPage({
         <section className="results-section" aria-live="polite">
           <div className="section-head">
             <div>
-              <div className="section-kicker">Search</div>
               <h2 className="section-title">{resultLabel}</h2>
             </div>
             {total > 0 && !searching && (
@@ -423,43 +405,11 @@ export function SearchPage({
         </section>
       ) : (
         <div className="home-sections">
-          {meta?.kind === "starter" && (
-            <section className="starter-banner">
-              <div className="banner-icon">
-                <Library size={22} />
-              </div>
-              <div className="banner-copy">
-                <div className="banner-title">Sample words are active</div>
-                <p>
-                  {formatCount(meta.count)} sample words. Add the full Chinese dictionary for more words.
-                </p>
-              </div>
-              <button type="button" className="button button-primary" onClick={onImport}>
-                <Sparkles size={16} />
-                Add Chinese dictionary
-              </button>
-            </section>
-          )}
-
-          {meta?.kind === "cedict" && (
-            <section className="ready-banner">
-              <CheckCircle2 size={20} />
-              <div>
-                <strong>Chinese dictionary ready</strong>
-                <span>
-                  {formatCount(meta.count)} words · {formatDate(meta.importedAt)}
-                </span>
-              </div>
-              <span className="status-pill">Ready</span>
-            </section>
-          )}
-
           {history.length > 0 && (
             <section className="home-section">
               <div className="section-head">
                 <div>
-                  <div className="section-kicker">Recent words</div>
-                  <h2 className="section-title">Recent</h2>
+                  <h2 className="section-title">Recent words</h2>
                 </div>
                 <Clock3 size={18} className="section-icon" />
               </div>
