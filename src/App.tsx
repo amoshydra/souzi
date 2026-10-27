@@ -168,19 +168,40 @@ export default function App() {
       ]);
       if (!active) return;
 
-      const englishIsCurrent =
-        currentEnglish?.meta.version === ECDICT_CORE_VERSION;
+      const englishWasMissing = !currentEnglish;
       const chineseIsReady =
         currentMeta?.kind === "cedict" && currentIndex !== null;
+      let nextEnglish = currentEnglish;
+      let englishFailed = false;
+
+      // The English core ships with the app. Install or update it silently
+      // instead of asking the user to perform a setup step for included data.
+      if (nextEnglish?.meta.version !== ECDICT_CORE_VERSION) {
+        try {
+          const installed = await ensureEnglishCore();
+          if (!active) return;
+          nextEnglish = installed;
+        } catch {
+          if (!active) return;
+          englishFailed = true;
+        }
+      }
+
+      const englishIsCurrent =
+        nextEnglish?.meta.version === ECDICT_CORE_VERSION;
 
       setMeta(currentMeta ?? null);
       setIndex(currentIndex);
       setFavorites(currentFavorites);
       setEnglishFavorites(currentEnglishFavorites);
-      setEnglishIndex(englishIsCurrent ? currentEnglish.index : null);
-      setEnglishMeta(currentEnglish?.meta ?? null);
-      setEnglishStatus(englishIsCurrent ? "ready" : "idle");
-      setSetupMode(!chineseIsReady && !englishIsCurrent);
+      setEnglishIndex(
+        englishIsCurrent && nextEnglish ? nextEnglish.index : null,
+      );
+      setEnglishMeta(nextEnglish?.meta ?? null);
+      setEnglishStatus(
+        englishIsCurrent ? "ready" : englishFailed ? "error" : "idle",
+      );
+      setSetupMode(englishWasMissing && !chineseIsReady);
       setReady(true);
 
       navigator.storage?.persist?.().catch(() => {
@@ -261,7 +282,7 @@ export default function App() {
             <div className="loading-screen">
               <Logo size={54} />
               <div className="loading-title">Opening Souzi</div>
-              <div className="loading-sub">Preparing your offline dictionary…</div>
+              <div className="loading-sub">Getting your words ready…</div>
               <div className="loading-bar">
                 <div className="loading-bar-fill" />
               </div>
@@ -278,7 +299,6 @@ export default function App() {
         <SetupView
           chineseMeta={meta}
           englishStatus={englishStatus}
-          englishMeta={englishMeta}
           onInstallEnglish={installEnglish}
           onChineseImported={handleChineseImported}
           onNext={finishSetup}

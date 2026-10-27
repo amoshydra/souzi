@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Download,
   FileText,
-  Languages,
   Loader2,
   Pause,
   Play,
@@ -18,12 +17,10 @@ import {
 } from "lucide-react";
 import type {
   DictionaryMeta,
-  EnglishCoreMeta,
   EnglishCoreStatus,
   ImportProgress,
 } from "../types";
 import { startCedictImport } from "../lib/cedict-import";
-import { formatBytes, formatCount } from "../lib/format";
 import { useNativeCedictDownload } from "../hooks/useNativeCedictDownload";
 import { Logo } from "./Logo";
 
@@ -41,23 +38,21 @@ function phaseLabel(phase: ImportProgress["phase"]): string {
     case "index":
       return "Preparing words";
     case "store":
-      return "Saving dictionary";
+      return "Saving words";
     default:
-      return "Installing";
+      return "Adding words";
   }
 }
 
 export function SetupView({
   chineseMeta,
   englishStatus,
-  englishMeta,
   onInstallEnglish,
   onChineseImported,
   onNext,
 }: {
   chineseMeta: DictionaryMeta | null;
   englishStatus: EnglishCoreStatus;
-  englishMeta: EnglishCoreMeta | null;
   onInstallEnglish: () => void;
   onChineseImported: () => Promise<void>;
   onNext: () => void;
@@ -74,14 +69,13 @@ export function SetupView({
   });
 
   const chineseReady = chineseMeta?.kind === "cedict";
-  const englishReady = englishStatus === "ready";
-  const canContinue =
-    (chineseReady || englishReady) && !importing && !nativeDownload.busy;
+  const waitingForChinese = importing || nativeDownload.busy;
+  const canContinue = englishStatus === "ready" && !waitingForChinese;
 
   const startChineseImport = (file: File | undefined) => {
     if (!file) return;
     if (!/\.(txt|gz|zip)$/i.test(file.name)) {
-      setError("Please choose the dictionary file you downloaded.");
+      setError("Please choose the file you downloaded.");
       return;
     }
 
@@ -133,24 +127,6 @@ export function SetupView({
           ),
         )
       : null;
-  const chineseStatusLabel = chineseReady
-    ? "Ready"
-    : native
-      ? nativeDownload.phase === "checking"
-        ? "Checking"
-        : nativeDownload.phase === "downloading"
-          ? "Downloading"
-          : nativeDownload.phase === "paused"
-            ? "Paused"
-            : nativeDownload.phase === "installing"
-              ? "Installing"
-              : nativeDownload.phase === "error"
-                ? "Try again"
-                : "Not added"
-      : importing
-        ? "Adding"
-        : "Not added";
-
   return (
     <div className="setup-page">
       <div className="setup-shell">
@@ -162,132 +138,68 @@ export function SetupView({
               <div className="setup-brand-sub">搜字</div>
             </div>
           </div>
-          <div className="setup-kicker">Getting started</div>
-          <h1>Set up your dictionary</h1>
+          <h1>Add Chinese words</h1>
           <p>
-            Choose one or both. You can add the other later.
+            {englishStatus === "ready"
+              ? "English words are ready. Chinese words are optional."
+              : englishStatus === "error"
+                ? "English words could not be prepared."
+                : "Getting English words ready…"}
           </p>
         </header>
 
-        <div className="setup-grid">
-          <section className={`setup-card ${englishReady ? "setup-card-ready" : ""}`}>
-            <div className="setup-card-head">
-              <div className="setup-card-icon">
-                <Languages size={22} />
-              </div>
-              <div className="setup-card-title">
-                <h2>English words</h2>
-                <span>Find Chinese meanings</span>
-              </div>
-              <span
-                className={`setup-status ${
-                  englishReady ? "setup-status-ready" : ""
-                }`}
-              >
-                {englishReady
-                  ? "Ready"
-                  : englishStatus === "loading"
-                    ? "Installing"
-                    : englishStatus === "error"
-                      ? "Try again"
-                      : "Not added"}
-              </span>
+        <section
+          className={`setup-card setup-card-single ${
+            chineseReady ? "setup-card-ready" : ""
+          }`}
+        >
+          <div className="setup-card-head">
+            <div className="setup-card-icon">
+              <BookOpen size={22} />
             </div>
-
-            <p className="setup-card-copy">
-              Included with the app. Install it to look up English words.
-            </p>
-
-            {englishReady ? (
-              <div className="setup-installed">
-                <CheckCircle2 size={17} />
-                {formatCount(englishMeta?.count ?? 30000)} words · ready to use
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="button button-primary setup-install-button"
-                onClick={onInstallEnglish}
-                disabled={englishStatus === "loading"}
-              >
-                {englishStatus === "loading" ? (
-                  <Loader2 size={16} className="spin" />
-                ) : (
-                  <Download size={16} />
-                )}
-                {englishStatus === "loading"
-                  ? "Installing English…"
-                  : englishStatus === "error"
-                    ? "Try installing English again"
-                    : "Install English dictionary"}
-              </button>
-            )}
-
-            {englishStatus === "error" && (
-              <div className="setup-error">
-                The English dictionary could not be installed. Please try again.
-              </div>
-            )}
-          </section>
-
-          <section className={`setup-card ${chineseReady ? "setup-card-ready" : ""}`}>
-            <div className="setup-card-head">
-              <div className="setup-card-icon">
-                <BookOpen size={22} />
-              </div>
-              <div className="setup-card-title">
-                <h2>Chinese words</h2>
-                <span>Find English meanings</span>
-              </div>
-              <span
-                className={`setup-status ${
-                  chineseReady ? "setup-status-ready" : ""
-                }`}
-              >
-                {chineseStatusLabel}
-              </span>
+            <div className="setup-card-title">
+              <h2>Chinese words</h2>
             </div>
+          </div>
 
-            <p className="setup-card-copy">
-              Download it once, then look up Chinese words without internet.
-            </p>
+          <p className="setup-card-copy">
+            Find English meanings for Chinese words. Works without internet
+            after download.
+          </p>
 
-            {chineseReady ? (
-              <div className="setup-installed">
-                <CheckCircle2 size={17} />
-                {formatCount(chineseMeta.count)} words · ready to use
-              </div>
-            ) : native ? (
-              <div className="setup-download">
-                {(nativeDownload.phase === "idle" ||
-                  nativeDownload.phase === "error") && (
-                  <>
-                    <p className="setup-download-copy">
-                      Souzi will download the Chinese dictionary for you. It works without internet afterward.
-                    </p>
-                    <button
-                      type="button"
-                      className="button button-primary setup-install-button"
-                      onClick={
-                        nativeDownload.phase === "error"
-                          ? nativeDownload.retry
-                          : nativeDownload.start
-                      }
-                    >
-                      {nativeDownload.phase === "error" ? (
-                        <RefreshCw size={16} />
-                      ) : (
-                        <Download size={16} />
-                      )}
-                      {nativeDownload.phase === "error"
-                        ? "Try download again"
-                        : "Download Chinese dictionary"}
-                    </button>
-                    {nativeDownload.error && (
-                      <div className="setup-error">{nativeDownload.error}</div>
+          {chineseReady ? (
+            <div className="setup-installed">
+              <CheckCircle2 size={17} />
+              Chinese words are ready.
+            </div>
+          ) : native ? (
+            <div className="setup-download">
+              {(nativeDownload.phase === "idle" ||
+                nativeDownload.phase === "error") && (
+                <>
+                  <button
+                    type="button"
+                    className="button button-secondary setup-install-button"
+                    onClick={
+                      nativeDownload.phase === "error"
+                        ? nativeDownload.retry
+                        : nativeDownload.start
+                    }
+                  >
+                    {nativeDownload.phase === "error" ? (
+                      <RefreshCw size={16} />
+                    ) : (
+                      <Download size={16} />
                     )}
-                  </>
-                )}
+                    {nativeDownload.phase === "error"
+                      ? "Try again"
+                      : "Download Chinese words"}
+                  </button>
+                  {nativeDownload.error && (
+                    <div className="setup-error">{nativeDownload.error}</div>
+                  )}
+                </>
+              )}
 
                 {(nativeDownload.phase === "checking" ||
                   nativeDownload.phase === "downloading" ||
@@ -297,9 +209,9 @@ export function SetupView({
                     <div className="setup-progress-head">
                       <span>
                         {nativeDownload.phase === "checking"
-                          ? "Checking download…"
+                          ? "Starting download…"
                           : nativeDownload.phase === "installing"
-                            ? "Installing dictionary…"
+                            ? "Preparing Chinese words…"
                             : nativeDownload.phase === "paused"
                               ? "Paused"
                               : nativeDownload.downloadStatus === "pending" ||
@@ -307,7 +219,7 @@ export function SetupView({
                                 ? nativeDownload.wifiOnly
                                   ? "Waiting for Wi-Fi…"
                                   : "Starting download…"
-                                : "Downloading Chinese dictionary"}
+                                : "Downloading Chinese words…"}
                       </span>
                       {nativeDownload.phase === "installing" ? (
                         installPercent !== null ? (
@@ -340,7 +252,7 @@ export function SetupView({
                           ? (installPercent ?? undefined)
                           : (nativePercent ?? undefined)
                       }
-                      aria-label="Dictionary download progress"
+                      aria-label="Chinese words download progress"
                     >
                       <div
                         className="progress-fill"
@@ -357,48 +269,37 @@ export function SetupView({
                     </div>
 
                     {nativeDownload.phase !== "installing" && (
-                      <>
-                        <div className="setup-download-meta">
-                          <span>
-                            {nativeDownload.totalBytes > 0
-                              ? `${formatBytes(nativeDownload.bytesDownloaded)} of ${formatBytes(nativeDownload.totalBytes)}`
-                              : "Downloading…"}
-                          </span>
-                        </div>
-                        <div className="setup-download-actions">
-                          {nativeDownload.phase === "paused" ? (
-                            <button
-                              type="button"
-                              className="button button-secondary button-small"
-                              onClick={nativeDownload.resume}
-                            >
-                              <Play size={14} />
-                              Resume
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="button button-secondary button-small"
-                              onClick={nativeDownload.pause}
-                              disabled={nativeDownload.phase === "checking"}
-                            >
-                              <Pause size={14} />
-                              Pause
-                            </button>
-                          )}
+                      <div className="setup-download-actions">
+                        {nativeDownload.phase === "paused" ? (
                           <button
                             type="button"
-                            className="button button-ghost button-small"
-                            onClick={nativeDownload.cancel}
+                            className="button button-secondary button-small"
+                            onClick={nativeDownload.resume}
                           >
-                            <X size={14} />
-                            Cancel
+                            <Play size={14} />
+                            Continue
                           </button>
-                        </div>
-                      </>
+                        ) : (
+                          <button
+                            type="button"
+                            className="button button-secondary button-small"
+                            onClick={nativeDownload.pause}
+                            disabled={nativeDownload.phase === "checking"}
+                          >
+                            <Pause size={14} />
+                            Pause
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="button button-ghost button-small"
+                          onClick={nativeDownload.cancel}
+                        >
+                          <X size={14} />
+                          Cancel
+                        </button>
+                      </div>
                     )}
-
-
                   </div>
                 )}
 
@@ -435,7 +336,7 @@ export function SetupView({
                   }}
                 >
                   <FileText size={20} />
-                  <span>Download the Chinese dictionary, then choose the file here.</span>
+                  <span>Download the file, then choose it here.</span>
                   <span className="setup-dropzone-actions">
                     <a
                       className="button button-secondary button-small"
@@ -444,7 +345,7 @@ export function SetupView({
                       rel="noreferrer"
                     >
                       <Download size={14} />
-                      Download Chinese dictionary
+                      Download file
                     </a>
                     <button
                       type="button"
@@ -481,7 +382,7 @@ export function SetupView({
                       aria-valuemin={0}
                       aria-valuemax={100}
                       aria-valuenow={percent ?? undefined}
-                      aria-label="Chinese dictionary import progress"
+                      aria-label="Chinese words import progress"
                     >
                       <div
                         className="progress-fill"
@@ -495,30 +396,43 @@ export function SetupView({
               </>
             )}
 
-            <div className="setup-privacy">
-              <ShieldCheck size={14} />
-              Saved on this device. Nothing is sent anywhere.
-            </div>
-          </section>
-        </div>
+          <div className="setup-privacy">
+            <ShieldCheck size={14} />
+            Your words stay on this device. Nothing is sent to us.
+          </div>
+        </section>
 
         <footer className="setup-footer">
-          {canContinue ? (
+          {englishStatus === "error" ? (
+            <button
+              type="button"
+              className="button button-primary setup-next"
+              onClick={onInstallEnglish}
+            >
+              <RefreshCw size={16} />
+              Try again
+            </button>
+          ) : (
             <button
               type="button"
               className="button button-primary setup-next"
               onClick={onNext}
+              disabled={!canContinue}
             >
-              Start using Souzi
+              {canContinue ? "Start using Souzi" : "Please wait…"}
               <ArrowRight size={16} />
             </button>
-          ) : (
-            <p className="setup-hint">
-              Add one dictionary to continue.
-            </p>
           )}
-          <p className="setup-legal">
-            Free dictionary data. Works without internet.
+          <p className="setup-hint">
+            {englishStatus === "error"
+              ? "English words need to be prepared first."
+              : englishStatus === "loading"
+                ? "Getting English words ready…"
+                : waitingForChinese
+                  ? "Please wait for Chinese words to finish."
+                  : chineseReady
+                    ? "You can change this later in Settings."
+                    : "You can add Chinese words later in Settings."}
           </p>
         </footer>
       </div>

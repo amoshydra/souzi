@@ -26,7 +26,7 @@ An offline-first English–Chinese dictionary for web/PWA and Android. It bundle
 - Chinese→English from a local CC-CEDICT import (`.txt.gz`, `.txt`, or `.zip`).
 - Look up by simplified/traditional characters, pinyin (with or without tones), or English.
 - Entry pages with pinyin, HSK level, classifiers, character breakdown, and text-to-speech.
-- First-run setup: install English→Chinese, Chinese→English, or both. The app does not enter search until at least one direction is ready.
+- First-run setup: the bundled English→Chinese core installs automatically. Adding Chinese→English is optional and can be done now or later.
 - Native CC-CEDICT download manager on Android with progress, pause/resume, retry, cancel, and a Wi-Fi-only option.
 - Large, high-contrast interface designed for comfortable reading. Layout and type use rem/em units and follow the browser or device text-size setting. Border widths, corner radii, and shadows intentionally use fixed px for crisp hairlines.
 - Favorites and search history for both directions, stored locally.
@@ -41,7 +41,7 @@ pnpm install
 pnpm dev
 ```
 
-Open the local URL. The first-run setup asks you to install at least one dictionary; the app enters search only after one direction is ready.
+Open the local URL. The bundled English→Chinese core installs automatically. The first-run page offers the optional Chinese→English dictionary; you can start using the app without it.
 
 To test the production PWA:
 
@@ -87,7 +87,7 @@ does not have the native download bridge.
 
 English→Chinese is already included. This import adds the full Chinese→English side.
 
-On Android, open **Setup** or **Settings** and tap **Download CC-CEDICT**. The
+On Android, open **Settings** and tap **Add** under Chinese words. The
 app downloads the official export directly, supports pause/resume and a
 Wi-Fi-only mode, and parses the file locally.
 
@@ -99,7 +99,7 @@ On the web/PWA, download the official CC-CEDICT export and import it manually:
 3. Choose the downloaded `.txt.gz`.
 4. Wait for parsing and indexing. The app then works offline.
 
-The raw CC-CEDICT file is about 4 MB compressed. With both dictionaries installed, entries and indexes use roughly 40–60 MB in IndexedDB, depending on the browser. The bundled ECDICT core is about 2.8 MB compressed and is installed from the setup screen.
+The raw CC-CEDICT file is about 4 MB compressed. With both dictionaries installed, entries and indexes use roughly 40–60 MB in IndexedDB, depending on the browser. The bundled ECDICT core is about 2.8 MB compressed and installs automatically on first launch.
 
 ## Why import instead of bundling?
 
@@ -146,7 +146,7 @@ Search uses precomputed lookup maps:
 - `char`: every character in every headword, for "words containing this character".
 - ECDICT `words` / `variants`: exact English headwords plus inflected forms from the ECDICT `exchange` field (`went` -> `go`, `paid` -> `pay`).
 
-Entries and indexes live in IndexedDB. The ECDICT core is a static gzip asset installed from the setup screen, stored in IndexedDB, and cached by the service worker for offline use.
+Entries and indexes live in IndexedDB. The ECDICT core is a static gzip asset installed automatically on first launch, stored in IndexedDB, and cached by the service worker for offline use.
 
 ## Tests
 
