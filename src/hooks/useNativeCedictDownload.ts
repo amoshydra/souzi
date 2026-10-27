@@ -114,7 +114,7 @@ export function useNativeCedictDownload({
         setError(
           reason instanceof Error
             ? reason.message
-            : "Could not read the downloaded dictionary.",
+            : "The downloaded dictionary could not be read. Please try again.",
         );
         setPhase("error");
       }
@@ -158,7 +158,7 @@ export function useNativeCedictDownload({
 
         if (status.status === "failed") {
           setSpeed(0);
-          setError("The CC-CEDICT download failed. You can retry.");
+          setError("The download did not finish. Please try again.");
           setPhase("error");
           return;
         }
@@ -240,7 +240,7 @@ export function useNativeCedictDownload({
       setError(
         reason instanceof Error
           ? reason.message
-          : "Could not start the CC-CEDICT download.",
+          : "Could not start the download. Please try again.",
       );
       setPhase("error");
     }

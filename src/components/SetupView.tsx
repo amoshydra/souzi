@@ -33,15 +33,15 @@ const CEDICT_DIRECT =
 function phaseLabel(phase: ImportProgress["phase"]): string {
   switch (phase) {
     case "read":
-      return "Reading file";
+      return "Opening file";
     case "decompress":
-      return "Decompressing";
+      return "Opening file";
     case "parse":
-      return "Parsing entries";
+      return "Preparing words";
     case "index":
-      return "Building indexes";
+      return "Preparing words";
     case "store":
-      return "Saving to this device";
+      return "Saving dictionary";
     default:
       return "Installing";
   }
@@ -81,7 +81,7 @@ export function SetupView({
   const startChineseImport = (file: File | undefined) => {
     if (!file) return;
     if (!/\.(txt|gz|zip)$/i.test(file.name)) {
-      setError("Choose a .txt, .gz, or .zip CC-CEDICT file.");
+      setError("Please choose the dictionary file you downloaded.");
       return;
     }
 
@@ -134,7 +134,7 @@ export function SetupView({
         )
       : null;
   const chineseStatusLabel = chineseReady
-    ? "Installed"
+    ? "Ready"
     : native
       ? nativeDownload.phase === "checking"
         ? "Checking"
@@ -145,11 +145,11 @@ export function SetupView({
             : nativeDownload.phase === "installing"
               ? "Installing"
               : nativeDownload.phase === "error"
-                ? "Retry"
-                : "Not installed"
+                ? "Try again"
+                : "Not added"
       : importing
-        ? "Importing"
-        : "Not installed";
+        ? "Adding"
+        : "Not added";
 
   return (
     <div className="setup-page">
@@ -162,11 +162,10 @@ export function SetupView({
               <div className="setup-brand-sub">搜字</div>
             </div>
           </div>
-          <div className="setup-kicker">First-time setup</div>
-          <h1>Choose your dictionaries</h1>
+          <div className="setup-kicker">Getting started</div>
+          <h1>Set up your dictionary</h1>
           <p>
-            Install at least one. You can add the other direction later from
-            Settings.
+            Choose one or both. You can add the other later.
           </p>
         </header>
 
@@ -177,8 +176,8 @@ export function SetupView({
                 <Languages size={22} />
               </div>
               <div className="setup-card-title">
-                <h2>English → Chinese</h2>
-                <span>30,000-entry ECDICT core</span>
+                <h2>English words</h2>
+                <span>Find Chinese meanings</span>
               </div>
               <span
                 className={`setup-status ${
@@ -186,25 +185,23 @@ export function SetupView({
                 }`}
               >
                 {englishReady
-                  ? "Installed"
+                  ? "Ready"
                   : englishStatus === "loading"
                     ? "Installing"
                     : englishStatus === "error"
-                      ? "Retry"
-                      : "Not installed"}
+                      ? "Try again"
+                      : "Not added"}
               </span>
             </div>
 
             <p className="setup-card-copy">
-              Common words, exam vocabulary, IPA, and Chinese translations.
-              Included with the app.
+              Included with the app. Install it to look up English words.
             </p>
 
             {englishReady ? (
               <div className="setup-installed">
                 <CheckCircle2 size={17} />
-                {formatCount(englishMeta?.count ?? 30000)} entries · available
-                offline
+                {formatCount(englishMeta?.count ?? 30000)} words · ready to use
               </div>
             ) : (
               <button
@@ -221,15 +218,14 @@ export function SetupView({
                 {englishStatus === "loading"
                   ? "Installing English…"
                   : englishStatus === "error"
-                    ? "Retry English install"
+                    ? "Try installing English again"
                     : "Install English dictionary"}
               </button>
             )}
 
             {englishStatus === "error" && (
               <div className="setup-error">
-                The English core could not be installed. Check storage and try
-                again.
+                The English dictionary could not be installed. Please try again.
               </div>
             )}
           </section>
@@ -240,8 +236,8 @@ export function SetupView({
                 <BookOpen size={22} />
               </div>
               <div className="setup-card-title">
-                <h2>Chinese → English</h2>
-                <span>Full CC-CEDICT</span>
+                <h2>Chinese words</h2>
+                <span>Find English meanings</span>
               </div>
               <span
                 className={`setup-status ${
@@ -253,14 +249,13 @@ export function SetupView({
             </div>
 
             <p className="setup-card-copy">
-              The full Chinese dictionary: {formatCount(125320)} entries,
-              pinyin, traditional forms, and classifiers.
+              Download it once, then look up Chinese words without internet.
             </p>
 
             {chineseReady ? (
               <div className="setup-installed">
                 <CheckCircle2 size={17} />
-                {formatCount(chineseMeta.count)} entries · available offline
+                {formatCount(chineseMeta.count)} words · ready to use
               </div>
             ) : native ? (
               <div className="setup-download">
@@ -268,8 +263,7 @@ export function SetupView({
                   nativeDownload.phase === "error") && (
                   <>
                     <p className="setup-download-copy">
-                      Souzi downloads the official CC-CEDICT export directly,
-                      then parses it on this device.
+                      Souzi will download the Chinese dictionary for you. It works without internet afterward.
                     </p>
                     <button
                       type="button"
@@ -286,8 +280,8 @@ export function SetupView({
                         <Download size={16} />
                       )}
                       {nativeDownload.phase === "error"
-                        ? "Retry CC-CEDICT download"
-                        : "Download CC-CEDICT"}
+                        ? "Try download again"
+                        : "Download Chinese dictionary"}
                     </button>
                     {nativeDownload.error && (
                       <div className="setup-error">{nativeDownload.error}</div>
@@ -313,7 +307,7 @@ export function SetupView({
                                 ? nativeDownload.wifiOnly
                                   ? "Waiting for Wi-Fi…"
                                   : "Starting download…"
-                                : "Downloading CC-CEDICT"}
+                                : "Downloading Chinese dictionary"}
                       </span>
                       {nativeDownload.phase === "installing" ? (
                         installPercent !== null ? (
@@ -346,7 +340,7 @@ export function SetupView({
                           ? (installPercent ?? undefined)
                           : (nativePercent ?? undefined)
                       }
-                      aria-label="CC-CEDICT download progress"
+                      aria-label="Dictionary download progress"
                     >
                       <div
                         className="progress-fill"
@@ -366,14 +360,10 @@ export function SetupView({
                       <>
                         <div className="setup-download-meta">
                           <span>
-                            {formatBytes(nativeDownload.bytesDownloaded)}
                             {nativeDownload.totalBytes > 0
-                              ? ` / ${formatBytes(nativeDownload.totalBytes)}`
-                              : ""}
+                              ? `${formatBytes(nativeDownload.bytesDownloaded)} of ${formatBytes(nativeDownload.totalBytes)}`
+                              : "Downloading…"}
                           </span>
-                          {nativeDownload.speed > 0 && (
-                            <span>{formatBytes(nativeDownload.speed)}/s</span>
-                          )}
                         </div>
                         <div className="setup-download-actions">
                           {nativeDownload.phase === "paused" ? (
@@ -408,12 +398,7 @@ export function SetupView({
                       </>
                     )}
 
-                    {nativeDownload.phase === "installing" &&
-                      nativeDownload.importProgress && (
-                        <p className="progress-message">
-                          {nativeDownload.importProgress.message}
-                        </p>
-                      )}
+
                   </div>
                 )}
 
@@ -431,7 +416,7 @@ export function SetupView({
                     disabled={nativeDownload.busy}
                   />
                   <Wifi size={14} />
-                  Download over Wi-Fi only
+                  Use Wi-Fi only
                 </label>
               </div>
             ) : (
@@ -450,7 +435,7 @@ export function SetupView({
                   }}
                 >
                   <FileText size={20} />
-                  <span>Download from MDBG, then import the file here.</span>
+                  <span>Download the Chinese dictionary, then choose the file here.</span>
                   <span className="setup-dropzone-actions">
                     <a
                       className="button button-secondary button-small"
@@ -459,7 +444,7 @@ export function SetupView({
                       rel="noreferrer"
                     >
                       <Download size={14} />
-                      Download CC-CEDICT
+                      Download Chinese dictionary
                     </a>
                     <button
                       type="button"
@@ -468,7 +453,7 @@ export function SetupView({
                       disabled={importing}
                     >
                       <UploadCloud size={14} />
-                      Import file
+                      Choose file
                     </button>
                   </span>
                 </div>
@@ -512,9 +497,7 @@ export function SetupView({
 
             <div className="setup-privacy">
               <ShieldCheck size={14} />
-              {native
-                ? "Downloaded by the app and parsed on this device. Nothing is uploaded."
-                : "Parsed on this device. Nothing is uploaded."}
+              Saved on this device. Nothing is sent anywhere.
             </div>
           </section>
         </div>
@@ -526,17 +509,16 @@ export function SetupView({
               className="button button-primary setup-next"
               onClick={onNext}
             >
-              Continue to dictionary
+              Start using Souzi
               <ArrowRight size={16} />
             </button>
           ) : (
             <p className="setup-hint">
-              Install at least one dictionary to continue.
+              Add one dictionary to continue.
             </p>
           )}
           <p className="setup-legal">
-            ECDICT core · MIT · CC-CEDICT · CC BY-SA 4.0. Both stay offline on
-            this device.
+            Free dictionary data. Works without internet.
           </p>
         </footer>
       </div>

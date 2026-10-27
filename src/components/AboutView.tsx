@@ -1,10 +1,10 @@
 import {
   ArrowLeft,
   BookOpen,
-  Database,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { Logo } from "./Logo";
 
 export function AboutView({
   onBack,
@@ -31,8 +31,8 @@ export function AboutView({
           both ways.
         </h1>
         <p className="hero-sub">
-          Look up Mandarin by character, pinyin, or English. Works offline,
-          with no account.
+          A simple dictionary for English and Chinese, made to be easy to read
+          and easy to use.
         </p>
       </section>
 
@@ -40,14 +40,12 @@ export function AboutView({
         <section className="panel about-panel">
           <div className="panel-kicker">A dictionary first</div>
           <p>
-            Souzi is meant to feel like a dictionary, not a landing page.
-            Search is the first thing on the screen, results are ranked for
-            learners, and the interface stays out of the way.
+            Search is the first thing you see. Type a Chinese or English word
+            and tap the result to read the meaning.
           </p>
           <p>
-            The English→Chinese core is bundled and installs automatically.
-            Chinese→English uses the official CC-CEDICT export, which you
-            download from MDBG and import locally.
+            Your dictionaries are saved on this device. There is no account and
+            no sign-in. After setup, Souzi works without internet.
           </p>
         </section>
 
@@ -56,56 +54,106 @@ export function AboutView({
             <div className="how-icon">
               <BookOpen size={20} />
             </div>
-            <h3>Both directions</h3>
-            <p>
-              English→Chinese is included. Import CC-CEDICT for full
-              Chinese→English coverage.
-            </p>
+            <h3>Two directions</h3>
+            <p>Look up English words and Chinese words in the same app.</p>
           </article>
           <article className="how-card">
             <div className="how-icon">
               <ShieldCheck size={20} />
             </div>
-            <h3>Stays private</h3>
-            <p>
-              Dictionary files are parsed on this device and never uploaded.
-            </p>
+            <h3>Private</h3>
+            <p>Your words stay on your device. Nothing is sent to a server.</p>
           </article>
           <article className="how-card">
             <div className="how-icon">
               <Sparkles size={20} />
             </div>
             <h3>Works offline</h3>
-            <p>Once installed, lookups never wait for a network request.</p>
+            <p>Once your dictionaries are installed, you do not need internet.</p>
           </article>
         </section>
 
         <section className="panel about-panel">
-          <div className="panel-kicker">Data & licenses</div>
+          <div className="panel-kicker">Data and credits</div>
           <p>
-            The bundled English core is a filtered 30,000-entry subset of
-            ECDICT (MIT). The full ECDICT dataset remains available from its
-            project if you want to build a larger core later.
+            The English dictionary is included with Souzi. The Chinese
+            dictionary is downloaded when you set up the app.
           </p>
-          <p>
-            CC-CEDICT is licensed CC BY-SA 4.0 and is imported by you. HSK 3.0
-            levels and jieba frequency ranks are MIT licensed.
-          </p>
+          <details className="english-details">
+            <summary>Data credits and licenses</summary>
+            <ul>
+              <li>
+                English dictionary:{" "}
+                <a
+                  href="https://github.com/skywind3000/ECDICT"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  ECDICT
+                </a>{" "}
+                (MIT license)
+              </li>
+              <li>
+                Chinese dictionary:{" "}
+                <a
+                  href="https://www.mdbg.net/chinese/dictionary?page=cc-cedict"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  CC-CEDICT
+                </a>{" "}
+                (CC BY-SA 4.0)
+              </li>
+              <li>
+                Word levels:{" "}
+                <a
+                  href="https://github.com/ivankra/hsk30"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  HSK 3.0
+                </a>{" "}
+                (MIT license)
+              </li>
+              <li>
+                Word frequency data:{" "}
+                <a
+                  href="https://github.com/fxsjy/jieba"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  jieba
+                </a>{" "}
+                (MIT license)
+              </li>
+              <li>
+                App code:{" "}
+                <a
+                  href="https://www.apache.org/licenses/LICENSE-2.0"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Apache License 2.0
+                </a>
+              </li>
+            </ul>
+          </details>
           <div className="button-row">
             <button
               type="button"
               className="button button-secondary"
               onClick={onOpenSettings}
             >
-              <Database size={16} />
-              Open data & licenses
+              Go to Settings
             </button>
           </div>
         </section>
 
-        <p className="fine-print">
-          Souzi 0.1.0 · No server, no tracking, no account.
-        </p>
+        <div className="about-brand">
+          <Logo size={34} />
+          <span>Souzi 搜字</span>
+        </div>
+        <p className="fine-print">Version 0.1.0 · Works without internet after setup.</p>
       </div>
     </div>
   );

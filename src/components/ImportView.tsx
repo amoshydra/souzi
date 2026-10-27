@@ -31,11 +31,11 @@ function phaseLabel(phase: ImportProgress["phase"]): string {
     case "decompress":
       return "Decompressing";
     case "parse":
-      return "Parsing entries";
+      return "Preparing words";
     case "index":
-      return "Building indexes";
+      return "Preparing words";
     case "store":
-      return "Saving to this device";
+      return "Saving dictionary";
     case "done":
       return "Installed";
     default:
@@ -173,13 +173,12 @@ export function ImportView({
       </button>
 
       <header className="page-heading">
-        <div className="section-kicker">Chinese dictionary data</div>
-        <h1>Add the full Chinese dictionary</h1>
+        <div className="section-kicker">Chinese dictionary</div>
+        <h1>Add the Chinese dictionary</h1>
         <p>
-          English→Chinese is already included. CC-CEDICT adds the full
-          Chinese→English direction. It is free but share-alike, so Souzi does
-          not bundle it. Download it from MDBG, then import the file here. It
-          stays on this device.
+          English to Chinese is already included. This adds Chinese words and
+          their English meanings. Download the free dictionary, then choose the
+          file here. It stays on this device.
         </p>
       </header>
 
@@ -193,7 +192,7 @@ export function ImportView({
               {meta.kind === "cedict" ? "Full dictionary installed" : "Starter set active"}
             </strong>
             <span>
-              {formatCount(meta.count)} entries
+              {formatCount(meta.count)} words
               {meta.kind === "cedict" ? ` · ${formatDate(meta.importedAt)}` : " · sample content"}
             </span>
           </div>
@@ -207,7 +206,7 @@ export function ImportView({
           </div>
           <h2>Dictionary installed</h2>
           <p>
-            {formatCount(installedCount ?? 0)} entries are now available offline
+            {formatCount(installedCount ?? 0)} words are now available offline
             on this device.
           </p>
           <div className="button-row">
@@ -234,10 +233,9 @@ export function ImportView({
         <div className="import-grid">
           <section className="step-card">
             <div className="step-number">1</div>
-            <h2>Download CC-CEDICT</h2>
+            <h2>Download the dictionary</h2>
             <p>
-              The official export from MDBG. About 4 MB compressed, updated
-              daily, 125,000+ entries.
+              The free Chinese dictionary. About 4 MB. It stays on your device.
             </p>
             <a
               className="button button-primary"
@@ -246,7 +244,7 @@ export function ImportView({
               rel="noreferrer"
             >
               <Download size={16} />
-              Download .txt.gz
+              Download dictionary
             </a>
             <a
               className="text-link"
@@ -254,10 +252,10 @@ export function ImportView({
               target="_blank"
               rel="noreferrer"
             >
-              Open the MDBG download page
+              Open the download page
             </a>
             <div className="license-note">
-              CC-CEDICT · CC BY-SA 4.0 · MDBG and contributors
+              Free dictionary data. See About for credits.
             </div>
           </section>
 
@@ -265,8 +263,7 @@ export function ImportView({
             <div className="step-number">2</div>
             <h2>Choose the file</h2>
             <p>
-              Select the <code>.txt.gz</code> you just downloaded. Souzi also
-              accepts the uncompressed <code>.txt</code> or a <code>.zip</code>.
+              Choose the file you downloaded.
             </p>
 
             <div
@@ -292,7 +289,7 @@ export function ImportView({
                 className="button button-secondary"
                 onClick={() => inputRef.current?.click()}
               >
-                Browse files
+                Choose file
               </button>
               <span className="dropzone-hint">.txt.gz · .txt · .zip</span>
             </div>
@@ -310,7 +307,7 @@ export function ImportView({
 
             <div className="privacy-note">
               <ShieldCheck size={16} />
-              Parsed locally. Nothing is uploaded. No account required.
+              Saved on this device. Nothing is sent anywhere.
             </div>
           </section>
         </div>
@@ -341,7 +338,7 @@ export function ImportView({
             <h2 id="replace-title">Replace the current dictionary?</h2>
             <p>
               <strong>{pendingFile.name}</strong> will replace the installed
-              entries. Saved words and history are kept.
+              dictionary. Saved words and history are kept.
             </p>
             <div className="button-row">
               <button
@@ -438,16 +435,14 @@ export function ImportView({
       )}
 
       <section className="import-faq">
-        <h2>Why isn’t the dictionary built in?</h2>
+        <h2>Why is this a separate download?</h2>
         <p>
-          CC-CEDICT is licensed CC BY-SA 4.0. Bundling a modified copy would
-          require Souzi to publish its derived database under the same license.
-          Importing the original file keeps the app small and keeps the data
-          under your control.
+          The Chinese dictionary is large. Downloading it separately keeps the
+          app small and keeps the data on your device.
         </p>
         <p>
-          The file is read in a Web Worker, indexed on this device, and stored in
-          IndexedDB. It is never sent to a server.
+          The file is prepared on this device and saved for offline use. It is
+          never sent to a server.
         </p>
       </section>
     </div>

@@ -1,12 +1,15 @@
 export function Logo({ size = 40 }: { size?: number }) {
+  const remSize = `${size / 16}rem`;
+
   return (
     <svg
-      width={size}
-      height={size}
+      width={remSize}
+      height={remSize}
       viewBox="0 0 512 512"
       role="img"
       aria-label="Souzi"
       className="logo"
+      style={{ width: remSize, height: remSize }}
     >
       <rect width="512" height="512" rx="112" fill="currentColor" />
       <circle cx="372" cy="148" r="34" fill="#c2553f" />

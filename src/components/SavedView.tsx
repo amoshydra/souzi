@@ -23,12 +23,12 @@ export function SavedView({
   return (
     <div className="page saved-page">
       <header className="page-heading">
-        <div className="section-kicker">Your collection</div>
+        <div className="section-kicker">Words you saved</div>
         <h1>Saved words</h1>
         <p>
           {total > 0
             ? `${total} word${total === 1 ? "" : "s"} kept on this device.`
-            : "Star a word from its entry to keep it here."}
+            : "Tap Save on a word to keep it here."}
         </p>
       </header>
 
@@ -48,7 +48,7 @@ export function SavedView({
           {favorites.length > 0 && (
             <section className="saved-group">
               <div className="result-group-head">
-                <span>Chinese → English</span>
+                <span>Chinese words</span>
                 <span>{favorites.length}</span>
               </div>
               <div className="saved-list">
@@ -61,9 +61,6 @@ export function SavedView({
                     >
                       <span className="saved-head">
                         <span className="hanzi saved-hanzi">{item.simp}</span>
-                        {item.trad !== item.simp && (
-                          <span className="trad-chip">{item.trad}</span>
-                        )}
                       </span>
                       <span className="pinyin">{item.pinyin}</span>
                       <span className="gloss">
@@ -72,12 +69,12 @@ export function SavedView({
                     </button>
                     <button
                       type="button"
-                      className="icon-button saved-remove"
+                      className="button button-ghost button-small saved-remove"
                       onClick={() => onRemove(item.simp)}
                       aria-label={`Remove ${item.simp} from saved words`}
-                      title="Remove"
                     >
                       <Trash2 size={17} />
+                      Remove
                     </button>
                   </article>
                 ))}
@@ -88,7 +85,7 @@ export function SavedView({
           {englishFavorites.length > 0 && (
             <section className="saved-group">
               <div className="result-group-head">
-                <span>English → Chinese</span>
+                <span>English words</span>
                 <span>{englishFavorites.length}</span>
               </div>
               <div className="saved-list">
@@ -111,12 +108,12 @@ export function SavedView({
                     </button>
                     <button
                       type="button"
-                      className="icon-button saved-remove"
+                      className="button button-ghost button-small saved-remove"
                       onClick={() => onRemoveEnglish(item.key)}
                       aria-label={`Remove ${item.word} from saved words`}
-                      title="Remove"
                     >
                       <Trash2 size={17} />
+                      Remove
                     </button>
                   </article>
                 ))}

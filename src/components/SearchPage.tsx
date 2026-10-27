@@ -95,10 +95,10 @@ export function SearchPage({
   const isLatinQuery = hasQuery && !isHanQuery && !isPinyinHint;
   const total = chineseHits.length + englishHits.length;
   const resultLabel = searching
-    ? "Looking…"
+    ? "Searching…"
     : total === 0
-      ? "No results"
-      : `${formatCount(total)} result${total === 1 ? "" : "s"}`;
+      ? "No word found"
+      : `${formatCount(total)} ${total === 1 ? "word" : "words"}`;
 
   useEffect(() => {
     try {
@@ -247,6 +247,7 @@ export function SearchPage({
   const englishLoading = isLatinQuery && englishStatus === "loading";
   const englishError = isLatinQuery && englishStatus === "error";
   const englishMissing = isLatinQuery && englishStatus === "idle";
+  const chineseMissing = hasQuery && !index && !isLatinQuery;
 
   return (
     <div className="page search-page">
@@ -256,7 +257,7 @@ export function SearchPage({
             <div className="section-kicker">Chinese ↔ English</div>
             <h1 className="dictionary-title">Look up a word</h1>
           </div>
-          <p>Character, pinyin, or English</p>
+          <p>A Chinese or English word</p>
         </div>
       )}
 
@@ -268,7 +269,7 @@ export function SearchPage({
             className="search-input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="汉字, pinyin, or English"
+            placeholder="Chinese or English word"
             aria-label="Search the dictionary"
             autoComplete="off"
             autoCapitalize="off"
@@ -293,7 +294,7 @@ export function SearchPage({
         {!hasQuery && (
           <div className="search-hint">
             <span className="hint-label">Try</span>
-            {["银行", "nǐ hǎo", "bank", "serendipity"].map((example) => (
+            {["银行", "hello", "中国", "book"].map((example) => (
               <button
                 type="button"
                 className="hint-chip"
@@ -315,27 +316,32 @@ export function SearchPage({
               <h2 className="section-title">{resultLabel}</h2>
             </div>
             {total > 0 && !searching && (
-              <span className="result-caption">Best matches first</span>
+              <span className="result-caption">Tap a word for the meaning</span>
             )}
           </div>
 
           {englishLoading && (
             <div className="english-note">
               <Loader2 size={15} className="spin" />
-              Loading the English–Chinese core…
+              Opening the English dictionary…
             </div>
           )}
 
           {englishError && (
             <div className="english-note english-note-error">
-              The bundled English core could not be loaded. English results may
-              be unavailable until you reload.
+              The English dictionary did not load. Please try again.
             </div>
           )}
 
           {englishMissing && (
             <div className="english-note">
-              English→Chinese is not installed. Add it in Settings.
+              The English dictionary is not installed. You can add it in Settings.
+            </div>
+          )}
+
+          {chineseMissing && (
+            <div className="english-note">
+              The Chinese dictionary is not installed. You can add it in Settings.
             </div>
           )}
 
@@ -356,15 +362,15 @@ export function SearchPage({
               <div className="empty-icon">
                 <Search size={22} />
               </div>
-              <h3>{englishLoading ? "Loading the English dictionary" : "No entry found"}</h3>
+              <h3>{englishLoading ? "Opening the English dictionary" : "Try another word"}</h3>
               <p>
                 {englishLoading
-                  ? "The English–Chinese core is being installed. Try again in a moment."
-                  : "Try simplified or traditional characters, pinyin with or without tones, or a single English word."}
+                  ? "The English dictionary is being installed. Please wait."
+                  : "Try a Chinese character, an English word, or how the word sounds."}
               </p>
               {!englishLoading && (
                 <div className="empty-examples">
-                  {["中国", "zhongguo", "hello"].map((example) => (
+                  {["中国", "hello", "book"].map((example) => (
                     <button
                       type="button"
                       className="hint-chip"
@@ -382,7 +388,7 @@ export function SearchPage({
           {!searching && englishHits.length > 0 && (
             <div className="result-group">
               <div className="result-group-head">
-                <span>English → Chinese</span>
+                <span>English words</span>
                 <span>{formatCount(englishHits.length)}</span>
               </div>
               <div className="result-list">
@@ -390,7 +396,6 @@ export function SearchPage({
                   <EnglishResultCard
                     key={`en-${hit.entry.id}`}
                     entry={hit.entry}
-                    match={hit.match}
                     onOpen={onOpenEnglish}
                   />
                 ))}
@@ -401,7 +406,7 @@ export function SearchPage({
           {!searching && chineseHits.length > 0 && (
             <div className="result-group">
               <div className="result-group-head">
-                <span>Chinese → English</span>
+                <span>Chinese words</span>
                 <span>{formatCount(chineseHits.length)}</span>
               </div>
               <div className="result-list">
@@ -409,7 +414,6 @@ export function SearchPage({
                   <ResultCard
                     key={`zh-${hit.entry.id}`}
                     entry={hit.entry}
-                    match={hit.match}
                     onOpen={onOpenEntry}
                   />
                 ))}
@@ -425,16 +429,14 @@ export function SearchPage({
                 <Library size={22} />
               </div>
               <div className="banner-copy">
-                <div className="banner-title">You’re using the starter set</div>
+                <div className="banner-title">Sample words are active</div>
                 <p>
-                  {formatCount(meta.count)} Chinese sample words. Add CC-CEDICT
-                  for the full Chinese dictionary; English→Chinese is already
-                  included.
+                  {formatCount(meta.count)} sample words. Add the full Chinese dictionary for more words.
                 </p>
               </div>
               <button type="button" className="button button-primary" onClick={onImport}>
                 <Sparkles size={16} />
-                Add dictionary
+                Add Chinese dictionary
               </button>
             </section>
           )}
@@ -443,12 +445,12 @@ export function SearchPage({
             <section className="ready-banner">
               <CheckCircle2 size={20} />
               <div>
-                <strong>Full Chinese dictionary installed</strong>
+                <strong>Chinese dictionary ready</strong>
                 <span>
-                  {formatCount(meta.count)} entries · {formatDate(meta.importedAt)}
+                  {formatCount(meta.count)} words · {formatDate(meta.importedAt)}
                 </span>
               </div>
-              <span className="status-pill">Offline</span>
+              <span className="status-pill">Ready</span>
             </section>
           )}
 
@@ -456,7 +458,7 @@ export function SearchPage({
             <section className="home-section">
               <div className="section-head">
                 <div>
-                  <div className="section-kicker">Pick up where you left off</div>
+                  <div className="section-kicker">Recent words</div>
                   <h2 className="section-title">Recent</h2>
                 </div>
                 <Clock3 size={18} className="section-icon" />
@@ -505,7 +507,7 @@ export function SearchPage({
 
           <div className="home-footer">
             <button type="button" className="text-link" onClick={onAbout}>
-              About Souzi & data
+              About Souzi
             </button>
           </div>
         </div>

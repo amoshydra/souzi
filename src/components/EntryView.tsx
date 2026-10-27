@@ -95,7 +95,7 @@ export function EntryView({
   const handleSpeak = () => {
     if (!entry) return;
     if (!speakChinese(entry.simp)) {
-      onToast("Speech is not available in this browser", "error");
+      onToast("Speech is not available on this device", "error");
     }
   };
 
@@ -134,41 +134,6 @@ export function EntryView({
       </button>
 
       <header className="entry-hero">
-        <div className="entry-tools">
-          <button
-            type="button"
-            className="icon-button"
-            onClick={handleSpeak}
-            aria-label={`Pronounce ${entry.simp}`}
-            title="Pronounce"
-          >
-            <Volume2 size={19} />
-          </button>
-          <button
-            type="button"
-            className={`icon-button ${starred ? "starred" : ""}`}
-            onClick={handleFavorite}
-            aria-label={starred ? "Remove from saved words" : "Save word"}
-            title={starred ? "Remove from saved words" : "Save word"}
-          >
-            <Star size={19} fill={starred ? "currentColor" : "none"} />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={handleCopy}
-            aria-label="Copy entry"
-            title="Copy entry"
-          >
-            <Copy size={18} />
-          </button>
-        </div>
-
-        {entry.trad !== entry.simp && (
-          <div className="entry-trad" lang="zh-Hant">
-            {entry.trad}
-          </div>
-        )}
         <h1
           className={`entry-hanzi ${
             entry.simp.length > 8
@@ -183,11 +148,47 @@ export function EntryView({
         </h1>
         <div className="entry-meta">
           <span className="entry-pinyin">{entry.pinyin}</span>
-          {entry.hsk && <span className="hsk-badge">HSK {entry.hsk}</span>}
         </div>
-        {entry.source === "starter" && (
-          <div className="entry-note">Starter entry · import CC-CEDICT for full coverage</div>
+        {entry.trad !== entry.simp && (
+          <div className="entry-also">
+            Also written <span lang="zh-Hant">{entry.trad}</span>
+          </div>
         )}
+        {entry.source === "starter" && (
+          <div className="entry-note">Sample word</div>
+        )}
+
+        <div className="entry-actions">
+          <button
+            type="button"
+            className="button button-secondary entry-action"
+            onClick={handleSpeak}
+            aria-label={`Listen to ${entry.simp}`}
+          >
+            <Volume2 size={19} />
+            <span>Listen</span>
+          </button>
+          <button
+            type="button"
+            className={`button button-secondary entry-action ${
+              starred ? "entry-action-saved" : ""
+            }`}
+            onClick={handleFavorite}
+            aria-label={starred ? "Remove from saved words" : "Save word"}
+          >
+            <Star size={19} fill={starred ? "currentColor" : "none"} />
+            <span>{starred ? "Saved" : "Save"}</span>
+          </button>
+          <button
+            type="button"
+            className="button button-secondary entry-action"
+            onClick={handleCopy}
+            aria-label="Copy word"
+          >
+            <Copy size={18} />
+            <span>Copy</span>
+          </button>
+        </div>
       </header>
 
       <section className="panel definitions-panel">
@@ -199,12 +200,12 @@ export function EntryView({
             ))}
           </ol>
         ) : (
-          <p className="muted">No English gloss is available for this entry.</p>
+          <p className="muted">No meaning is available for this word.</p>
         )}
 
         {entry.classifiers.length > 0 && (
           <div className="classifier-row">
-            <span className="classifier-label">Classifiers</span>
+            <span className="classifier-label">Counting word</span>
             <div className="classifier-chips">
               {entry.classifiers.map((classifier) => (
                 <span className="classifier-chip" key={classifier} lang="zh">
@@ -220,8 +221,8 @@ export function EntryView({
         <section className="character-section">
           <div className="section-head">
             <div>
-              <div className="section-kicker">Character by character</div>
-              <h2 className="section-title">Build the word</h2>
+              <div className="section-kicker">Each character</div>
+              <h2 className="section-title">Character meanings</h2>
             </div>
           </div>
           <div className="char-grid">
@@ -245,8 +246,8 @@ export function EntryView({
 
       <p className="entry-source">
         {entry.source === "cedict"
-          ? "Definition from CC-CEDICT, imported by you. Licensed CC BY-SA 4.0."
-          : "Sample entry written for Souzi."}
+          ? "From the Chinese dictionary on this device."
+          : "Sample word."}
       </p>
     </div>
   );

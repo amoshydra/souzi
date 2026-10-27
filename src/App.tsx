@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Search, Settings, Star } from "lucide-react";
 import type {
-  BeforeInstallPromptEvent,
   DictionaryMeta,
   EnglishCoreMeta,
   EnglishCoreStatus,
@@ -12,7 +11,6 @@ import type {
   UserWord,
 } from "./types";
 import {
-  clearHistory as clearHistoryDb,
   getDictionaryMeta,
   getEntryBySimp,
   listEnglishFavorites,
@@ -21,7 +19,6 @@ import {
   loadSearchIndex,
   removeEnglishFavorite,
   removeFavorite,
-  resetToStarter,
 } from "./lib/db";
 import {
   ECDICT_CORE_VERSION,
@@ -108,8 +105,6 @@ export default function App() {
   const [setupMode, setSetupMode] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const [installPrompt, setInstallPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
 
   const showToast = useCallback(
     (message: string, tone: "default" | "error" = "default") => {
@@ -214,25 +209,8 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    const handler = (event: Event) => {
-      event.preventDefault();
-      setInstallPrompt(event as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  useEffect(() => {
     window.scrollTo(0, 0);
   }, [route]);
-
-  const handleInstall = async () => {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === "accepted") showToast("Souzi installed");
-    setInstallPrompt(null);
-  };
 
   const openSimp = async (simp: string) => {
     const entry = await getEntryBySimp(simp);
@@ -266,16 +244,6 @@ export default function App() {
   const finishSetup = () => {
     setSetupMode(false);
     navigate({ name: "search" });
-  };
-
-  const handleReset = async () => {
-    const nextMeta = await resetToStarter();
-    setMeta(nextMeta);
-    setIndex(await loadSearchIndex());
-    setFavorites(await listFavorites());
-    if (englishStatus !== "ready") {
-      setSetupMode(true);
-    }
   };
 
   const savedCount = favorites.length + englishFavorites.length;
@@ -423,18 +391,12 @@ export default function App() {
           ) : route.name === "settings" ? (
             <SettingsView
               meta={meta}
-              englishMeta={englishMeta}
               englishStatus={englishStatus}
               theme={theme}
               onThemeChange={setTheme}
               onImport={() => navigate({ name: "import" })}
-              onReset={handleReset}
-              onClearHistory={clearHistoryDb}
-              installPrompt={installPrompt}
-              onInstall={handleInstall}
               onInstallEnglish={installEnglish}
               onAbout={() => navigate({ name: "about" })}
-              onToast={showToast}
             />
           ) : route.name === "about" ? (
             <AboutView

@@ -12,7 +12,6 @@ import {
   getEnglishEntriesByIds,
   toggleEnglishFavorite,
 } from "../lib/db";
-import { englishTagLabel } from "../lib/english-tags";
 import { speakEnglish } from "../lib/speech";
 
 export function EnglishEntryView({
@@ -84,7 +83,7 @@ export function EnglishEntryView({
   const handleSpeak = () => {
     if (!entry) return;
     if (!speakEnglish(entry.word)) {
-      onToast("Speech is not available in this browser", "error");
+      onToast("Speech is not available on this device", "error");
     }
   };
 
@@ -109,8 +108,8 @@ export function EnglishEntryView({
           <ArrowLeft size={18} /> Back
         </button>
         <div className="empty-card">
-          <h3>English entry not found</h3>
-          <p>The bundled English core may not be installed yet. Try again in a moment.</p>
+          <h3>English word not found</h3>
+          <p>The English dictionary may not be installed yet. Please try again.</p>
         </div>
       </div>
     );
@@ -130,36 +129,6 @@ export function EnglishEntryView({
       </button>
 
       <header className="entry-hero en-entry-hero">
-        <div className="entry-tools">
-          <button
-            type="button"
-            className="icon-button"
-            onClick={handleSpeak}
-            aria-label={`Pronounce ${entry.word}`}
-            title="Pronounce"
-          >
-            <Volume2 size={19} />
-          </button>
-          <button
-            type="button"
-            className={`icon-button ${starred ? "starred" : ""}`}
-            onClick={handleFavorite}
-            aria-label={starred ? "Remove from saved words" : "Save word"}
-            title={starred ? "Remove from saved words" : "Save word"}
-          >
-            <Star size={19} fill={starred ? "currentColor" : "none"} />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={handleCopy}
-            aria-label="Copy entry"
-            title="Copy entry"
-          >
-            <Copy size={18} />
-          </button>
-        </div>
-
         <h1 className={wordClass} lang="en">
           {entry.word}
         </h1>
@@ -167,22 +136,41 @@ export function EnglishEntryView({
           <div className="entry-phonetic">/{entry.phonetic}/</div>
         )}
 
-        <div className="entry-badges">
-          <span className="en-direction-chip">EN → ZH</span>
-          {entry.tags.map((tag) => (
-            <span className="tag-chip" key={tag}>
-              {englishTagLabel(tag)}
-            </span>
-          ))}
-          {entry.collins > 0 && (
-            <span className="tag-chip">Collins {entry.collins}</span>
-          )}
-          {entry.oxford > 0 && <span className="tag-chip">Oxford</span>}
+        <div className="entry-actions">
+          <button
+            type="button"
+            className="button button-secondary entry-action"
+            onClick={handleSpeak}
+            aria-label={`Listen to ${entry.word}`}
+          >
+            <Volume2 size={19} />
+            <span>Listen</span>
+          </button>
+          <button
+            type="button"
+            className={`button button-secondary entry-action ${
+              starred ? "entry-action-saved" : ""
+            }`}
+            onClick={handleFavorite}
+            aria-label={starred ? "Remove from saved words" : "Save word"}
+          >
+            <Star size={19} fill={starred ? "currentColor" : "none"} />
+            <span>{starred ? "Saved" : "Save"}</span>
+          </button>
+          <button
+            type="button"
+            className="button button-secondary entry-action"
+            onClick={handleCopy}
+            aria-label="Copy word"
+          >
+            <Copy size={18} />
+            <span>Copy</span>
+          </button>
         </div>
       </header>
 
       <section className="panel definitions-panel">
-        <div className="panel-kicker">Chinese</div>
+        <div className="panel-kicker">Chinese meaning</div>
         {entry.translations.length > 0 ? (
           <ol className="definition-list">
             {entry.translations.map((translation, index) => (
@@ -190,7 +178,7 @@ export function EnglishEntryView({
             ))}
           </ol>
         ) : (
-          <p className="muted">No Chinese translation is available for this entry.</p>
+          <p className="muted">No meaning is available for this word.</p>
         )}
       </section>
 
@@ -198,8 +186,7 @@ export function EnglishEntryView({
         <section className="panel english-definition-panel">
           <details className="english-details">
             <summary>
-              English definition
-              <span>{entry.definitions.length}</span>
+              More in English
             </summary>
             <ul>
               {entry.definitions.map((definition, index) => (
@@ -211,7 +198,7 @@ export function EnglishEntryView({
       )}
 
       <p className="entry-source">
-        English core from ECDICT, MIT licensed and bundled as a filtered subset.
+        From the English dictionary on this device.
       </p>
     </div>
   );
