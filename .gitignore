@@ -6,3 +6,8 @@ dev-dist
 .DS_Store
 /data
 /ecdict.csv
+pnpm-debug.log*
+*.jks
+*.keystore
+key.properties
+android/.kotlin/

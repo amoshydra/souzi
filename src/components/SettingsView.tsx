@@ -398,9 +398,15 @@ export function SettingsView({
           <li>
             <div>
               <strong>App code</strong>
-              <span>Ciqiao is an offline-first PWA.</span>
+              <span>Ciqiao is an offline-first dictionary app.</span>
             </div>
-            <span className="license-tag">MIT</span>
+            <a
+              href="https://www.apache.org/licenses/LICENSE-2.0"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Apache-2.0
+            </a>
           </li>
         </ul>
 

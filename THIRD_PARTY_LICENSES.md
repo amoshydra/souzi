@@ -1,6 +1,6 @@
 # Third-party data and licenses
 
-Ciqiao's application code is MIT licensed. See `LICENSE`.
+Ciqiao's application code is Apache-2.0 licensed. See `LICENSE`.
 
 ## CC-CEDICT
 
@@ -41,7 +41,7 @@ Copyright (c) 2021 Pleco Inc.
 
 Copyright (c) 2013 Sun Junyi
 
-## MIT License
+## MIT License (third-party data)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -64,4 +64,4 @@ SOFTWARE.
 ## Starter set
 
 The sample entries in `src/lib/starter.ts` were written for Ciqiao and are
-released under the same MIT license as the application code.
+released under the same Apache-2.0 license as the application code.

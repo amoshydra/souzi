@@ -1,6 +1,6 @@
 # Ciqiao 词桥
 
-An offline-first English–Chinese dictionary PWA. It bundles a filtered ECDICT core for English→Chinese and imports CC-CEDICT locally for full Chinese→English coverage.
+An offline-first English–Chinese dictionary for web/PWA and Android. It bundles a filtered ECDICT core for English→Chinese and imports CC-CEDICT locally for full Chinese→English coverage.
 
 **Ciqiao does not redistribute CC-CEDICT.** You download the official export from MDBG and import it locally. The file is parsed in a Web Worker and stored in IndexedDB; it never leaves the device. The bundled ECDICT core is MIT licensed.
 
@@ -35,8 +35,8 @@ An offline-first English–Chinese dictionary PWA. It bundles a filtered ECDICT 
 ## Run it
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open the local URL. The starter set is seeded on first launch.
@@ -44,9 +44,38 @@ Open the local URL. The starter set is seeded on first launch.
 To test the production PWA:
 
 ```bash
-npm run build
-npm run preview
+pnpm build
+pnpm preview
 ```
+
+## Android app (Capacitor)
+
+An Android shell is in progress. Build requirements:
+
+- Node 22+
+- pnpm 10+
+- JDK 21
+- Android SDK platform 36 and build-tools 36.0.0
+
+```bash
+pnpm install
+pnpm build
+pnpm exec cap sync android
+cd android
+./gradlew assembleDebug
+```
+
+The debug APK is written to:
+
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+`android/local.properties` should point at your Android SDK. The package ID is
+currently provisional (`com.amoshydra.dictionary`) and will be finalized before
+the first public release. The GitHub Actions workflow
+`.github/workflows/android-debug.yml` builds the debug APK on pushes and pull
+requests.
 
 ## Add the full Chinese dictionary
 
@@ -69,7 +98,7 @@ ECDICT is MIT licensed, so a frequency-filtered core can be bundled directly. Th
 The ECDICT core is generated with:
 
 ```bash
-npm run data:ecdict -- /path/to/ecdict.csv
+pnpm run data:ecdict -- /path/to/ecdict.csv
 ```
 
 That script selects exam-tagged / Collins / Oxford words first, then the most frequent remaining words, up to 30,000 entries.
@@ -110,7 +139,7 @@ Entries and indexes live in IndexedDB. The ECDICT core is downloaded as a static
 ## Tests
 
 ```bash
-npm test
+pnpm test
 ```
 
 Covers pinyin conversion, CC-CEDICT parsing, Chinese and English index building, and search behavior against the starter set and a small ECDICT fixture.
@@ -122,7 +151,7 @@ Covers pinyin conversion, CC-CEDICT parsing, Chinese and English index building,
 - **HSK 3.0 word list**: MIT, [ivankra/hsk30](https://github.com/ivankra/hsk30).
 - **Word frequency ranks**: MIT, [jieba](https://github.com/fxsjy/jieba).
 - **Starter set**: original sample entries written for Ciqiao.
-- **App code**: MIT. See `LICENSE` and `THIRD_PARTY_LICENSES.md`.
+- **App code**: Apache-2.0. See `LICENSE` and `THIRD_PARTY_LICENSES.md`.
 
 ## Deployment
 

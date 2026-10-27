@@ -7,7 +7,7 @@
  * words, up to ECDICT_CORE_MAX entries (default 30,000).
  *
  * Usage:
- *   npm run data:ecdict -- /path/to/ecdict.csv
+ *   pnpm run data:ecdict -- /path/to/ecdict.csv
  *
  * Download the source CSV from:
  *   https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv
