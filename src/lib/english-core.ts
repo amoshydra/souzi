@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { gunzipSync } from "fflate";
 import type {
   EnglishCoreMeta,
@@ -41,20 +42,48 @@ async function decodeBytes(bytes: Uint8Array): Promise<string> {
 }
 
 async function downloadCore(): Promise<CorePayload> {
-  const url = `${import.meta.env.BASE_URL}data/ecdict-core.json.gz`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Could not load the English core (HTTP ${response.status}).`);
+  const baseUrl = `${import.meta.env.BASE_URL}data/ecdict-core`;
+
+  // Android asset packaging decompresses .gz files and strips the suffix, so
+  // the native app sees ecdict-core.json. Web keeps the smaller gzip asset.
+  const urls = Capacitor.isNativePlatform()
+    ? [`${baseUrl}.json`, `${baseUrl}.json.gz`]
+    : [`${baseUrl}.json.gz`];
+
+  let lastError: unknown;
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        lastError = new Error(
+          `Could not load the English core (HTTP ${response.status}).`,
+        );
+        continue;
+      }
+
+      const text = await decodeBytes(
+        new Uint8Array(await response.arrayBuffer()),
+      );
+      const payload = JSON.parse(text) as CorePayload;
+
+      if (
+        !payload ||
+        !Array.isArray(payload.entries) ||
+        payload.entries.length === 0
+      ) {
+        throw new Error("The bundled English core is empty or malformed.");
+      }
+
+      return payload;
+    } catch (error) {
+      lastError = error;
+    }
   }
 
-  const text = await decodeBytes(new Uint8Array(await response.arrayBuffer()));
-  const payload = JSON.parse(text) as CorePayload;
-
-  if (!payload || !Array.isArray(payload.entries) || payload.entries.length === 0) {
-    throw new Error("The bundled English core is empty or malformed.");
-  }
-
-  return payload;
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Could not load the bundled English core.");
 }
 
 /**

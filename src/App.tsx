@@ -4,6 +4,7 @@ import type {
   BeforeInstallPromptEvent,
   DictionaryMeta,
   EnglishCoreMeta,
+  EnglishCoreStatus,
   EnglishSavedWord,
   EnglishSearchIndex,
   SearchIndex,
@@ -16,13 +17,16 @@ import {
   getEntryBySimp,
   listEnglishFavorites,
   listFavorites,
+  loadEnglishCore,
   loadSearchIndex,
   removeEnglishFavorite,
   removeFavorite,
   resetToStarter,
-  seedStarter,
 } from "./lib/db";
-import { ensureEnglishCore } from "./lib/english-core";
+import {
+  ECDICT_CORE_VERSION,
+  ensureEnglishCore,
+} from "./lib/english-core";
 import { SearchPage } from "./components/SearchPage";
 import { EntryView } from "./components/EntryView";
 import { EnglishEntryView } from "./components/EnglishEntryView";
@@ -30,6 +34,7 @@ import { ImportView } from "./components/ImportView";
 import { SavedView } from "./components/SavedView";
 import { SettingsView } from "./components/SettingsView";
 import { AboutView } from "./components/AboutView";
+import { SetupView } from "./components/SetupView";
 import { Logo } from "./components/Logo";
 import { Toast, type ToastMessage } from "./components/Toast";
 
@@ -94,13 +99,13 @@ export default function App() {
   const [englishIndex, setEnglishIndex] = useState<EnglishSearchIndex | null>(
     null,
   );
-  const [englishStatus, setEnglishStatus] = useState<
-    "loading" | "ready" | "error"
-  >("loading");
+  const [englishStatus, setEnglishStatus] =
+    useState<EnglishCoreStatus>("idle");
   const [englishMeta, setEnglishMeta] = useState<EnglishCoreMeta | null>(null);
   const [englishFavorites, setEnglishFavorites] = useState<EnglishSavedWord[]>(
     [],
   );
+  const [setupMode, setSetupMode] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [installPrompt, setInstallPrompt] =
@@ -151,43 +156,39 @@ export default function App() {
     let active = true;
 
     async function init() {
-      let currentMeta = await getDictionaryMeta();
-      if (!currentMeta) {
-        currentMeta = await seedStarter();
-      }
-
-      let currentIndex = await loadSearchIndex();
-      if (!currentIndex && currentMeta.kind === "starter") {
-        currentMeta = await seedStarter();
-        currentIndex = await loadSearchIndex();
-      }
-
-      const [currentFavorites, currentEnglishFavorites] = await Promise.all([
+      const [
+        currentMeta,
+        currentIndex,
+        currentEnglish,
+        currentFavorites,
+        currentEnglishFavorites,
+      ] = await Promise.all([
+        getDictionaryMeta(),
+        loadSearchIndex(),
+        loadEnglishCore(),
         listFavorites(),
         listEnglishFavorites(),
       ]);
       if (!active) return;
 
-      setMeta(currentMeta);
+      const englishIsCurrent =
+        currentEnglish?.meta.version === ECDICT_CORE_VERSION;
+      const chineseIsReady =
+        currentMeta?.kind === "cedict" && currentIndex !== null;
+
+      setMeta(currentMeta ?? null);
       setIndex(currentIndex);
       setFavorites(currentFavorites);
       setEnglishFavorites(currentEnglishFavorites);
+      setEnglishIndex(englishIsCurrent ? currentEnglish.index : null);
+      setEnglishMeta(currentEnglish?.meta ?? null);
+      setEnglishStatus(englishIsCurrent ? "ready" : "idle");
+      setSetupMode(!chineseIsReady && !englishIsCurrent);
       setReady(true);
 
       navigator.storage?.persist?.().catch(() => {
         // Persistence is best-effort.
       });
-
-      void ensureEnglishCore()
-        .then(({ index: nextEnglishIndex, meta: nextEnglishMeta }) => {
-          if (!active) return;
-          setEnglishIndex(nextEnglishIndex);
-          setEnglishMeta(nextEnglishMeta);
-          setEnglishStatus("ready");
-        })
-        .catch(() => {
-          if (active) setEnglishStatus("error");
-        });
     }
 
     void init();
@@ -246,17 +247,76 @@ export default function App() {
     navigate({ name: "entry", kind: "en", id });
   };
 
+  const installEnglish = async () => {
+    setEnglishStatus("loading");
+    try {
+      const { index: nextIndex, meta: nextMeta } = await ensureEnglishCore();
+      setEnglishIndex(nextIndex);
+      setEnglishMeta(nextMeta);
+      setEnglishStatus("ready");
+    } catch {
+      setEnglishStatus("error");
+    }
+  };
+
+  const handleChineseImported = async () => {
+    await reloadDictionary();
+  };
+
+  const finishSetup = () => {
+    setSetupMode(false);
+    navigate({ name: "search" });
+  };
+
   const handleReset = async () => {
     const nextMeta = await resetToStarter();
     setMeta(nextMeta);
     setIndex(await loadSearchIndex());
     setFavorites(await listFavorites());
+    if (englishStatus !== "ready") {
+      setSetupMode(true);
+    }
   };
 
   const savedCount = favorites.length + englishFavorites.length;
   const isNavActive = (name: "search" | "saved" | "settings") =>
     route.name === name ||
     (name === "search" && (route.name === "entry" || route.name === "import"));
+
+  if (!ready) {
+    return (
+      <div className="app setup-app">
+        <main className="main">
+          <div className="shell">
+            <div className="loading-screen">
+              <Logo size={54} />
+              <div className="loading-title">Opening Souzi</div>
+              <div className="loading-sub">Preparing your offline dictionary…</div>
+              <div className="loading-bar">
+                <div className="loading-bar-fill" />
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (setupMode) {
+    return (
+      <div className="app setup-app">
+        <SetupView
+          chineseMeta={meta}
+          englishStatus={englishStatus}
+          englishMeta={englishMeta}
+          onInstallEnglish={installEnglish}
+          onChineseImported={handleChineseImported}
+          onNext={finishSetup}
+        />
+        <Toast toast={toast} onDismiss={() => setToast(null)} />
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -307,16 +367,7 @@ export default function App() {
 
       <main className="main">
         <div className="shell">
-          {!ready ? (
-            <div className="loading-screen">
-              <Logo size={54} />
-              <div className="loading-title">Opening Souzi</div>
-              <div className="loading-sub">Loading your offline dictionary…</div>
-              <div className="loading-bar">
-                <div className="loading-bar-fill" />
-              </div>
-            </div>
-          ) : route.name === "search" ? (
+          {route.name === "search" ? (
             <SearchPage
               index={index}
               englishIndex={englishIndex}
@@ -381,6 +432,7 @@ export default function App() {
               onClearHistory={clearHistoryDb}
               installPrompt={installPrompt}
               onInstall={handleInstall}
+              onInstallEnglish={installEnglish}
               onAbout={() => navigate({ name: "about" })}
               onToast={showToast}
             />

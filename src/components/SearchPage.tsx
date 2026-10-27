@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type {
   DictionaryMeta,
+  EnglishCoreStatus,
   EnglishEntry,
   EnglishHistoryWord,
   EnglishMatchKind,
@@ -64,7 +65,7 @@ export function SearchPage({
 }: {
   index: SearchIndex | null;
   englishIndex: EnglishSearchIndex | null;
-  englishStatus: "loading" | "ready" | "error";
+  englishStatus: EnglishCoreStatus;
   meta: DictionaryMeta | null;
   onOpenEntry: (id: number) => void;
   onOpenEnglish: (id: number) => void;
@@ -138,7 +139,7 @@ export function SearchPage({
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (!index || !trimmed) {
+    if (!trimmed || (!index && !englishIndex)) {
       setChineseHits([]);
       setEnglishHits([]);
       setSearching(false);
@@ -153,7 +154,7 @@ export function SearchPage({
       const pinyinHint =
         TONE_MARK.test(trimmed) || NUMERIC_PINYIN.test(trimmed);
       const chineseOnly = han || pinyinHint;
-      const chineseCandidates = searchIndex(index, trimmed);
+      const chineseCandidates = index ? searchIndex(index, trimmed) : [];
       const englishCandidates =
         !chineseOnly && englishIndex
           ? searchEnglishIndex(englishIndex, trimmed)
@@ -245,6 +246,7 @@ export function SearchPage({
 
   const englishLoading = isLatinQuery && englishStatus === "loading";
   const englishError = isLatinQuery && englishStatus === "error";
+  const englishMissing = isLatinQuery && englishStatus === "idle";
 
   return (
     <div className="page search-page">
@@ -328,6 +330,12 @@ export function SearchPage({
             <div className="english-note english-note-error">
               The bundled English core could not be loaded. English results may
               be unavailable until you reload.
+            </div>
+          )}
+
+          {englishMissing && (
+            <div className="english-note">
+              English→Chinese is not installed. Add it in Settings.
             </div>
           )}
 

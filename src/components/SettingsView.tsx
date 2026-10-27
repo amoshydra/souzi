@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import {
   Check,
   Database,
@@ -6,6 +7,7 @@ import {
   HardDrive,
   Info,
   Languages,
+  Loader2,
   Monitor,
   Moon,
   RotateCcw,
@@ -19,6 +21,7 @@ import type {
   BeforeInstallPromptEvent,
   DictionaryMeta,
   EnglishCoreMeta,
+  EnglishCoreStatus,
   Theme,
 } from "../types";
 import { formatBytes, formatCount, formatDate } from "../lib/format";
@@ -35,12 +38,13 @@ export function SettingsView({
   onClearHistory,
   installPrompt,
   onInstall,
+  onInstallEnglish,
   onAbout,
   onToast,
 }: {
   meta: DictionaryMeta | null;
   englishMeta: EnglishCoreMeta | null;
-  englishStatus: "loading" | "ready" | "error";
+  englishStatus: EnglishCoreStatus;
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
   onImport: () => void;
@@ -48,9 +52,11 @@ export function SettingsView({
   onClearHistory: () => Promise<void>;
   installPrompt: BeforeInstallPromptEvent | null;
   onInstall: () => void;
+  onInstallEnglish: () => void;
   onAbout: () => void;
   onToast: (message: string, tone?: "default" | "error") => void;
 }) {
+  const native = Capacitor.isNativePlatform();
   const [storage, setStorage] = useState<{ usage: number; quota: number } | null>(
     null,
   );
@@ -119,11 +125,17 @@ export function SettingsView({
             <p>
               {meta?.kind === "cedict"
                 ? "Full Chinese→English CC-CEDICT, imported by you."
-                : "Chinese starter sample set. Import CC-CEDICT for full coverage."}
+                : meta?.kind === "starter"
+                  ? "Chinese starter sample set. Import CC-CEDICT for full coverage."
+                  : "No Chinese dictionary installed. Import CC-CEDICT to add it."}
             </p>
           </div>
           <span className={`status-pill ${meta?.kind === "cedict" ? "status-good" : ""}`}>
-            {meta?.kind === "cedict" ? "Full" : "Starter"}
+            {meta?.kind === "cedict"
+              ? "Full"
+              : meta?.kind === "starter"
+                ? "Starter"
+                : "Not installed"}
           </span>
         </div>
 
@@ -167,7 +179,7 @@ export function SettingsView({
           </div>
           <div>
             <h2>English → Chinese</h2>
-            <p>Bundled ECDICT core. No download required.</p>
+            <p>Bundled ECDICT core. Installs locally.</p>
           </div>
           <span
             className={`status-pill ${englishStatus === "ready" ? "status-good" : ""}`}
@@ -176,7 +188,9 @@ export function SettingsView({
               ? "Ready"
               : englishStatus === "loading"
                 ? "Loading"
-                : "Error"}
+                : englishStatus === "error"
+                  ? "Error"
+                  : "Not installed"}
           </span>
         </div>
 
@@ -196,6 +210,28 @@ export function SettingsView({
             <strong>MIT</strong>
           </div>
         </div>
+
+        {englishStatus !== "ready" && (
+          <div className="button-row">
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={onInstallEnglish}
+              disabled={englishStatus === "loading"}
+            >
+              {englishStatus === "loading" ? (
+                <Loader2 size={16} className="spin" />
+              ) : (
+                <Download size={16} />
+              )}
+              {englishStatus === "loading"
+                ? "Installing English…"
+                : englishStatus === "error"
+                  ? "Retry English install"
+                  : "Install English core"}
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="settings-card">
@@ -235,7 +271,11 @@ export function SettingsView({
           </div>
           <div>
             <h2>Storage</h2>
-            <p>Everything is stored locally in this browser.</p>
+            <p>
+              {native
+                ? "Everything is stored locally on this device."
+                : "Everything is stored locally in this browser."}
+            </p>
           </div>
         </div>
 
@@ -250,34 +290,53 @@ export function SettingsView({
             <span>
               {storage ? `${formatBytes(storage.usage)} used` : "Measuring…"}
             </span>
-            <span>{storage ? `${formatBytes(storage.quota)} available` : ""}</span>
+            {!native && (
+              <span>
+                {storage ? `${formatBytes(storage.quota)} available` : ""}
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="setting-row">
-          <div className="setting-row-copy">
-            <ShieldCheck size={17} />
-            <div>
-              <strong>Persistent storage</strong>
-              <span>
-                {persisted === null
-                  ? "Checking…"
-                  : persisted
-                    ? "Granted. The browser is less likely to evict your dictionary."
-                    : "Not granted. The browser may clear data under pressure."}
-              </span>
+        {native ? (
+          <div className="setting-row">
+            <div className="setting-row-copy">
+              <ShieldCheck size={17} />
+              <div>
+                <strong>Private app storage</strong>
+                <span>
+                  Stored inside Souzi&apos;s private Android storage and removed
+                  when you uninstall the app.
+                </span>
+              </div>
             </div>
           </div>
-          {persisted === false && (
-            <button
-              type="button"
-              className="button button-secondary button-small"
-              onClick={requestPersistence}
-            >
-              Request
-            </button>
-          )}
-        </div>
+        ) : (
+          <div className="setting-row">
+            <div className="setting-row-copy">
+              <ShieldCheck size={17} />
+              <div>
+                <strong>Persistent storage</strong>
+                <span>
+                  {persisted === null
+                    ? "Checking…"
+                    : persisted
+                      ? "Granted. The browser is less likely to evict your dictionary."
+                      : "Not granted. The browser may clear data under pressure."}
+                </span>
+              </div>
+            </div>
+            {persisted === false && (
+              <button
+                type="button"
+                className="button button-secondary button-small"
+                onClick={requestPersistence}
+              >
+                Request
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="setting-row">
           <div className="setting-row-copy">
@@ -300,29 +359,35 @@ export function SettingsView({
         </div>
       </section>
 
-      <section className="settings-card">
-        <div className="settings-card-head">
-          <div className="settings-icon">
-            <Smartphone size={18} />
+      {!native && (
+        <section className="settings-card">
+          <div className="settings-card-head">
+            <div className="settings-icon">
+              <Smartphone size={18} />
+            </div>
+            <div>
+              <h2>Install app</h2>
+              <p>Use Souzi full-screen and offline from your home screen.</p>
+            </div>
           </div>
-          <div>
-            <h2>Install app</h2>
-            <p>Use Souzi full-screen and offline from your home screen.</p>
-          </div>
-        </div>
 
-        {installPrompt ? (
-          <button type="button" className="button button-primary" onClick={onInstall}>
-            <Download size={16} />
-            Install Souzi
-          </button>
-        ) : (
-          <p className="muted install-help">
-            On Chrome or Edge, use the install icon in the address bar. On
-            iPhone or iPad, tap Share → Add to Home Screen.
-          </p>
-        )}
-      </section>
+          {installPrompt ? (
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={onInstall}
+            >
+              <Download size={16} />
+              Install Souzi
+            </button>
+          ) : (
+            <p className="muted install-help">
+              On Chrome or Edge, use the install icon in the address bar. On
+              iPhone or iPad, tap Share → Add to Home Screen.
+            </p>
+          )}
+        </section>
+      )}
 
       <section className="settings-card">
         <div className="settings-card-head">

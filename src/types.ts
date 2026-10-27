@@ -51,6 +51,8 @@ export interface EnglishSearchIndex {
   keys: string[];
 }
 
+export type EnglishCoreStatus = "idle" | "loading" | "ready" | "error";
+
 export type EnglishMatchKind = "word" | "variant" | "lemma" | "prefix";
 
 export interface EnglishSearchCandidate {
