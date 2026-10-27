@@ -19,7 +19,9 @@ export function EnglishResultCard({
     >
       <span className="result-card-main">
         <span className="result-card-top">
-          <span className="en-word">{entry.word}</span>
+          <span className="en-word" lang="en">
+            {entry.word}
+          </span>
         </span>
         {entry.phonetic && (
           <span className="en-phonetic">/{entry.phonetic}/</span>
