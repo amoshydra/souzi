@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  BookOpen,
   CheckCircle2,
   Clock3,
   Library,
   Loader2,
   Search,
-  ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
@@ -62,6 +60,7 @@ export function SearchPage({
   onOpenEnglish,
   onOpenSimp,
   onImport,
+  onAbout,
 }: {
   index: SearchIndex | null;
   englishIndex: EnglishSearchIndex | null;
@@ -71,6 +70,7 @@ export function SearchPage({
   onOpenEnglish: (id: number) => void;
   onOpenSimp: (simp: string) => void;
   onImport: () => void;
+  onAbout: () => void;
 }) {
   const [query, setQuery] = useState(() => {
     try {
@@ -249,22 +249,13 @@ export function SearchPage({
   return (
     <div className="page search-page">
       {!hasQuery && (
-        <section className="hero">
-          <div className="eyebrow">
-            <span className="eyebrow-line" />
-            English ↔ Chinese
-            <span className="eyebrow-line" />
+        <div className="dictionary-head">
+          <div>
+            <div className="section-kicker">Chinese ↔ English</div>
+            <h1 className="dictionary-title">Look up a word</h1>
           </div>
-          <h1>
-            Every word,
-            <br />
-            both ways.
-          </h1>
-          <p className="hero-sub">
-            Look up Mandarin by character, pinyin, or English. Works offline,
-            with no account.
-          </p>
-        </section>
+          <p>Character, pinyin, or English</p>
+        </div>
       )}
 
       <div className={`search-area ${hasQuery ? "search-area-compact" : ""}`}>
@@ -504,35 +495,11 @@ export function SearchPage({
             </section>
           )}
 
-          <section className="how-grid">
-            <article className="how-card">
-              <div className="how-icon">
-                <BookOpen size={20} />
-              </div>
-              <h3>Both directions</h3>
-              <p>English→Chinese is included. Import CC-CEDICT for full Chinese→English.</p>
-            </article>
-            <article className="how-card">
-              <div className="how-icon">
-                <ShieldCheck size={20} />
-              </div>
-              <h3>Stays private</h3>
-              <p>Your dictionary file is parsed on this device and never uploaded.</p>
-            </article>
-            <article className="how-card">
-              <div className="how-icon">
-                <Sparkles size={20} />
-              </div>
-              <h3>Works offline</h3>
-              <p>Once installed, lookups never wait for a network request.</p>
-            </article>
-          </section>
-
-          <p className="fine-print">
-            Ciqiao bundles a filtered ECDICT core (MIT) for English→Chinese.
-            CC-CEDICT is not bundled; download it from MDBG and import it locally
-            for the full Chinese→English dictionary.
-          </p>
+          <div className="home-footer">
+            <button type="button" className="text-link" onClick={onAbout}>
+              About Ciqiao & data
+            </button>
+          </div>
         </div>
       )}
     </div>

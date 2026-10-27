@@ -35,6 +35,7 @@ export function SettingsView({
   onClearHistory,
   installPrompt,
   onInstall,
+  onAbout,
   onToast,
 }: {
   meta: DictionaryMeta | null;
@@ -47,6 +48,7 @@ export function SettingsView({
   onClearHistory: () => Promise<void>;
   installPrompt: BeforeInstallPromptEvent | null;
   onInstall: () => void;
+  onAbout: () => void;
   onToast: (message: string, tone?: "default" | "error") => void;
 }) {
   const [storage, setStorage] = useState<{ usage: number; quota: number } | null>(
@@ -406,6 +408,21 @@ export function SettingsView({
           <Check size={15} />
           Ciqiao 0.1.0 · No server, no tracking, no account.
         </div>
+      </section>
+
+      <section className="settings-card">
+        <div className="settings-card-head">
+          <div className="settings-icon">
+            <Info size={18} />
+          </div>
+          <div>
+            <h2>About Ciqiao</h2>
+            <p>Why the dictionary is built this way.</p>
+          </div>
+        </div>
+        <button type="button" className="button button-secondary" onClick={onAbout}>
+          Open About
+        </button>
       </section>
 
       {confirmReset && (

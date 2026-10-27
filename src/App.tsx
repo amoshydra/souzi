@@ -29,6 +29,7 @@ import { EnglishEntryView } from "./components/EnglishEntryView";
 import { ImportView } from "./components/ImportView";
 import { SavedView } from "./components/SavedView";
 import { SettingsView } from "./components/SettingsView";
+import { AboutView } from "./components/AboutView";
 import { Logo } from "./components/Logo";
 import { Toast, type ToastMessage } from "./components/Toast";
 
@@ -39,6 +40,7 @@ type Route =
   | { name: "entry"; kind: EntryKind; id: number }
   | { name: "saved" }
   | { name: "settings" }
+  | { name: "about" }
   | { name: "import" };
 
 function parseHash(): Route {
@@ -53,6 +55,7 @@ function parseHash(): Route {
   }
   if (name === "saved") return { name: "saved" };
   if (name === "settings") return { name: "settings" };
+  if (name === "about") return { name: "about" };
   if (name === "import") return { name: "import" };
   return { name: "search" };
 }
@@ -65,6 +68,8 @@ function routeToHash(route: Route): string {
       return "#/saved";
     case "settings":
       return "#/settings";
+    case "about":
+      return "#/about";
     case "import":
       return "#/import";
     default:
@@ -323,6 +328,7 @@ export default function App() {
               onOpenEnglish={openEnglish}
               onOpenSimp={openSimp}
               onImport={() => navigate({ name: "import" })}
+              onAbout={() => navigate({ name: "about" })}
             />
           ) : route.name === "entry" ? (
             route.kind === "zh" ? (
@@ -375,7 +381,13 @@ export default function App() {
               onClearHistory={clearHistoryDb}
               installPrompt={installPrompt}
               onInstall={handleInstall}
+              onAbout={() => navigate({ name: "about" })}
               onToast={showToast}
+            />
+          ) : route.name === "about" ? (
+            <AboutView
+              onBack={() => navigate({ name: "search" })}
+              onOpenSettings={() => navigate({ name: "settings" })}
             />
           ) : (
             <ImportView

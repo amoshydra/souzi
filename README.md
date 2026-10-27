@@ -18,6 +18,8 @@ An offline-first English–Chinese dictionary PWA. It bundles a filtered ECDICT 
 | --- | --- |
 | ![Searching for hello in both directions](docs/english-search.jpg) | ![The English entry for bank](docs/english-entry.jpg) |
 
+<p align="center"><img src="docs/about.jpg" alt="About Ciqiao" width="720"></p>
+
 ## What works
 
 - English→Chinese from a bundled 30,000-entry ECDICT core, including IPA, Chinese translations, exam tags, and English definitions.

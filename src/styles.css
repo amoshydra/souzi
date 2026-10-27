@@ -291,9 +291,31 @@ input:focus-visible {
   font-size: 16px;
 }
 
+.dictionary-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  max-width: 720px;
+  margin: 10px auto 0;
+}
+
+.dictionary-title {
+  margin: 2px 0 0;
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.dictionary-head p {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .search-area {
   max-width: 720px;
-  margin: 30px auto 0;
+  margin: 12px auto 0;
 }
 
 .search-area-compact {
@@ -407,7 +429,7 @@ input:focus-visible {
 
 .home-sections {
   max-width: 720px;
-  margin: 34px auto 0;
+  margin: 24px auto 0;
   display: grid;
   gap: 22px;
 }
@@ -629,6 +651,65 @@ input:focus-visible {
   font-size: 11px;
   line-height: 1.6;
   text-align: center;
+}
+
+.home-footer {
+  margin-top: 2px;
+  text-align: center;
+}
+
+.home-footer .text-link {
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.home-footer .text-link:hover {
+  color: var(--jade);
+}
+
+/* About */
+
+.about-page {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.about-hero {
+  margin-top: 4px;
+}
+
+.about-content {
+  display: grid;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.about-panel {
+  padding: 24px;
+}
+
+.about-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.about-panel p + p {
+  margin-top: 10px;
+}
+
+.about-panel .button-row {
+  margin-top: 14px;
+}
+
+.about-content .how-grid {
+  margin-top: 0;
+}
+
+.about-page .fine-print {
+  margin-top: 6px;
 }
 
 /* Buttons */
@@ -2603,6 +2684,36 @@ input:focus-visible {
   .segment {
     flex: 1;
     justify-content: center;
+  }
+}
+
+@media (max-width: 760px) {
+  .dictionary-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 6px;
+  }
+
+  .dictionary-head p {
+    margin: 0;
+    font-size: 11px;
+  }
+
+  .dictionary-title {
+    font-size: 26px;
+  }
+
+  .search-area {
+    margin-top: 12px;
+  }
+
+  .home-sections {
+    margin-top: 24px;
+  }
+
+  .about-content {
+    margin-top: 22px;
   }
 }
 
