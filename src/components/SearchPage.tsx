@@ -238,12 +238,6 @@ export function SearchPage({
 
   return (
     <div className="page search-page">
-      {!hasQuery && (
-        <div className="dictionary-head">
-          <h1 className="dictionary-title">Look up a word</h1>
-        </div>
-      )}
-
       <div className={`search-area ${hasQuery ? "search-area-compact" : ""}`}>
         <div className="search-wrap">
           <Search className="search-icon" size={21} aria-hidden="true" />
@@ -252,7 +246,7 @@ export function SearchPage({
             className="search-input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Chinese or English word"
+            placeholder="Look up a word"
             aria-label="Search the dictionary"
             autoComplete="off"
             autoCapitalize="off"

@@ -24,6 +24,7 @@ import {
   ECDICT_CORE_VERSION,
   ensureEnglishCore,
 } from "./lib/english-core";
+import { useKeyboardViewport } from "./hooks/useKeyboardViewport";
 import { SearchPage } from "./components/SearchPage";
 import { EntryView } from "./components/EntryView";
 import { EnglishEntryView } from "./components/EnglishEntryView";
@@ -88,6 +89,7 @@ function getInitialTheme(): Theme {
 }
 
 export default function App() {
+  useKeyboardViewport();
   const [route, setRoute] = useState<Route>(parseHash);
   const [ready, setReady] = useState(false);
   const [meta, setMeta] = useState<DictionaryMeta | null>(null);
