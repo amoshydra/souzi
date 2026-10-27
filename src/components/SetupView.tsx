@@ -138,13 +138,19 @@ export function SetupView({
               <div className="setup-brand-sub">搜字</div>
             </div>
           </div>
-          <h1>Add Chinese words</h1>
+          <h1>
+            {englishStatus === "error"
+              ? "One more try"
+              : englishStatus === "loading"
+                ? "Getting ready"
+                : "Welcome to Souzi"}
+          </h1>
           <p>
-            {englishStatus === "ready"
-              ? "English words are ready. Chinese words are optional."
-              : englishStatus === "error"
-                ? "English words could not be prepared."
-                : "Getting English words ready…"}
+            {englishStatus === "error"
+              ? "English words could not be prepared."
+              : englishStatus === "loading"
+                ? "Getting English words ready…"
+                : "English words are ready."}
           </p>
         </header>
 
@@ -153,14 +159,14 @@ export function SetupView({
             chineseReady ? "setup-card-ready" : ""
           }`}
         >
-          <div className="setup-card-head">
-            <div className="setup-card-icon">
-              <BookOpen size={22} />
+            <div className="setup-card-head">
+              <div className="setup-card-icon">
+                <BookOpen size={22} />
+              </div>
+              <div className="setup-card-title">
+                <h2>Add Chinese words</h2>
+              </div>
             </div>
-            <div className="setup-card-title">
-              <h2>Chinese words</h2>
-            </div>
-          </div>
 
           <p className="setup-card-copy">
             Find English meanings for Chinese words. Works without internet
@@ -179,7 +185,7 @@ export function SetupView({
                 <>
                   <button
                     type="button"
-                    className="button button-secondary setup-install-button"
+                    className="button button-primary setup-install-button setup-primary"
                     onClick={
                       nativeDownload.phase === "error"
                         ? nativeDownload.retry
@@ -395,12 +401,7 @@ export function SetupView({
                 {error && <div className="setup-error">{error}</div>}
               </>
             )}
-
-          <div className="setup-privacy">
-            <ShieldCheck size={14} />
-            Your words stay on this device. Nothing is sent to us.
-          </div>
-        </section>
+          </section>
 
         <footer className="setup-footer">
           {englishStatus === "error" ? (
@@ -412,7 +413,7 @@ export function SetupView({
               <RefreshCw size={16} />
               Try again
             </button>
-          ) : (
+          ) : chineseReady ? (
             <button
               type="button"
               className="button button-primary setup-next"
@@ -422,18 +423,20 @@ export function SetupView({
               {canContinue ? "Start using Souzi" : "Please wait…"}
               <ArrowRight size={16} />
             </button>
+          ) : (
+            <button
+              type="button"
+              className="button button-secondary setup-next"
+              onClick={onNext}
+              disabled={!canContinue}
+            >
+              {canContinue ? "Skip for now" : "Please wait…"}
+            </button>
           )}
-          <p className="setup-hint">
-            {englishStatus === "error"
-              ? "English words need to be prepared first."
-              : englishStatus === "loading"
-                ? "Getting English words ready…"
-                : waitingForChinese
-                  ? "Please wait for Chinese words to finish."
-                  : chineseReady
-                    ? "You can change this later in Settings."
-                    : "You can add Chinese words later in Settings."}
-          </p>
+          <div className="setup-privacy setup-privacy-center">
+            <ShieldCheck size={14} />
+            Your words stay on this device. Nothing is sent to us.
+          </div>
         </footer>
       </div>
     </div>

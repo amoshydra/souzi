@@ -2754,6 +2754,12 @@ html.keyboard-open .bottom-nav {
   margin-top: auto;
 }
 
+.setup-primary {
+  align-self: stretch;
+  width: 100%;
+  max-width: 22rem;
+}
+
 .setup-installed {
   display: flex;
   align-items: center;
@@ -2879,6 +2885,14 @@ html.keyboard-open .bottom-nav {
   color: var(--jade);
 }
 
+.setup-privacy-center {
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.375rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
 .setup-footer {
   display: flex;
   flex-direction: column;
@@ -2889,14 +2903,9 @@ html.keyboard-open .bottom-nav {
 }
 
 .setup-next {
-  max-width: 100%;
+  width: 100%;
+  max-width: 22rem;
   min-height: 2.875rem;
-}
-
-.setup-hint {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.75rem;
 }
 
 /* Responsive */
