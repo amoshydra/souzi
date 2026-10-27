@@ -74,7 +74,7 @@ export function SearchPage({
 }) {
   const [query, setQuery] = useState(() => {
     try {
-      return sessionStorage.getItem("ciqiao-query") ?? "";
+      return sessionStorage.getItem("souzi-query") ?? "";
     } catch {
       return "";
     }
@@ -101,7 +101,7 @@ export function SearchPage({
 
   useEffect(() => {
     try {
-      sessionStorage.setItem("ciqiao-query", query);
+      sessionStorage.setItem("souzi-query", query);
     } catch {
       // Session storage can be unavailable in private modes.
     }
@@ -497,7 +497,7 @@ export function SearchPage({
 
           <div className="home-footer">
             <button type="button" className="text-link" onClick={onAbout}>
-              About Ciqiao & data
+              About Souzi & data
             </button>
           </div>
         </div>

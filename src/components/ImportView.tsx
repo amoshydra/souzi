@@ -177,7 +177,7 @@ export function ImportView({
         <h1>Add the full Chinese dictionary</h1>
         <p>
           English→Chinese is already included. CC-CEDICT adds the full
-          Chinese→English direction. It is free but share-alike, so Ciqiao does
+          Chinese→English direction. It is free but share-alike, so Souzi does
           not bundle it. Download it from MDBG, then import the file here. It
           stays on this device.
         </p>
@@ -265,7 +265,7 @@ export function ImportView({
             <div className="step-number">2</div>
             <h2>Choose the file</h2>
             <p>
-              Select the <code>.txt.gz</code> you just downloaded. Ciqiao also
+              Select the <code>.txt.gz</code> you just downloaded. Souzi also
               accepts the uncompressed <code>.txt</code> or a <code>.zip</code>.
             </p>
 
@@ -441,7 +441,7 @@ export function ImportView({
         <h2>Why isn’t the dictionary built in?</h2>
         <p>
           CC-CEDICT is licensed CC BY-SA 4.0. Bundling a modified copy would
-          require Ciqiao to publish its derived database under the same license.
+          require Souzi to publish its derived database under the same license.
           Importing the original file keeps the app small and keeps the data
           under your control.
         </p>

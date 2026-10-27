@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "icons/*.png"],
       manifest: {
-        name: "Ciqiao — Chinese Dictionary",
-        short_name: "Ciqiao",
+        name: "Souzi — Chinese Dictionary",
+        short_name: "Souzi",
         description:
           "An offline-first English–Chinese dictionary with a bundled ECDICT core. Import CC-CEDICT for full Chinese coverage.",
         id: "/",

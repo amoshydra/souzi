@@ -1,4 +1,4 @@
-package com.amoshydra.dictionary;
+package com.amoshydra.souzi;
 
 import com.getcapacitor.BridgeActivity;
 

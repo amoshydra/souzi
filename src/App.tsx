@@ -78,7 +78,7 @@ function routeToHash(route: Route): string {
 }
 
 function getInitialTheme(): Theme {
-  const stored = localStorage.getItem("ciqiao-theme");
+  const stored = localStorage.getItem("souzi-theme");
   if (stored === "light" || stored === "dark" || stored === "system") {
     return stored;
   }
@@ -206,7 +206,7 @@ export default function App() {
     };
 
     apply();
-    localStorage.setItem("ciqiao-theme", theme);
+    localStorage.setItem("souzi-theme", theme);
 
     media.addEventListener("change", apply);
     return () => media.removeEventListener("change", apply);
@@ -229,7 +229,7 @@ export default function App() {
     if (!installPrompt) return;
     await installPrompt.prompt();
     const choice = await installPrompt.userChoice;
-    if (choice.outcome === "accepted") showToast("Ciqiao installed");
+    if (choice.outcome === "accepted") showToast("Souzi installed");
     setInstallPrompt(null);
   };
 
@@ -266,12 +266,12 @@ export default function App() {
             type="button"
             className="brand"
             onClick={() => navigate({ name: "search" })}
-            aria-label="Ciqiao home"
+            aria-label="Souzi home"
           >
             <Logo size={36} />
             <span className="brand-text">
-              <span className="brand-name">Ciqiao</span>
-              <span className="brand-sub">词桥</span>
+              <span className="brand-name">Souzi</span>
+              <span className="brand-sub">搜字</span>
             </span>
           </button>
 
@@ -310,7 +310,7 @@ export default function App() {
           {!ready ? (
             <div className="loading-screen">
               <Logo size={54} />
-              <div className="loading-title">Opening Ciqiao</div>
+              <div className="loading-title">Opening Souzi</div>
               <div className="loading-sub">Loading your offline dictionary…</div>
               <div className="loading-bar">
                 <div className="loading-bar-fill" />

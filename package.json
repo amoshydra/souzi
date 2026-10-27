@@ -1,10 +1,10 @@
 {
-  "name": "ciqiao",
+  "name": "souzi",
   "private": true,
   "version": "0.1.0",
   "license": "Apache-2.0",
   "type": "module",
-  "description": "Ciqiao \u2014 an offline-first English\u2013Chinese dictionary app.",
+  "description": "Souzi \u2014 an offline-first English\u2013Chinese dictionary app.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

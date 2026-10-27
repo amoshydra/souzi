@@ -1,18 +1,18 @@
 # Third-party data and licenses
 
-Ciqiao's application code is Apache-2.0 licensed. See `LICENSE`.
+Souzi's application code is Apache-2.0 licensed. See `LICENSE`.
 
 ## CC-CEDICT
 
-Chinese–English dictionary data, not bundled with Ciqiao. The user downloads the
+Chinese–English dictionary data, not bundled with Souzi. The user downloads the
 official export from MDBG and imports it locally.
 
 - Source: <https://www.mdbg.net/chinese/dictionary?page=cc-cedict>
 - License: CC BY-SA 4.0, <https://creativecommons.org/licenses/by-sa/4.0/>
 - Attribution: CC-CEDICT by MDBG and contributors
 
-Because Ciqiao does not distribute the data, it does not publish a derived
-CC-CEDICT database. If you fork Ciqiao and choose to bundle or host the data,
+Because Souzi does not distribute the data, it does not publish a derived
+CC-CEDICT database. If you fork Souzi and choose to bundle or host the data,
 you must comply with CC BY-SA 4.0, including attribution and share-alike.
 
 ## ECDICT
@@ -63,5 +63,5 @@ SOFTWARE.
 
 ## Starter set
 
-The sample entries in `src/lib/starter.ts` were written for Ciqiao and are
+The sample entries in `src/lib/starter.ts` were written for Souzi and are
 released under the same Apache-2.0 license as the application code.

@@ -16,7 +16,7 @@ import { STARTER_ENTRIES } from "./starter";
 
 const ENTRY_CHUNK_SIZE = 2000;
 
-interface CiqiaoDB extends DBSchema {
+interface SouziDB extends DBSchema {
   entries: {
     key: number;
     value: Entry[];
@@ -55,18 +55,18 @@ interface CiqiaoDB extends DBSchema {
   };
 }
 
-const DB_NAME = "ciqiao";
+const DB_NAME = "souzi";
 const DB_VERSION = 3;
 
-let dbPromise: Promise<IDBPDatabase<CiqiaoDB>> | null = null;
+let dbPromise: Promise<IDBPDatabase<SouziDB>> | null = null;
 let cachedIndex: SearchIndex | null = null;
 let cachedEnglishIndex: EnglishSearchIndex | null = null;
 const chunkCache = new Map<number, Entry[]>();
 const englishChunkCache = new Map<number, EnglishEntry[]>();
 
-export function getDB(): Promise<IDBPDatabase<CiqiaoDB>> {
+export function getDB(): Promise<IDBPDatabase<SouziDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<CiqiaoDB>(DB_NAME, DB_VERSION, {
+    dbPromise = openDB<SouziDB>(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion) {
         if (oldVersion < 2) {
           if (db.objectStoreNames.contains("entries")) {

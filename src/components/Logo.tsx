@@ -5,7 +5,7 @@ export function Logo({ size = 40 }: { size?: number }) {
       height={size}
       viewBox="0 0 512 512"
       role="img"
-      aria-label="Ciqiao"
+      aria-label="Souzi"
       className="logo"
     >
       <rect width="512" height="512" rx="112" fill="currentColor" />

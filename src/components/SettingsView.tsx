@@ -307,14 +307,14 @@ export function SettingsView({
           </div>
           <div>
             <h2>Install app</h2>
-            <p>Use Ciqiao full-screen and offline from your home screen.</p>
+            <p>Use Souzi full-screen and offline from your home screen.</p>
           </div>
         </div>
 
         {installPrompt ? (
           <button type="button" className="button button-primary" onClick={onInstall}>
             <Download size={16} />
-            Install Ciqiao
+            Install Souzi
           </button>
         ) : (
           <p className="muted install-help">
@@ -352,7 +352,7 @@ export function SettingsView({
           <li>
             <div>
               <strong>ECDICT core</strong>
-              <span>Filtered English–Chinese entries bundled with Ciqiao.</span>
+              <span>Filtered English–Chinese entries bundled with Souzi.</span>
             </div>
             <a
               href="https://github.com/skywind3000/ECDICT"
@@ -391,14 +391,14 @@ export function SettingsView({
           <li>
             <div>
               <strong>Starter set</strong>
-              <span>Original sample entries written for Ciqiao.</span>
+              <span>Original sample entries written for Souzi.</span>
             </div>
             <span className="license-tag">Original</span>
           </li>
           <li>
             <div>
               <strong>App code</strong>
-              <span>Ciqiao is an offline-first dictionary app.</span>
+              <span>Souzi is an offline-first dictionary app.</span>
             </div>
             <a
               href="https://www.apache.org/licenses/LICENSE-2.0"
@@ -412,7 +412,7 @@ export function SettingsView({
 
         <div className="about-line">
           <Check size={15} />
-          Ciqiao 0.1.0 · No server, no tracking, no account.
+          Souzi 0.1.0 · No server, no tracking, no account.
         </div>
       </section>
 
@@ -422,7 +422,7 @@ export function SettingsView({
             <Info size={18} />
           </div>
           <div>
-            <h2>About Ciqiao</h2>
+            <h2>About Souzi</h2>
             <p>Why the dictionary is built this way.</p>
           </div>
         </div>

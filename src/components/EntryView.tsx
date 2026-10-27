@@ -246,7 +246,7 @@ export function EntryView({
       <p className="entry-source">
         {entry.source === "cedict"
           ? "Definition from CC-CEDICT, imported by you. Licensed CC BY-SA 4.0."
-          : "Sample entry written for Ciqiao."}
+          : "Sample entry written for Souzi."}
       </p>
     </div>
   );

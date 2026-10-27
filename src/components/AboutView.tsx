@@ -40,7 +40,7 @@ export function AboutView({
         <section className="panel about-panel">
           <div className="panel-kicker">A dictionary first</div>
           <p>
-            Ciqiao is meant to feel like a dictionary, not a landing page.
+            Souzi is meant to feel like a dictionary, not a landing page.
             Search is the first thing on the screen, results are ranked for
             learners, and the interface stays out of the way.
           </p>
@@ -104,7 +104,7 @@ export function AboutView({
         </section>
 
         <p className="fine-print">
-          Ciqiao 0.1.0 · No server, no tracking, no account.
+          Souzi 0.1.0 · No server, no tracking, no account.
         </p>
       </div>
     </div>
