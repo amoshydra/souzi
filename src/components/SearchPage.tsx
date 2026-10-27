@@ -287,14 +287,7 @@ export function SearchPage({
 
       {hasQuery ? (
         <section className="results-section" aria-live="polite">
-          <div className="section-head">
-            <div>
-              <h2 className="section-title">{resultLabel}</h2>
-            </div>
-            {total > 0 && !searching && (
-              <span className="result-caption">Tap a word for the meaning</span>
-            )}
-          </div>
+          <p className="sr-only">{resultLabel}</p>
 
           {englishLoading && (
             <div className="english-note">

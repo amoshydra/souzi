@@ -840,13 +840,11 @@ input:focus-visible {
 
 .results-section {
   max-width: 48.75rem;
-  margin: 1.75rem auto 0;
+  margin: 1.5rem auto 0;
 }
 
-.result-caption {
-  margin-bottom: 0.25rem;
-  color: var(--muted);
-  font-size: 0.6875rem;
+.results-section > .result-group:first-of-type {
+  margin-top: 0;
 }
 
 .result-list {
