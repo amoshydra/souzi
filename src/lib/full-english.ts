@@ -6,6 +6,7 @@ import type {
   FullEnglishMeta,
 } from "../types";
 import { englishTypoKeys, normalizeEnglishWord } from "./english";
+import { definitionLines, translationLines } from "./ecdict-text";
 import { lemmaCandidates } from "./lemma";
 
 type WordMatch = {
@@ -186,13 +187,6 @@ export async function suggestFullEnglishSpellings(
     .slice(0, limit);
 }
 
-function splitLines(value: string): string[] {
-  return value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
-
 export async function getFullEnglishEntriesByIds(
   ids: number[],
 ): Promise<EnglishEntry[]> {
@@ -204,8 +198,8 @@ export async function getFullEnglishEntriesByIds(
     id: entry.id,
     word: entry.word,
     phonetic: entry.phonetic,
-    translations: splitLines(entry.translation),
-    definitions: splitLines(entry.definition),
+    translations: translationLines(entry.translation),
+    definitions: definitionLines(entry.definition),
     pos: entry.pos,
     tags: entry.tags.split(/\s+/).filter(Boolean),
     collins: entry.collins,

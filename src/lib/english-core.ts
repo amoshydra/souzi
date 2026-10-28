@@ -6,6 +6,7 @@ import type {
   EnglishSearchIndex,
 } from "../types";
 import { buildEnglishIndex } from "./english";
+import { definitionLines, translationLines } from "./ecdict-text";
 import { installEnglishCore, loadEnglishCore } from "./db";
 
 export const ECDICT_CORE_VERSION = 1;
@@ -106,6 +107,8 @@ export function ensureEnglishCore(): Promise<{
       const payload = await downloadCore();
       const entries: EnglishEntry[] = payload.entries.map((entry) => ({
         ...entry,
+        translations: translationLines(entry.translations.join("\n")),
+        definitions: definitionLines(entry.definitions.join("\n")),
         source: "ecdict",
       }));
       const index = buildEnglishIndex(entries);

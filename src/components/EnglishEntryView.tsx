@@ -189,16 +189,12 @@ export function EnglishEntryView({
 
       {entry.definitions.length > 0 && (
         <section className="panel english-definition-panel">
-          <details className="english-details">
-            <summary>
-              More in English
-            </summary>
-            <ul>
-              {entry.definitions.map((definition, index) => (
-                <li key={`${definition}-${index}`}>{definition}</li>
-              ))}
-            </ul>
-          </details>
+          <div className="panel-kicker">More in English</div>
+          <ul>
+            {entry.definitions.map((definition, index) => (
+              <li key={`${definition}-${index}`}>{definition}</li>
+            ))}
+          </ul>
         </section>
       )}
 
