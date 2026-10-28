@@ -2,10 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import {
   ArrowRight,
-  BookOpen,
-  CheckCircle2,
   Download,
-  FileText,
   RefreshCw,
   UploadCloud,
   Wifi,
@@ -131,7 +128,7 @@ export function SetupView({
         <header className="setup-header">
           <div className="setup-brand">
             <span aria-hidden="true">
-              <Logo size={44} />
+              <Logo size={36} />
             </span>
             <div>
               <div className="setup-brand-name">Souzi</div>
@@ -143,7 +140,7 @@ export function SetupView({
               ? "One more try"
               : englishStatus === "loading"
                 ? "Getting ready"
-                : "Welcome"}
+                : "Add Chinese words"}
           </h1>
           <p>
             {englishStatus === "error"
@@ -154,30 +151,14 @@ export function SetupView({
           </p>
         </header>
 
-        <section
-          className={`setup-card setup-card-single ${
-            chineseReady ? "setup-card-ready" : ""
-          }`}
-        >
-            <div className="setup-card-head">
-              <div className="setup-card-icon">
-                <BookOpen size={22} />
-              </div>
-              <div className="setup-card-title">
-                <h2>Chinese words</h2>
-              </div>
-            </div>
-
+        <section className="setup-actions">
           {chineseReady ? (
-            <div className="setup-installed">
-              <CheckCircle2 size={17} />
-              Chinese words are ready.
-            </div>
+            <p className="setup-installed">Chinese words are ready.</p>
           ) : native ? (
             <div className="setup-download">
               <button
                 type="button"
-                className="button button-primary setup-install-button setup-primary"
+                className="button button-primary setup-primary"
                 onClick={onStartDownload}
               >
                 <Download size={16} />
@@ -208,8 +189,7 @@ export function SetupView({
                     if (!importing) startChineseImport(event.dataTransfer.files[0]);
                   }}
                 >
-                  <FileText size={20} />
-                  <span>Download the file, then choose it here.</span>
+                  <span>Download the file first.</span>
                   <span className="setup-dropzone-actions">
                     <a
                       className="button button-secondary button-small"
@@ -218,7 +198,7 @@ export function SetupView({
                       rel="noreferrer"
                     >
                       <Download size={14} />
-                      Download file
+                      Download
                     </a>
                     <button
                       type="button"
@@ -268,7 +248,7 @@ export function SetupView({
                 {error && <div className="setup-error">{error}</div>}
               </>
             )}
-          </section>
+        </section>
 
         <footer className="setup-footer">
           {englishStatus === "error" ? (
@@ -306,7 +286,7 @@ export function SetupView({
               {importing ? "Cancel and skip" : "Skip for now"}
             </button>
           )}
-          <p className="setup-privacy setup-privacy-center">
+          <p className="setup-privacy">
             Your words never leave this device.
           </p>
         </footer>

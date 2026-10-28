@@ -2850,104 +2850,42 @@ html.keyboard-open .bottom-nav {
   line-height: 1.6;
 }
 
-.setup-card {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  padding: 1.375rem;
+.setup-actions {
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  padding: 1.25rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: var(--surface);
   box-shadow: var(--shadow-soft);
 }
 
-.setup-card-ready {
-  border-color: color-mix(in srgb, var(--jade) 24%, var(--line));
-  background:
-    linear-gradient(
-      160deg,
-      color-mix(in srgb, var(--jade-soft) 32%, var(--surface)),
-      var(--surface) 58%
-    );
-}
-
-.setup-card-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6875rem;
-}
-
-.setup-card-icon {
-  width: 2.625rem;
-  height: 2.625rem;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--jade-soft);
-  color: var(--jade);
-  font-size: 1.375rem;
-}
-
-.setup-card-title {
-  flex: 1;
-  min-width: 0;
-}
-
-.setup-card-title h2 {
-  margin: 0.0625rem 0 0.125rem;
-  overflow-wrap: normal;
-  font-size: 1.0625rem;
-  line-height: 1.3;
-  letter-spacing: -0.02em;
-}
-
-.setup-install-button {
-  align-self: flex-start;
-  margin-top: auto;
-}
-
 .setup-primary {
-  align-self: stretch;
   width: 100%;
-  max-width: 22rem;
 }
 
 .setup-installed {
-  display: flex;
-  align-items: center;
-  gap: 0.4375rem;
-  margin-top: 1rem;
+  margin: 0;
   color: var(--jade);
   font-size: var(--type-label-small-size);
   font-weight: var(--type-label-weight);
   letter-spacing: var(--type-label-tracking);
+  text-align: center;
 }
 
 .setup-dropzone {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.4375rem;
-  margin-top: 1rem;
-  padding: 0.9375rem;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+  gap: 0.75rem;
   color: var(--muted);
   font-size: var(--type-body-small-size);
   line-height: var(--type-body-line);
-  transition:
-    border-color 0.18s ease,
-    background 0.18s ease;
-}
-
-.setup-dropzone > svg {
-  color: var(--jade);
 }
 
 .setup-dropzone-active {
-  border-color: var(--jade);
+  border-radius: var(--radius);
   background: var(--jade-soft);
 }
 
@@ -2992,8 +2930,7 @@ html.keyboard-open .bottom-nav {
 .setup-download {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-  margin-top: 1rem;
+  gap: 0.75rem;
 }
 
 .setup-wifi-toggle {
@@ -3224,11 +3161,11 @@ html.keyboard-open .bottom-nav {
 }
 
 @media (max-width: 26.25em) {
-  .setup-card .button-primary {
+  .setup-primary {
     padding-inline: 0.75rem;
   }
 
-  .setup-card .button-primary .lucide {
+  .setup-primary .lucide {
     display: none;
   }
 
@@ -3285,11 +3222,11 @@ html.keyboard-open .bottom-nav {
   }
 
   .setup-header h1 {
-    font-size: clamp(1.75rem, 10vw, 2.125rem);
+    font-size: min(2.125rem, 14vw);
   }
 
-  .setup-card {
-    padding: 1.125rem;
+  .setup-actions {
+    padding: 1rem;
   }
 
   .setup-next {
@@ -3301,18 +3238,6 @@ html.keyboard-open .bottom-nav {
   }
 
   .dict-row .button {
-    width: 100%;
-  }
-}
-
-@media (max-width: 22.5em) {
-  .setup-card-head {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .setup-card-title {
     width: 100%;
   }
 }
