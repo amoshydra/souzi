@@ -417,6 +417,8 @@ export default function App() {
           onSkip={handleSkipSetup}
           onNext={handleFinishChineseSetup}
           download={nativeDownload}
+          fullEnglishMeta={fullEnglishMeta}
+          fullDownload={fullEnglishDownload}
         />
         <Toast toast={toast} onDismiss={() => setToast(null)} />
       </div>

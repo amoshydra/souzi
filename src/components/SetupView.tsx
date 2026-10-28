@@ -13,6 +13,8 @@ import type {
   ImportProgress,
 } from "../types";
 import type { NativeCedictDownload } from "../hooks/useNativeCedictDownload";
+import type { FullEnglishDownload } from "../hooks/useFullEnglishDownload";
+import type { FullEnglishMeta } from "../types";
 import { startCedictImport } from "../lib/cedict-import";
 import { getActivePercent } from "../lib/download-progress";
 import { Logo } from "./Logo";
@@ -45,6 +47,8 @@ export function SetupView({
   onSkip,
   onNext,
   download,
+  fullEnglishMeta,
+  fullDownload,
 }: {
   chineseMeta: DictionaryMeta | null;
   englishStatus: EnglishCoreStatus;
@@ -53,6 +57,8 @@ export function SetupView({
   onSkip: () => void;
   onNext: () => void;
   download: NativeCedictDownload;
+  fullEnglishMeta: FullEnglishMeta | null;
+  fullDownload: FullEnglishDownload;
 }) {
   const [dragging, setDragging] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -68,6 +74,8 @@ export function SetupView({
   const waitingForWifi =
     download.downloadStatus === "waiting" ||
     (download.downloadStatus === "pending" && download.wifiOnly);
+  const fullDownloading =
+    fullDownload.phase === "downloading" || fullDownload.phase === "checking";
 
   useEffect(() => {
     if (!importing) return;
@@ -151,6 +159,7 @@ export function SetupView({
           <h1 className="setup-title">
             {chineseReady ? "Chinese dictionary" : "Add Chinese dictionary"}
           </h1>
+          <p className="setup-size">About 4 MB download · 130k words</p>
           {chineseReady ? (
             <p className="setup-installed">Chinese dictionary is ready.</p>
           ) : native ? (
@@ -303,6 +312,124 @@ export function SetupView({
                 {error && <div className="setup-error">{error}</div>}
               </>
             )}
+        </section>
+
+        <section className="setup-actions">
+          <h1 className="setup-title">
+            {fullEnglishMeta
+              ? "Full English dictionary"
+              : "Add full English dictionary"}
+          </h1>
+          <p className="setup-size">About 42 MB download · 770k words</p>
+          {fullEnglishMeta ? (
+            <p className="setup-installed">Full English dictionary is ready.</p>
+          ) : native ? (
+            <div className="setup-download">
+              {fullDownload.phase === "idle" ? (
+                <button
+                  type="button"
+                  className="button button-primary setup-primary"
+                  onClick={() => void fullDownload.start()}
+                >
+                  <Download size={16} />
+                  Download
+                </button>
+              ) : fullDownload.phase === "error" ? (
+                <>
+                  <p className="setup-download-state">Download stopped.</p>
+                  <button
+                    type="button"
+                    className="button button-primary setup-primary"
+                    onClick={() => void fullDownload.retry()}
+                  >
+                    <RefreshCw size={16} />
+                    Try again
+                  </button>
+                </>
+              ) : (
+                <div className="setup-progress">
+                  <div className="setup-progress-head">
+                    <span>
+                      {fullDownload.phase === "installing"
+                        ? "Preparing dictionary…"
+                        : fullDownload.phase === "checking"
+                          ? "Starting download…"
+                          : fullDownload.phase === "paused"
+                            ? "Download paused."
+                            : fullDownload.downloadStatus === "waiting" ||
+                                (fullDownload.downloadStatus === "pending" &&
+                                  fullDownload.wifiOnly)
+                              ? "Waiting for Wi-Fi…"
+                              : "Downloading dictionary…"}
+                    </span>
+                    {(() => {
+                      const fullPercent =
+                        fullDownload.totalBytes > 0
+                          ? Math.min(
+                              100,
+                              Math.round(
+                                (fullDownload.bytesDownloaded /
+                                  fullDownload.totalBytes) *
+                                  100,
+                              ),
+                            )
+                          : null;
+                      return (
+                        <>
+                          {fullPercent !== null && <span>{fullPercent}%</span>}
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div
+                    className={`progress-track ${
+                      fullDownload.totalBytes === 0 ||
+                      fullDownload.phase === "checking"
+                        ? "progress-indeterminate"
+                        : ""
+                    }`}
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Full English dictionary download progress"
+                  >
+                    <div
+                      className="progress-fill"
+                      style={
+                        fullDownload.totalBytes > 0
+                          ? {
+                              width: `${Math.min(
+                                100,
+                                Math.round(
+                                  (fullDownload.bytesDownloaded /
+                                    fullDownload.totalBytes) *
+                                    100,
+                                ),
+                              )}%`,
+                            }
+                          : undefined
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+              <label className="setup-wifi-toggle">
+                <input
+                  type="checkbox"
+                  checked={fullDownload.wifiOnly}
+                  onChange={(event) =>
+                    fullDownload.setWifiOnly(event.target.checked)
+                  }
+                />
+                <Wifi size={14} />
+                Wi-Fi only
+              </label>
+            </div>
+          ) : (
+            <p className="setup-installed">
+              The full English dictionary is available in the Android app.
+            </p>
+          )}
         </section>
 
         <footer className="setup-footer">
