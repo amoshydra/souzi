@@ -1,5 +1,9 @@
 # Souzi 搜字
 
+<p align="center">
+  <img src="docs/feature-graphic.png" alt="Souzi — offline English–Chinese dictionary" width="100%">
+</p>
+
 An offline-first English–Chinese dictionary for web/PWA and Android. It bundles a filtered ECDICT core for English→Chinese and imports CC-CEDICT locally for full Chinese→English coverage.
 
 **Souzi does not redistribute CC-CEDICT.** You download the official export from MDBG and import it locally. The file is parsed in a Web Worker and stored in IndexedDB; it never leaves the device. The bundled ECDICT core is MIT licensed.
