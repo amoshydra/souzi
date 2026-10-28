@@ -2840,6 +2840,7 @@ html.keyboard-open .bottom-nav {
   font-weight: 720;
   letter-spacing: -0.035em;
   line-height: 1.14;
+  text-wrap: normal;
 }
 
 .setup-header p {
