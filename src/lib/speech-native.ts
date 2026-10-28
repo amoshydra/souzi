@@ -38,6 +38,12 @@ export async function speakText(
   text: string,
   lang: "zh-CN" | "en-US",
 ): Promise<boolean> {
+  // GrapheneOS (and most Android WebViews) ship a working Web Speech
+  // Synthesis engine, so prefer it whenever it is available. The native
+  // plugin is only a fallback for WebViews without speechSynthesis.
+  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    return webSpeak(text, lang, lang === "en-US" ? 0.9 : 0.85);
+  }
   if (native) {
     try {
       await native.speak({ text, lang });
@@ -46,5 +52,5 @@ export async function speakText(
       return false;
     }
   }
-  return webSpeak(text, lang, lang === "en-US" ? 0.9 : 0.85);
+  return false;
 }
