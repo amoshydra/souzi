@@ -40,54 +40,17 @@ import { AboutView } from "./components/AboutView";
 import { SetupView } from "./components/SetupView";
 import { Logo } from "./components/Logo";
 import { Toast, type ToastMessage } from "./components/Toast";
-
-type EntryKind = "zh" | "en";
-
-type Route =
-  | { name: "search" }
-  | { name: "entry"; kind: EntryKind; id: number }
-  | { name: "saved" }
-  | { name: "settings" }
-  | { name: "about" }
-  | { name: "downloads" }
-  | { name: "import" };
-
-function parseHash(): Route {
-  const hash = window.location.hash.replace(/^#\/?/, "");
-  const [name, value] = hash.split("/");
-
-  if ((name === "entry" || name === "zh" || name === "en") && value) {
-    const id = Number(value);
-    if (Number.isFinite(id) && id > 0) {
-      return { name: "entry", kind: name === "en" ? "en" : "zh", id };
-    }
-  }
-  if (name === "saved") return { name: "saved" };
-  if (name === "settings") return { name: "settings" };
-  if (name === "about") return { name: "about" };
-  if (name === "downloads") return { name: "downloads" };
-  if (name === "import") return { name: "import" };
-  return { name: "search" };
-}
-
-function routeToHash(route: Route): string {
-  switch (route.name) {
-    case "entry":
-      return `#/${route.kind}/${route.id}`;
-    case "saved":
-      return "#/saved";
-    case "settings":
-      return "#/settings";
-    case "about":
-      return "#/about";
-    case "downloads":
-      return "#/downloads";
-    case "import":
-      return "#/import";
-    default:
-      return "#/";
-  }
-}
+import {
+  backNavigation,
+  createInitialNavigation,
+  navigateTo,
+  parseHash,
+  routeToHash,
+  syncNavigationState,
+  type NavigationState,
+  type Route,
+  type Tab,
+} from "./lib/navigation";
 
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem("souzi-theme");
@@ -117,19 +80,11 @@ function saveSetupChoice(choice: SetupChoice): void {
   }
 }
 
-type SouziHistoryState = {
-  souziDepth?: number;
-};
-
-function getHistoryDepth(): number {
-  const depth = (window.history.state as SouziHistoryState | null)?.souziDepth;
-  return typeof depth === "number" ? depth : 0;
-}
-
 export default function App() {
   useKeyboardViewport();
   const [route, setRoute] = useState<Route>(parseHash);
-  const depthRef = useRef(getHistoryDepth());
+  const navRef = useRef<NavigationState>(createInitialNavigation(route));
+  const [activeTab, setActiveTab] = useState<Tab>(navRef.current.activeTab);
   const [ready, setReady] = useState(false);
   const [meta, setMeta] = useState<DictionaryMeta | null>(null);
   const [index, setIndex] = useState<SearchIndex | null>(null);
@@ -157,39 +112,40 @@ export default function App() {
   const navigate = useCallback(
     (next: Route, options?: { replace?: boolean }) => {
       const hash = routeToHash(next);
-      if (window.location.hash === hash) {
-        setRoute(next);
-        return;
-      }
+      const currentHash = window.location.hash;
+      const nextState = navigateTo(navRef.current, next, options);
 
-      const replace = options?.replace ?? false;
-      const depth = replace ? depthRef.current : depthRef.current + 1;
-      const state: SouziHistoryState = {
-        ...(window.history.state as SouziHistoryState | null),
-        souziDepth: depth,
-      };
-
-      if (replace) {
-        window.history.replaceState(state, "", hash);
-      } else {
-        window.history.pushState(state, "", hash);
-      }
-      depthRef.current = depth;
+      navRef.current = nextState;
+      setActiveTab(nextState.activeTab);
       setRoute(next);
+
+      if (options?.replace) {
+        window.history.replaceState(null, "", hash);
+      } else if (hash !== currentHash) {
+        window.history.pushState(null, "", hash);
+      }
     },
     [],
   );
 
-  const navigateBack = useCallback(
-    (fallback: Route = { name: "search" }) => {
-      if (depthRef.current > 0) {
-        window.history.back();
-        return;
-      }
-      navigate(fallback, { replace: true });
-    },
-    [navigate],
-  );
+  const goBack = useCallback((): boolean => {
+    const result = backNavigation(navRef.current);
+    if (result.exit) return false;
+
+    navRef.current = result.state;
+    setActiveTab(result.state.activeTab);
+    setRoute(result.route);
+
+    const hash = routeToHash(result.route);
+    if (window.location.hash !== hash) {
+      window.history.replaceState(null, "", hash);
+    }
+    return true;
+  }, []);
+
+  const handleBack = useCallback(() => {
+    goBack();
+  }, [goBack]);
 
   const refreshFavorites = useCallback(async () => {
     setFavorites(await listFavorites());
@@ -221,21 +177,12 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = () => {
-      depthRef.current = getHistoryDepth();
-      setRoute(parseHash());
+      const next = parseHash();
+      const nextState = syncNavigationState(navRef.current, next);
+      navRef.current = nextState;
+      setActiveTab(nextState.activeTab);
+      setRoute(next);
     };
-
-    if (typeof (window.history.state as SouziHistoryState | null)?.souziDepth !== "number") {
-      window.history.replaceState(
-        {
-          ...(window.history.state as SouziHistoryState | null),
-          souziDepth: 0,
-        },
-        "",
-        window.location.href,
-      );
-      depthRef.current = 0;
-    }
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -325,23 +272,8 @@ export default function App() {
         return;
       }
 
-      if (!ready || setupMode) {
-        void CapacitorApp.exitApp();
-        return;
-      }
-      if (depthRef.current > 0) {
-        window.history.back();
-        return;
-      }
-      if (route.name === "search") {
-        void CapacitorApp.exitApp();
-        return;
-      }
-      navigateBack(
-        route.name === "import" || route.name === "downloads"
-          ? { name: "settings" }
-          : { name: "search" },
-      );
+      if (!ready || setupMode) return;
+      if (!goBack()) void CapacitorApp.exitApp();
     }).then((handle) => {
       if (disposed) {
         void handle.remove();
@@ -354,7 +286,7 @@ export default function App() {
       disposed = true;
       void listener?.remove();
     };
-  }, [navigateBack, ready, route, setupMode]);
+  }, [goBack, ready, setupMode]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -423,11 +355,7 @@ export default function App() {
   }, [finishSetup]);
 
   const savedCount = favorites.length + englishFavorites.length;
-  const isNavActive = (name: "search" | "saved" | "settings") =>
-    route.name === name ||
-    (name === "settings" && route.name === "downloads") ||
-    (name === "search" &&
-      (route.name === "entry" || route.name === "import"));
+  const isNavActive = (name: Tab) => activeTab === name;
 
   if (!ready) {
     return (
@@ -538,7 +466,7 @@ export default function App() {
               <EntryView
                 id={route.id}
                 favorites={favorites}
-                onBack={() => navigateBack({ name: "search" })}
+                onBack={handleBack}
                 onOpenEntry={(id) =>
                   navigate({ name: "entry", kind: "zh", id })
                 }
@@ -549,7 +477,7 @@ export default function App() {
               <EnglishEntryView
                 id={route.id}
                 favorites={englishFavorites}
-                onBack={() => navigateBack({ name: "search" })}
+                onBack={handleBack}
                 onFavoriteChange={() => void refreshEnglishFavorites()}
                 onToast={showToast}
               />
@@ -584,13 +512,13 @@ export default function App() {
               chineseMeta={meta}
               englishStatus={englishStatus}
               download={nativeDownload}
-              onBack={() => navigateBack({ name: "settings" })}
+              onBack={handleBack}
               onInstallEnglish={installEnglish}
               onImport={() => navigate({ name: "import" })}
             />
           ) : route.name === "about" ? (
             <AboutView
-              onBack={() => navigateBack({ name: "search" })}
+              onBack={handleBack}
               onOpenSettings={() => navigate({ name: "settings" })}
             />
           ) : (
@@ -598,7 +526,7 @@ export default function App() {
               meta={meta}
               onImported={() => void reloadDictionary()}
               onDone={() => navigate({ name: "search" }, { replace: true })}
-              onBack={() => navigateBack({ name: "settings" })}
+              onBack={handleBack}
               onToast={showToast}
             />
           )}
