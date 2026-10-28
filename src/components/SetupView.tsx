@@ -355,7 +355,7 @@ export function SetupView({
                     </a>
                     <button
                       type="button"
-                      className="button button-primary button-small"
+                      className="button button-primary"
                       onClick={() => inputRef.current?.click()}
                       disabled={importing}
                     >
@@ -435,7 +435,7 @@ export function SetupView({
           )}
           <div className="setup-privacy setup-privacy-center">
             <ShieldCheck size={14} />
-            Your words stay on this device. Nothing is sent to us.
+            Your words never leave this device.
           </div>
         </footer>
       </div>
