@@ -1,0 +1,66 @@
+name: F-Droid build check
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "app-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web assets (root base for Capacitor)
+        run: pnpm build
+
+      - name: Sync Capacitor
+        run: pnpm exec cap sync android
+
+      - name: Build release APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Upload F-Droid-style artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-build
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
