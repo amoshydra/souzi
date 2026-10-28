@@ -183,3 +183,27 @@ jobs:
           files: souzi-${{ steps.version.outputs.name }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - name: Build release AAB (for Google Play)
+        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        env:
+          KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
+          ANDROID_VERSION_CODE: ${{ steps.version.outputs.code }}
+          ANDROID_VERSION_NAME: ${{ steps.version.outputs.name }}
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew bundleRelease
+
+      - name: Upload to Google Play (internal track)
+        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.amoshydra.souzi
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
