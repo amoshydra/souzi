@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(DictionaryDownloaderPlugin.class);
         registerPlugin(FullEnglishDictionaryPlugin.class);
+        registerPlugin(SpeechPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

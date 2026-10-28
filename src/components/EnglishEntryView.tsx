@@ -85,9 +85,9 @@ export function EnglishEntryView({
     }
   };
 
-  const handleSpeak = () => {
+  const handleSpeak = async () => {
     if (!entry) return;
-    if (!speakEnglish(entry.word)) {
+    if (!(await speakEnglish(entry.word))) {
       onToast("Speech is not available on this device", "error");
     }
   };
