@@ -72,14 +72,16 @@ jobs:
           else
             git checkout --orphan gh-pages
             git rm --cached -r . >/dev/null 2>&1 || true
-            git clean -fdx
           fi
 
-          # Replace the app files but keep previously published packs.
+          # Replace the app files but keep previously published packs and the
+          # downloaded dist-pages artifact directory.
           if [ -d ecdict ]; then
             mv ecdict ecdict-keep
           fi
-          find . -mindepth 1 -maxdepth 1 ! -name ecdict-keep ! -name .git -exec rm -rf {} +
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name ecdict-keep ! -name dist-pages ! -name .git \
+            -exec rm -rf {} +
           if [ -d ecdict-keep ]; then
             mv ecdict-keep ecdict
           fi
@@ -115,6 +117,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ''
 
       - name: Install Android SDK packages
         run: |
