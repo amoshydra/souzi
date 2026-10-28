@@ -4,7 +4,9 @@ import { getEnglishEntriesByIds } from "./db";
 import { englishFrequency } from "./english";
 
 const HAN_WORD = /^[\u3400-\u9fff]{2,4}$/;
-const ENGLISH_WORD = /^[a-z]{4,8}$/;
+const ENGLISH_WORD = /^[a-z]{5,11}$/;
+const ADVANCED_ENGLISH_TAGS = ["gre", "toefl", "ielts"];
+const BASIC_ENGLISH_TAGS = ["zk", "gk", "cet4"];
 
 function sample<T>(values: T[], count: number): T[] {
   const copy = [...values];
@@ -23,17 +25,14 @@ function chineseExamples(
   const candidates = Object.entries(levels)
     .filter(
       ([word, level]) =>
-        level > 0 &&
-        level <= 3 &&
+        level >= 4 &&
+        level <= 6 &&
         HAN_WORD.test(word) &&
         Boolean(index.simp[word]?.length),
     )
-    .sort((a, b) => a[1] - b[1]);
+    .sort((a, b) => b[1] - a[1]);
 
-  const beginnerCandidates = candidates.filter(([, level]) => level <= 2);
-  const preferred =
-    beginnerCandidates.length >= count ? beginnerCandidates : candidates;
-  const unique = [...new Set(preferred.map(([word]) => word))];
+  const unique = [...new Set(candidates.map(([word]) => word))];
   if (unique.length >= count) return sample(unique, count);
 
   const fallback = index.keys.simp.filter((word) => HAN_WORD.test(word));
@@ -45,23 +44,42 @@ async function englishExamples(
   count: number,
 ): Promise<string[]> {
   try {
-    const entries = await getEnglishEntriesByIds(
-      Array.from({ length: 600 }, (_, index) => index + 1),
+    const ranges = [8001, 16001, 24001];
+    const chunks = await Promise.all(
+      ranges.map((start) =>
+        getEnglishEntriesByIds(
+          Array.from({ length: 400 }, (_, index) => start + index),
+        ),
+      ),
     );
-    const ranked = entries
-      .map((entry) => ({
-        frequency: englishFrequency(entry),
-        word: entry.word.trim().toLowerCase(),
-      }))
-      .filter(
-        ({ frequency, word }) =>
-          ENGLISH_WORD.test(word) &&
-          frequency > 0 &&
-          frequency < 30_000,
-      )
-      .sort((a, b) => a.frequency - b.frequency);
+    const entries = chunks.flat();
 
-    const words = [...new Set(ranked.slice(0, 40).map(({ word }) => word))];
+    const advanced = entries.filter((entry) => {
+      const tags = entry.tags ?? [];
+      return (
+        ENGLISH_WORD.test(entry.word.trim().toLowerCase()) &&
+        ADVANCED_ENGLISH_TAGS.some((tag) => tags.includes(tag)) &&
+        !BASIC_ENGLISH_TAGS.some((tag) => tags.includes(tag))
+      );
+    });
+    const advancedWords = [
+      ...new Set(advanced.map((entry) => entry.word.trim().toLowerCase())),
+    ];
+    if (advancedWords.length >= count) {
+      return sample(advancedWords, count);
+    }
+
+    const lessCommon = entries
+      .filter((entry) => {
+        const tags = entry.tags ?? [];
+        return (
+          ENGLISH_WORD.test(entry.word.trim().toLowerCase()) &&
+          !BASIC_ENGLISH_TAGS.some((tag) => tags.includes(tag)) &&
+          englishFrequency(entry) > 5_000
+        );
+      })
+      .map((entry) => entry.word.trim().toLowerCase());
+    const words = [...new Set([...advancedWords, ...lessCommon])];
     if (words.length >= count) return sample(words, count);
   } catch {
     // Fall through to the index-only fallback.
@@ -73,8 +91,8 @@ async function englishExamples(
 
 /**
  * Pick example lookups from the dictionaries actually installed on this device.
- * Chinese candidates come from HSK levels 1–3; English candidates come from the
- * most useful part of the bundled core.
+ * Chinese candidates come from HSK levels 4–6; English candidates come from the
+ * advanced GRE/TOEFL/IELTS portion of the bundled core.
  */
 export async function loadExampleQueries(
   index: SearchIndex | null,
