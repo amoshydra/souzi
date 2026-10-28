@@ -132,10 +132,10 @@ jobs:
 
       - name: Restore signing keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" \
+          echo "${{ secrets.KEYSTORE_BASE64 }}" \
             | base64 --decode \
-            > android/app/android-release.jks
-          echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/android/app/android-release.jks" >>"$GITHUB_ENV"
+            > android/app/android-release.keystore
+          echo "KEYSTORE_PATH=$GITHUB_WORKSPACE/android/app/android-release.keystore" >>"$GITHUB_ENV"
 
       - name: Compute version
         id: version
@@ -150,9 +150,9 @@ jobs:
 
       - name: Build release APK
         env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
           ANDROID_VERSION_CODE: ${{ steps.version.outputs.code }}
           ANDROID_VERSION_NAME: ${{ steps.version.outputs.name }}
         run: |

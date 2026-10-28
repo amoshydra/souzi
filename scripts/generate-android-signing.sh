@@ -4,13 +4,13 @@
 # Run from the repository root:
 #   scripts/generate-android-signing.sh [key-alias]
 #
-# Files land in .secrets/ (git-ignored). Copy the printed values into
-# GitHub → Settings → Secrets and variables → Actions → New repository secret:
-#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
-#   ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# You choose the keystore password (it is prompted for and confirmed, or can
+# be passed via the SOUZI_KEYSTORE_PASSWORD environment variable). It is
+# saved locally under .secrets/ so you do not have to remember it by hand.
 #
-# This script never uses interactive prompts. It generates two random
-# passwords itself and stores them under .secrets/.
+# Copy the printed values into GitHub → Settings → Secrets and variables →
+# Actions → New repository secret:
+#   KEYSTORE_BASE64, KEYSTORE_STORE_PASSWORD, KEYSTORE_KEY_ALIAS, KEYSTORE_KEY_PASSWORD
 
 set -euo pipefail
 
@@ -40,8 +40,27 @@ if [[ -f "$keystore" ]]; then
   key_password=$(cat "$keypass_file")
 else
   echo "Generating a new keystore…"
-  store_password=$(openssl rand -base64 24 | tr -d '\n')
+
+  # Let the user choose the password. It can also be provided non-interactively
+  # via the SOUZI_KEYSTORE_PASSWORD environment variable (no echo of it).
+  store_password=${SOUZI_KEYSTORE_PASSWORD:-}
+  if [[ -z "$store_password" ]]; then
+    printf 'Choose a keystore password: '
+    read -rs store_password
+    printf '\nRe-enter it to confirm:     '
+    read -rs store_password_check
+    printf '\n'
+    if [[ "$store_password" != "$store_password_check" ]]; then
+      echo "Passwords do not match — aborting before anything was written."
+      exit 1
+    fi
+    if [[ ${#store_password} -lt 8 ]]; then
+      echo "Password must be at least 8 characters — aborting."
+      exit 1
+    fi
+  fi
   key_password="$store_password"
+
   printf '%s' "$store_password" >"$storepass_file"
   printf '%s' "$key_password" >"$keypass_file"
   chmod 600 "$storepass_file" "$keypass_file"
@@ -68,8 +87,6 @@ fi
 printf '%s' "$(keystore_base64)" >"$secrets_dir/keystore.b64"
 chmod 600 "$secrets_dir/keystore.b64"
 
-k64=$(cat "$secrets_dir/keystore.b64")
-
 cat <<EOF
 
 ========================================================================
@@ -82,17 +99,17 @@ Passwords saved to:
 Add these four GitHub repository secrets (Settings → Secrets and
 variables → Actions):
 
-  ANDROID_KEYSTORE_BASE64   see .secrets/keystore.b64 (large, not printed)
-  ANDROID_KEYSTORE_PASSWORD $store_password
-  ANDROID_KEY_ALIAS         $alias_name
-  ANDROID_KEY_PASSWORD      $key_password
+  KEYSTORE_BASE64           see .secrets/keystore.b64 (large, not printed)
+  KEYSTORE_STORE_PASSWORD   (what you just typed)
+  KEYSTORE_KEY_ALIAS        $alias_name
+  KEYSTORE_KEY_PASSWORD     (same as the store password)
 
 If you have the GitHub CLI installed you can set them directly:
 
-  gh secret set ANDROID_KEYSTORE_BASE64 < .secrets/keystore.b64
-  gh secret set ANDROID_KEYSTORE_PASSWORD --body '$store_password'
-  gh secret set ANDROID_KEY_ALIAS --body '$alias_name'
-  gh secret set ANDROID_KEY_PASSWORD --body '$key_password'
+  gh secret set KEYSTORE_BASE64 < .secrets/keystore.b64
+  gh secret set KEYSTORE_STORE_PASSWORD --body '<your password>'
+  gh secret set KEYSTORE_KEY_ALIAS --body '$alias_name'
+  gh secret set KEYSTORE_KEY_PASSWORD --body '<your password>'
 
 IMPORTANT: back up $keystore plus the two password files in a password
 manager. Losing the keystore permanently locks out in-place app updates
