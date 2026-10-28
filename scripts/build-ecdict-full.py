@@ -65,7 +65,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build(input_path: Path, output_dir: Path, version: int, base_url: str, mirror_url: str, source_commit: str) -> None:
+def build(input_path: Path, output_dir: Path, version: int, base_url: str, mirror_url: str, source_commit: str, pack_url: str | None) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     version_dir = output_dir / f"v{version}"
     version_dir.mkdir(parents=True, exist_ok=True)
@@ -200,7 +200,7 @@ def build(input_path: Path, output_dir: Path, version: int, base_url: str, mirro
         "version": version,
         "entries": count,
         "file": gz_path.name,
-        "url": f"{base_url.rstrip('/')}/v{version}/{gz_path.name}",
+        "url": pack_url or f"{base_url.rstrip('/')}/v{version}/{gz_path.name}",
         "mirror": mirror_url or None,
         "bytes": gz_path.stat().st_size,
         "sha256": digest,
@@ -228,6 +228,11 @@ def main() -> None:
     )
     parser.add_argument("--mirror-url", default="")
     parser.add_argument(
+        "--pack-url",
+        help="Explicit public URL of the .sqlite.gz artifact; overrides --base-url.",
+        default="",
+    )
+    parser.add_argument(
         "--source-commit",
         default=os.environ.get("ECDICT_SOURCE_COMMIT", ""),
     )
@@ -239,6 +244,7 @@ def main() -> None:
         args.base_url,
         args.mirror_url,
         args.source_commit,
+        args.pack_url or None,
     )
 
 

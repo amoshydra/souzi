@@ -50,11 +50,12 @@ jobs:
 
       - name: Build SQLite pack
         run: |
+          pack_url="https://github.com/amoshydra/souzi/releases/download/dict-v${{ steps.version.outputs.version }}/ecdict-full-v${{ steps.version.outputs.version }}.sqlite.gz"
           python3 scripts/build-ecdict-full.py \
             --input ecdict.csv \
             --output-dir build/ecdict \
             --version "${{ steps.version.outputs.version }}" \
-            --base-url https://amoshydra.github.io/souzi/ecdict \
+            --pack-url "$pack_url" \
             --source-commit "$ECDICT_REF"
 
       - name: Inspect output
@@ -65,7 +66,7 @@ jobs:
         with:
           name: ecdict-pack-v${{ steps.version.outputs.version }}
           path: |
-            build/ecdict/v${{ steps.version.outputs.version }}/
+            build/ecdict/v${{ steps.version.outputs.version }}/ecdict-full-v${{ steps.version.outputs.version }}.sqlite.gz
             build/ecdict/manifest.json
           if-no-files-found: error
 
@@ -86,7 +87,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy-pages-data:
+  publish-manifest:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -99,22 +100,22 @@ jobs:
           name: ecdict-pack-v${{ needs.build.outputs.version }}
           path: build/ecdict
 
-      - name: Deploy to gh-pages (preserve other versions)
+      - name: Publish manifest to dict-manifest branch
         run: |
           git config user.name "souzi-bot"
           git config user.email "actions@users.noreply.github.com"
 
-          if git ls-remote --exit-code origin gh-pages >/dev/null 2>&1; then
-            git fetch origin gh-pages --depth 1
-            git checkout gh-pages
-            git pull --ff-only origin gh-pages || true
-          else
-            git checkout --orphan gh-pages
-            git rm --cached -r . >/dev/null 2>&1 || true
-          fi
+          site_dir="$RUNNER_TEMP/manifest-site"
+          rm -rf "$site_dir"
+          mkdir -p "$site_dir/ecdict"
+          cp build/ecdict/manifest.json "$site_dir/ecdict/manifest.json"
 
-          mkdir -p ecdict
-          cp -r build/ecdict/. ecdict/
-          git add ecdict
-          git commit -m "deploy dictionary pack v${{ needs.build.outputs.version }}" --allow-empty
-          git push origin gh-pages
+          export GIT_WORK_TREE="$site_dir"
+          export GIT_INDEX_FILE="$RUNNER_TEMP/manifest-index"
+          git read-tree --empty
+          git add -A
+          tree=$(git write-tree)
+          commit=$(git commit-tree "$tree" \
+            -m "manifest for dict-v${{ needs.build.outputs.version }}")
+          git update-ref refs/heads/dict-manifest "$commit"
+          git push --force origin refs/heads/dict-manifest:dict-manifest

@@ -1,12 +1,14 @@
 /**
  * Static data endpoints for the optional full dictionary pack.
  *
- * The manifest is the stable URL. It points at an immutable, versioned pack.
- * Keep this in sync with `.github/workflows/dictionary.yml`.
+ * The manifest lives on the `dict-manifest` branch so the stable raw URL works
+ * with CORS (GitHub Releases assets do not) and is re-pointed each time a new
+ * `dict-vN` release is published. The pack itself is served straight from that
+ * Release asset.
  */
 export const FULL_ECDICT_MANIFEST_URL =
   import.meta.env.VITE_FULL_ECDICT_MANIFEST_URL ??
-  "https://amoshydra.github.io/souzi/ecdict/manifest.json";
+  "https://raw.githubusercontent.com/amoshydra/souzi/dict-manifest/ecdict/manifest.json";
 
 export type FullEnglishManifest = {
   schema: number;
