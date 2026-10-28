@@ -27,6 +27,8 @@ export function lemmaCandidates(word: string): string[] {
   }
 
   if (word.endsWith("ly")) add(word.slice(0, -2));
+  if (word.endsWith("ily")) add(`${word.slice(0, -3)}y`);
+  if (word.endsWith("y")) add(`${word.slice(0, -1)}ily`);
   if (word.endsWith("er")) add(word.slice(0, -2));
   if (word.endsWith("est")) add(word.slice(0, -3));
 

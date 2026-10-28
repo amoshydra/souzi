@@ -5,6 +5,7 @@ import {
   normalizeEnglishWord,
   searchEnglishIndex,
 } from "../lib/english";
+import { lemmaCandidates } from "../lib/lemma";
 
 function entry(overrides: Partial<EnglishEntry>): EnglishEntry {
   return {
@@ -64,6 +65,13 @@ describe("normalizeEnglishWord", () => {
   it("normalizes case, spaces, and curly apostrophes", () => {
     expect(normalizeEnglishWord("  New   York ")).toBe("new york");
     expect(normalizeEnglishWord("don’t")).toBe("don't");
+  });
+});
+
+describe("lemmaCandidates", () => {
+  it("links y and ily adjective forms", () => {
+    expect(lemmaCandidates("body")).toContain("bodily");
+    expect(lemmaCandidates("bodily")).toContain("body");
   });
 });
 

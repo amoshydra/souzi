@@ -22,6 +22,7 @@ import {
 import { englishFrequency, searchEnglishIndex } from "../lib/english";
 import { loadExampleQueries } from "../lib/examples";
 import { formatCount } from "../lib/format";
+import { lemmaCandidates } from "../lib/lemma";
 import { searchIndex } from "../lib/search";
 import { EnglishResultCard } from "./EnglishResultCard";
 import { ResultCard } from "./ResultCard";
@@ -184,23 +185,41 @@ export function SearchPage({
       if (token !== tokenRef.current) return;
 
       const normalizedQuery = trimmed.toLowerCase();
+      const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+      const definitionText = (entry: Entry) =>
+        entry.definitions.join(" ").toLowerCase().replace(/\s+/g, " ");
       const phraseBoost = (entry: Entry): number => {
         const first = entry.definitions[0]?.toLowerCase().trim();
+        const definitions = entry.definitions.map((definition) =>
+          definition.toLowerCase().trim(),
+        );
         if (first === normalizedQuery) return -1;
-        if (
-          entry.definitions.some(
-            (definition) => definition.toLowerCase().trim() === normalizedQuery,
-          )
-        ) {
+        if (definitions.some((definition) => definition === normalizedQuery)) {
           return -0.5;
         }
+        if (
+          queryWords.length > 1 &&
+          definitions.some((definition) =>
+            definition.includes(normalizedQuery),
+          )
+        ) {
+          return -0.25;
+        }
         return 0;
+      };
+      const matchesEveryWord = (entry: Entry): boolean => {
+        const words = new Set(
+          definitionText(entry).match(/[a-z][a-z'-]*/g) ?? [],
+        );
+        return queryWords.every((word) =>
+          lemmaCandidates(word).some((candidate) => words.has(candidate)),
+        );
       };
 
       const chineseById = new Map(
         chineseEntries.map((entry) => [entry.id, entry]),
       );
-      const nextChinese = chineseCandidates.flatMap((candidate) => {
+      let nextChinese = chineseCandidates.flatMap((candidate) => {
         const entry = chineseById.get(candidate.id);
         return entry
           ? [
@@ -212,6 +231,17 @@ export function SearchPage({
             ]
           : [];
       });
+
+      // A multi-word lookup is usually a phrase. If any entries match every
+      // word, keep those and drop entries that only match one term.
+      if (!chineseOnly && queryWords.length > 1) {
+        const phraseMatches = nextChinese.filter((hit) =>
+          matchesEveryWord(hit.entry),
+        );
+        if (phraseMatches.length > 0) {
+          nextChinese = phraseMatches;
+        }
+      }
 
       nextChinese.sort((a, b) => {
         const lengthA = a.rank >= 2 ? a.entry.simp.length : 0;
