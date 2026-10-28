@@ -6,19 +6,30 @@ An offline-first English–Chinese dictionary for web/PWA and Android. It bundle
 
 ## Screens
 
-| Home | Search |
-| --- | --- |
-| ![Souzi home screen](docs/home-desktop.png) | ![Searching for bank](docs/search-desktop.png) |
+All screenshots are from the mobile layout (390×844).
 
-| Entry | Mobile |
-| --- | --- |
-| ![The entry for 银行](docs/entry-desktop.png) | ![Souzi on a phone](docs/home-mobile.png) |
-
-| English search | English entry |
-| --- | --- |
-| ![Searching for hello in both directions](docs/english-search.jpg) | ![The English entry for bank](docs/english-entry.jpg) |
-
-<p align="center"><img src="docs/about.jpg" alt="About Souzi" width="720"></p>
+<table>
+  <tr>
+    <td><img src="docs/home-mobile.png" alt="Home" width="220"></td>
+    <td><img src="docs/english-search.png" alt="English search" width="220"></td>
+    <td><img src="docs/english-entry.png" alt="English entry" width="220"></td>
+  </tr>
+  <tr>
+    <td align="center">Home</td>
+    <td align="center">English search</td>
+    <td align="center">English entry</td>
+  </tr>
+  <tr>
+    <td><img src="docs/settings-mobile.png" alt="Settings" width="220"></td>
+    <td><img src="docs/downloads-mobile.png" alt="Downloads" width="220"></td>
+    <td><img src="docs/about-mobile.png" alt="About" width="220"></td>
+  </tr>
+  <tr>
+    <td align="center">Settings</td>
+    <td align="center">Downloads</td>
+    <td align="center">About</td>
+  </tr>
+</table>
 
 ## What works
 
