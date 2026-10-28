@@ -18,6 +18,7 @@ import {
   listHistory,
 } from "../lib/db";
 import { englishFrequency, searchEnglishIndex } from "../lib/english";
+import { loadExampleQueries } from "../lib/examples";
 import { formatCount } from "../lib/format";
 import { searchIndex } from "../lib/search";
 import { EnglishResultCard } from "./EnglishResultCard";
@@ -71,6 +72,7 @@ export function SearchPage({
   const [englishHits, setEnglishHits] = useState<EnglishHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [history, setHistory] = useState<RecentItem[]>([]);
+  const [examples, setExamples] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const tokenRef = useRef(0);
 
@@ -94,6 +96,17 @@ export function SearchPage({
       // Session storage can be unavailable in private modes.
     }
   }, [query]);
+
+  useEffect(() => {
+    let active = true;
+    setExamples([]);
+    void loadExampleQueries(index, englishIndex).then((next) => {
+      if (active) setExamples(next);
+    });
+    return () => {
+      active = false;
+    };
+  }, [index, englishIndex]);
 
   useEffect(() => {
     let active = true;
@@ -268,10 +281,10 @@ export function SearchPage({
           )}
         </div>
 
-        {!hasQuery && (
+        {!hasQuery && examples.length > 0 && (
           <div className="search-hint">
             <span className="hint-label">Try</span>
-            {["银行", "hello", "中国", "book"].map((example) => (
+            {examples.map((example) => (
               <button
                 type="button"
                 className="hint-chip"
@@ -337,9 +350,9 @@ export function SearchPage({
                   ? "The English dictionary is being installed. Please wait."
                   : "Try a Chinese character, an English word, or how the word sounds."}
               </p>
-              {!englishLoading && (
+              {!englishLoading && examples.length > 0 && (
                 <div className="empty-examples">
-                  {["中国", "hello", "book"].map((example) => (
+                  {examples.map((example) => (
                     <button
                       type="button"
                       className="hint-chip"
