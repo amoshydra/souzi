@@ -3210,7 +3210,7 @@ html.keyboard-open .bottom-nav {
   }
 
   .setup-shell {
-    width: calc(100% - 1.75rem);
+    width: calc(100% - 2 * min(1.75rem, 8vw));
     padding: 1.75rem 0 1.625rem;
   }
 
@@ -3223,7 +3223,7 @@ html.keyboard-open .bottom-nav {
   }
 
   .setup-header h1 {
-    font-size: min(2.125rem, 14vw);
+    font-size: min(2.125rem, 12vw);
   }
 
   .setup-actions {
