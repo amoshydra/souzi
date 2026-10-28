@@ -16,6 +16,7 @@ export interface NativeDownloadProgress {
   totalBytes: number;
   reason: number;
   localUri: string;
+  localPath: string;
 }
 
 export interface NativeDownloadedFile {

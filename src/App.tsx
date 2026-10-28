@@ -26,8 +26,11 @@ import {
   ECDICT_CORE_VERSION,
   ensureEnglishCore,
 } from "./lib/english-core";
+import type { FullEnglishMeta } from "./types";
 import { useKeyboardViewport } from "./hooks/useKeyboardViewport";
 import { useNativeCedictDownload } from "./hooks/useNativeCedictDownload";
+import { useFullEnglishDownload } from "./hooks/useFullEnglishDownload";
+import { getFullEnglishStatus, removeFullEnglishPack } from "./lib/full-english";
 import { ChineseDownloadBanner } from "./components/ChineseDownloadBanner";
 import { SearchPage } from "./components/SearchPage";
 import { EntryView } from "./components/EntryView";
@@ -98,6 +101,8 @@ export default function App() {
   const [englishFavorites, setEnglishFavorites] = useState<EnglishSavedWord[]>(
     [],
   );
+  const [fullEnglishMeta, setFullEnglishMeta] =
+    useState<FullEnglishMeta | null>(null);
   const [setupMode, setSetupMode] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
@@ -175,6 +180,28 @@ export default function App() {
     onInstalled: handleChineseInstalled,
   });
 
+  const handleFullEnglishInstalled = useCallback(
+    async (installedMeta: FullEnglishMeta) => {
+      setFullEnglishMeta(installedMeta);
+      showToast("Full English dictionary is ready");
+    },
+    [showToast],
+  );
+
+  const fullEnglishDownload = useFullEnglishDownload({
+    onInstalled: handleFullEnglishInstalled,
+  });
+
+  const removeFullEnglish = useCallback(async () => {
+    try {
+      await removeFullEnglishPack();
+      setFullEnglishMeta(null);
+      showToast("Full English dictionary removed");
+    } catch {
+      showToast("The full dictionary could not be removed", "error");
+    }
+  }, [showToast]);
+
   useEffect(() => {
     const handlePopState = () => {
       const next = parseHash();
@@ -198,14 +225,17 @@ export default function App() {
         currentEnglish,
         currentFavorites,
         currentEnglishFavorites,
+        currentFullEnglish,
       ] = await Promise.all([
         getDictionaryMeta(),
         loadSearchIndex(),
         loadEnglishCore(),
         listFavorites(),
         listEnglishFavorites(),
+        getFullEnglishStatus(),
       ]);
       if (!active) return;
+      setFullEnglishMeta(currentFullEnglish);
 
       const setupChoice = getSetupChoice();
       const chineseIsReady =
@@ -453,6 +483,7 @@ export default function App() {
               index={index}
               englishIndex={englishIndex}
               englishStatus={englishStatus}
+              fullEnglish={fullEnglishMeta !== null}
               onOpenEntry={(id) =>
                 navigate({ name: "entry", kind: "zh", id })
               }
@@ -477,6 +508,7 @@ export default function App() {
               <EnglishEntryView
                 id={route.id}
                 favorites={englishFavorites}
+                fullEnglish={fullEnglishMeta !== null}
                 onBack={handleBack}
                 onFavoriteChange={() => void refreshEnglishFavorites()}
                 onToast={showToast}
@@ -512,6 +544,9 @@ export default function App() {
               chineseMeta={meta}
               englishStatus={englishStatus}
               download={nativeDownload}
+              fullEnglishMeta={fullEnglishMeta}
+              fullDownload={fullEnglishDownload}
+              onRemoveFullEnglish={() => void removeFullEnglish()}
               onBack={handleBack}
               onInstallEnglish={installEnglish}
               onImport={() => navigate({ name: "import" })}

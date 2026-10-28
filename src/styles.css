@@ -2874,6 +2874,10 @@ html.keyboard-open .bottom-nav {
   line-height: var(--type-body-line);
 }
 
+.download-error {
+  color: var(--vermilion);
+}
+
 .download-progress-head {
   display: flex;
   justify-content: space-between;

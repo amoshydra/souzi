@@ -2,7 +2,12 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+// The Android/Capacitor build serves the app from "/".
+// The GitHub Pages build sets VITE_BASE_PATH=/souzi/.
+const base = process.env.VITE_BASE_PATH || "/";
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -13,27 +18,27 @@ export default defineConfig({
         short_name: "Souzi",
         description:
           "An offline-first English–Chinese dictionary with a bundled ECDICT core. Import CC-CEDICT for full Chinese coverage.",
-        id: "/",
+        id: base,
         lang: "en",
         categories: ["education", "reference"],
         theme_color: "#1f4d40",
         background_color: "#f7f3e8",
         display: "standalone",
-        start_url: "/",
-        scope: "/",
+        start_url: base,
+        scope: base,
         icons: [
           {
-            src: "/icons/icon-192.png",
+            src: `${base}icons/icon-192.png`,
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "/icons/icon-512.png",
+            src: `${base}icons/icon-512.png`,
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "/icons/icon-maskable-512.png",
+            src: `${base}icons/icon-maskable-512.png`,
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
@@ -53,6 +58,7 @@ export default defineConfig({
   ],
   build: {
     target: "es2022",
+    outDir: process.env.VITE_OUT_DIR || "dist",
   },
   server: {
     host: "127.0.0.1",

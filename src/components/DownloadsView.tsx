@@ -11,13 +11,21 @@ import {
   X,
 } from "lucide-react";
 import type { NativeCedictDownload } from "../hooks/useNativeCedictDownload";
+import type { FullEnglishDownload } from "../hooks/useFullEnglishDownload";
 import { getActivePercent } from "../lib/download-progress";
-import type { DictionaryMeta, EnglishCoreStatus } from "../types";
+import type {
+  DictionaryMeta,
+  EnglishCoreStatus,
+  FullEnglishMeta,
+} from "../types";
 
 export function DownloadsView({
   chineseMeta,
   englishStatus,
   download,
+  fullEnglishMeta,
+  fullDownload,
+  onRemoveFullEnglish,
   onBack,
   onInstallEnglish,
   onImport,
@@ -25,6 +33,9 @@ export function DownloadsView({
   chineseMeta: DictionaryMeta | null;
   englishStatus: EnglishCoreStatus;
   download: NativeCedictDownload;
+  fullEnglishMeta: FullEnglishMeta | null;
+  fullDownload: FullEnglishDownload;
+  onRemoveFullEnglish: () => void;
   onBack: () => void;
   onInstallEnglish: () => void;
   onImport: () => void;
@@ -35,6 +46,10 @@ export function DownloadsView({
   const waitingForWifi =
     download.downloadStatus === "waiting" ||
     (download.downloadStatus === "pending" && download.wifiOnly);
+  const fullPercent = getActivePercent(fullDownload);
+  const fullWaitingForWifi =
+    fullDownload.downloadStatus === "waiting" ||
+    (fullDownload.downloadStatus === "pending" && fullDownload.wifiOnly);
 
   const chineseStatus = chineseReady
     ? "Ready"
@@ -86,6 +101,188 @@ export function DownloadsView({
             </button>
           )}
         </div>
+      </section>
+
+      <section className="settings-card download-card">
+        <div className="download-card-head">
+          <div>
+            <h2>Full English dictionary</h2>
+            <p>770,000 English words.</p>
+          </div>
+          <span
+            className={`status-pill ${
+              fullEnglishMeta ? "status-good" : "status-muted"
+            }`}
+          >
+            {fullEnglishMeta
+              ? "Ready"
+              : fullDownload.phase === "error"
+                ? "Stopped"
+                : fullDownload.phase === "installing"
+                  ? "Preparing"
+                  : fullDownload.phase === "paused"
+                    ? "Paused"
+                    : fullDownload.phase === "checking" ||
+                        fullDownload.phase === "downloading"
+                      ? "Downloading"
+                      : "Optional"}
+          </span>
+        </div>
+
+        {fullEnglishMeta ? (
+          <div className="download-card-body">
+            <p className="download-ready">
+              <CheckCircle2 size={17} />
+              Downloaded and ready.
+            </p>
+            <div className="download-actions">
+              <button
+                type="button"
+                className="button button-secondary button-small"
+                onClick={onRemoveFullEnglish}
+              >
+                <X size={15} />
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : native ? (
+          <div className="download-card-body">
+            {fullDownload.phase === "idle" ? (
+              <>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={() => void fullDownload.start()}
+                >
+                  Download
+                </button>
+                {fullDownload.error && (
+                  <p className="download-state download-error">
+                    {fullDownload.error}
+                  </p>
+                )}
+              </>
+            ) : fullDownload.phase === "error" ? (
+              <>
+                <p className="download-state">Download stopped.</p>
+                <p className="download-state download-error">
+                  {fullDownload.error}
+                </p>
+                <div className="download-actions">
+                  <button
+                    type="button"
+                    className="button button-primary button-small"
+                    onClick={() => void fullDownload.retry()}
+                  >
+                    <RefreshCw size={15} />
+                    Try again
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-secondary button-small"
+                    onClick={() => void fullDownload.cancel()}
+                  >
+                    <X size={15} />
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="download-progress-head">
+                  <span>
+                    {fullDownload.phase === "installing"
+                      ? "Preparing dictionary…"
+                      : fullDownload.phase === "checking"
+                        ? "Starting download…"
+                        : fullDownload.phase === "paused"
+                          ? "Paused."
+                          : fullWaitingForWifi
+                            ? "Waiting for Wi-Fi…"
+                            : fullDownload.phase === "done"
+                              ? "Download complete."
+                              : "Downloading dictionary…"}
+                  </span>
+                  {fullPercent !== null && <span>{fullPercent}%</span>}
+                </div>
+                <div
+                  className={`progress-track ${
+                    fullPercent === null ||
+                    fullDownload.phase === "checking"
+                      ? "progress-indeterminate"
+                      : ""
+                  }`}
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={fullPercent ?? undefined}
+                  aria-label="Full English dictionary download progress"
+                >
+                  <div
+                    className="progress-fill"
+                    style={
+                      fullPercent !== null
+                        ? { width: `${fullPercent}%` }
+                        : undefined
+                    }
+                  />
+                </div>
+
+                {fullDownload.phase !== "installing" && (
+                  <div className="download-actions">
+                    {fullDownload.phase === "paused" ? (
+                      <button
+                        type="button"
+                        className="button button-primary button-small"
+                        onClick={() => void fullDownload.resume()}
+                      >
+                        <Play size={15} />
+                        Continue
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="button button-secondary button-small"
+                        onClick={() => void fullDownload.pause()}
+                        disabled={fullDownload.phase === "checking"}
+                      >
+                        <Pause size={15} />
+                        Pause
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="button button-secondary button-small"
+                      onClick={() => void fullDownload.cancel()}
+                    >
+                      <X size={15} />
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                <label className="setup-wifi-toggle">
+                  <input
+                    type="checkbox"
+                    checked={fullDownload.wifiOnly}
+                    onChange={(event) =>
+                      fullDownload.setWifiOnly(event.target.checked)
+                    }
+                  />
+                  <Wifi size={14} />
+                  Wi-Fi only
+                </label>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="download-card-body">
+            <p className="download-state">
+              The full English dictionary can be downloaded in the Android app.
+            </p>
+          </div>
+        )}
       </section>
 
       <section className="settings-card download-card">

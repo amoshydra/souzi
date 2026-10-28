@@ -11,3 +11,5 @@ pnpm-debug.log*
 *.keystore
 key.properties
 android/.kotlin/
+/build
+/.secrets

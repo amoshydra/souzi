@@ -5,6 +5,7 @@ import type {
   EnglishEntry,
   EnglishHistoryWord,
   EnglishMatchKind,
+  EnglishSearchCandidate,
   EnglishSearchIndex,
   Entry,
   HistoryWord,
@@ -25,6 +26,11 @@ import {
   suggestEnglishSpellings,
 } from "../lib/english";
 import { loadExampleQueries } from "../lib/examples";
+import {
+  getFullEnglishEntriesByIds,
+  searchFullEnglish,
+  suggestFullEnglishSpellings,
+} from "../lib/full-english";
 import { formatCount } from "../lib/format";
 import { lemmaCandidates } from "../lib/lemma";
 import { searchIndex, suggestPinyinSpellings } from "../lib/search";
@@ -55,6 +61,7 @@ export function SearchPage({
   index,
   englishIndex,
   englishStatus,
+  fullEnglish,
   onOpenEntry,
   onOpenEnglish,
   onOpenSimp,
@@ -64,6 +71,7 @@ export function SearchPage({
   index: SearchIndex | null;
   englishIndex: EnglishSearchIndex | null;
   englishStatus: EnglishCoreStatus;
+  fullEnglish: boolean;
   onOpenEntry: (id: number) => void;
   onOpenEnglish: (id: number) => void;
   onOpenSimp: (simp: string) => void;
@@ -163,7 +171,7 @@ export function SearchPage({
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (!trimmed || (!index && !englishIndex)) {
+    if (!trimmed || (!index && !englishIndex && !fullEnglish)) {
       setChineseHits([]);
       setEnglishHits([]);
       setSpellingSuggestion({ query: "", words: [] });
@@ -180,17 +188,24 @@ export function SearchPage({
         TONE_MARK.test(trimmed) || NUMERIC_PINYIN.test(trimmed);
       const chineseOnly = han || pinyinHint;
       const chineseCandidates = index ? searchIndex(index, trimmed) : [];
-      const englishCandidates =
-        !chineseOnly && englishIndex
-          ? searchEnglishIndex(englishIndex, trimmed)
-          : [];
+      const englishCandidates: EnglishSearchCandidate[] = !chineseOnly
+        ? fullEnglish
+          ? await searchFullEnglish(trimmed).catch(() => [])
+          : englishIndex
+            ? searchEnglishIndex(englishIndex, trimmed)
+            : []
+        : [];
 
       const [chineseEntries, englishEntries] = await Promise.all([
         getEntriesByIds(chineseCandidates.map((candidate) => candidate.id)),
         englishCandidates.length > 0
-          ? getEnglishEntriesByIds(
-              englishCandidates.map((candidate) => candidate.id),
-            )
+          ? fullEnglish
+            ? getFullEnglishEntriesByIds(
+                englishCandidates.map((candidate) => candidate.id),
+              )
+            : getEnglishEntriesByIds(
+                englishCandidates.map((candidate) => candidate.id),
+              )
           : Promise.resolve([]),
       ]);
       if (token !== tokenRef.current) return;
@@ -204,7 +219,13 @@ export function SearchPage({
       );
       const suggestions = new Set<string>();
       if (!hasStrongEnglishMatch && !hasStrongPinyinMatch) {
-        if (englishIndex) {
+        if (fullEnglish) {
+          for (const suggestion of await suggestFullEnglishSpellings(
+            trimmed,
+          )) {
+            suggestions.add(suggestion);
+          }
+        } else if (englishIndex) {
           for (const suggestion of suggestEnglishSpellings(
             englishIndex,
             trimmed,
@@ -319,7 +340,7 @@ export function SearchPage({
     }, 120);
 
     return () => window.clearTimeout(timer);
-  }, [query, index, englishIndex]);
+  }, [query, index, englishIndex, fullEnglish]);
 
   const setExample = (value: string) => {
     setQuery(value);

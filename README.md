@@ -171,9 +171,18 @@ Any static host works. Cloudflare Pages, Netlify, and GitHub Pages are fine. Use
 
 Do not add a server-side proxy that downloads CC-CEDICT on behalf of users. That turns Souzi into a distributor. Keep the import local.
 
+### GitHub repo setup (amoshydra/souzi)
+
+1. **Pages**: Settings → Pages → Build and deployment → Source **Deploy from a branch**, branch `gh-pages`, folder `/ (root)`. The `deploy.yml` workflow pushes the web app there (`https://amoshydra.github.io/souzi/`) and preserves previously published dictionary packs in `ecdict/`.
+2. **Actions**: Settings → Actions → General → Workflow permissions: **Read and write permissions** (needed to publish the `gh-pages` branch and create releases). `GITHUB_TOKEN` is the only token used — no othertoken secret is required for Pages or the dictionary pack.
+3. **Release signing**: run `scripts/generate-android-signing.sh` once, then add the four printed repository secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`). Back up the generated keystore; losing it permanently blocks app updates.
+4. **Releases**: push a tag `app-v0.1.1` to build the signed APK and attach it to a GitHub Release for Obtainium. Push `dict-v2` or run the `Dictionary pack` workflow to build/publish a new full ECDICT pack (`ecdict-full-v2.sqlite.gz` plus manifest) as both a Release asset and Pages data; never overwrite an already published version — always bump `vN`.
+5. **Obtainium**: point it at `https://github.com/amoshydra/souzi` (release APK assets match `souzi-*`), or add the repo URL directly.
+
 ## Roadmap
 
 - Full ECDICT import for power users, plus common phrasal verbs and idioms.
+- Full English dictionary support in the PWA (currently Android native SQLite; the web build ships the 30k core).
 - Example sentence pairs (Tatoeba).
 - Stroke-order data.
 - Handwriting and OCR.

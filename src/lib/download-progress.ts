@@ -1,8 +1,7 @@
-import type { NativeCedictDownload } from "../hooks/useNativeCedictDownload";
-
-export function getDownloadPercent(
-  download: NativeCedictDownload,
-): number | null {
+export function getDownloadPercent(download: {
+  totalBytes: number;
+  bytesDownloaded: number;
+}): number | null {
   if (download.totalBytes <= 0) return null;
   return Math.min(
     100,
@@ -10,8 +9,15 @@ export function getDownloadPercent(
   );
 }
 
+export type DownloadWithInstallProgress = {
+  phase: string;
+  importProgress?: { current: number; total: number } | null;
+  totalBytes: number;
+  bytesDownloaded: number;
+};
+
 export function getInstallPercent(
-  download: NativeCedictDownload,
+  download: DownloadWithInstallProgress,
 ): number | null {
   const progress = download.importProgress;
   if (!progress || progress.total <= 1) return null;
@@ -22,7 +28,7 @@ export function getInstallPercent(
 }
 
 export function getActivePercent(
-  download: NativeCedictDownload,
+  download: DownloadWithInstallProgress,
 ): number | null {
   return download.phase === "installing"
     ? getInstallPercent(download)

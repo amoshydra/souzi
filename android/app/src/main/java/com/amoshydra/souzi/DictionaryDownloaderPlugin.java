@@ -88,6 +88,7 @@ public class DictionaryDownloaderPlugin extends Plugin {
         result.put("totalBytes", task.totalBytes);
         result.put("reason", task.error.isEmpty() ? 0 : 1);
         result.put("localUri", "file://" + task.file.getAbsolutePath());
+        result.put("localPath", task.file.getAbsolutePath());
         call.resolve(result);
     }
 

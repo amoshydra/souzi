@@ -95,11 +95,7 @@ export function buildEnglishIndex(entries: EnglishEntry[]): EnglishSearchIndex {
   };
 }
 
-export function suggestEnglishSpellings(
-  index: EnglishSearchIndex,
-  rawQuery: string,
-  limit = 3,
-): string[] {
+export function englishTypoKeys(rawQuery: string): string[] {
   const query = normalizeEnglishWord(rawQuery);
   if (!TYPO_QUERY.test(query)) return [];
 
@@ -132,7 +128,18 @@ export function suggestEnglishSpellings(
     }
   }
 
-  const existing = [...candidates].filter(
+  return [...candidates];
+}
+
+export function suggestEnglishSpellings(
+  index: EnglishSearchIndex,
+  rawQuery: string,
+  limit = 3,
+): string[] {
+  const query = normalizeEnglishWord(rawQuery);
+  if (!TYPO_QUERY.test(query)) return [];
+
+  const existing = englishTypoKeys(query).filter(
     (candidate) =>
       Boolean(index.words[candidate]?.length) ||
       Boolean(index.variants[candidate]?.length),

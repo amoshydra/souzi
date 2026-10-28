@@ -12,17 +12,20 @@ import {
   getEnglishEntriesByIds,
   toggleEnglishFavorite,
 } from "../lib/db";
+import { getFullEnglishEntriesByIds } from "../lib/full-english";
 import { speakEnglish } from "../lib/speech";
 
 export function EnglishEntryView({
   id,
   favorites,
+  fullEnglish,
   onBack,
   onFavoriteChange,
   onToast,
 }: {
   id: number;
   favorites: EnglishSavedWord[];
+  fullEnglish: boolean;
   onBack: () => void;
   onFavoriteChange: () => void;
   onToast: (message: string, tone?: "default" | "error") => void;
@@ -36,7 +39,9 @@ export function EnglishEntryView({
     setEntry(null);
 
     async function load() {
-      const [found] = await getEnglishEntriesByIds([id]);
+      const [found] = fullEnglish
+        ? await getFullEnglishEntriesByIds([id])
+        : await getEnglishEntriesByIds([id]);
       if (!active) return;
       setLoading(false);
       if (!found) return;
@@ -48,7 +53,7 @@ export function EnglishEntryView({
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, fullEnglish]);
 
   const starred = entry
     ? favorites.some(

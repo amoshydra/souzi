@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(DictionaryDownloaderPlugin.class);
+        registerPlugin(FullEnglishDictionaryPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

@@ -83,6 +83,17 @@ export interface EnglishCoreMeta {
   version: number;
 }
 
+export interface FullEnglishMeta {
+  count: number;
+  installedAt: string;
+  size: number;
+  version: string;
+  schema: number;
+  source?: string;
+  license?: string;
+  sourceCommit?: string;
+}
+
 export interface DictionaryMeta {
   count: number;
   importedAt: string;
