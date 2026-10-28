@@ -87,7 +87,7 @@ does not have the native download bridge.
 
 English→Chinese is already included. This import adds the full Chinese→English side.
 
-On Android, open **Settings** and tap **Add** under Chinese words. The
+On Android, open **Settings** and tap **Add** under Chinese dictionary. The
 app downloads the official export directly, supports pause/resume and a
 Wi-Fi-only mode, and parses the file locally.
 

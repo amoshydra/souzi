@@ -55,7 +55,7 @@ export function SettingsView({
         <div className="dict-list">
           <div className="dict-row">
             <div className="dict-row-copy">
-              <strong>English words</strong>
+              <strong>English dictionary</strong>
               <span>Find Chinese meanings</span>
             </div>
             {englishStatus === "ready" ? (
@@ -83,7 +83,7 @@ export function SettingsView({
 
           <div className="dict-row">
             <div className="dict-row-copy">
-              <strong>Chinese words</strong>
+              <strong>Chinese dictionary</strong>
               <span>Find English meanings</span>
             </div>
             {chineseReady ? (

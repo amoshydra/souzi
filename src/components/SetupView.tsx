@@ -140,20 +140,20 @@ export function SetupView({
               ? "One more try"
               : englishStatus === "loading"
                 ? "Getting ready"
-                : "Add Chinese words"}
+                : "Add Chinese dictionary"}
           </h1>
           <p>
             {englishStatus === "error"
-              ? "English words could not be prepared."
+              ? "English dictionary could not be prepared."
               : englishStatus === "loading"
-                ? "Getting English words ready…"
-                : "English words are ready."}
+                ? "Getting English dictionary ready…"
+                : "English dictionary is ready."}
           </p>
         </header>
 
         <section className="setup-actions">
           {chineseReady ? (
-            <p className="setup-installed">Chinese words are ready.</p>
+            <p className="setup-installed">Chinese dictionary is ready.</p>
           ) : native ? (
             <div className="setup-download">
               <button
@@ -235,7 +235,7 @@ export function SetupView({
                       aria-valuemin={0}
                       aria-valuemax={100}
                       aria-valuenow={percent ?? undefined}
-                      aria-label="Chinese words import progress"
+                      aria-label="Chinese dictionary import progress"
                     >
                       <div
                         className="progress-fill"

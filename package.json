@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "license": "Apache-2.0",
   "type": "module",
-  "description": "Souzi \u2014 an offline-first English\u2013Chinese dictionary app.",
+  "description": "Souzi — an offline-first English–Chinese dictionary app.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.5.3",
     "fflate": "^0.8.2",
     "idb": "^8.0.3",

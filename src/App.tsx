@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 import { Search, Settings, Star } from "lucide-react";
 import type {
   DictionaryMeta,
@@ -110,9 +112,19 @@ function saveSetupChoice(choice: SetupChoice): void {
   }
 }
 
+type SouziHistoryState = {
+  souziDepth?: number;
+};
+
+function getHistoryDepth(): number {
+  const depth = (window.history.state as SouziHistoryState | null)?.souziDepth;
+  return typeof depth === "number" ? depth : 0;
+}
+
 export default function App() {
   useKeyboardViewport();
   const [route, setRoute] = useState<Route>(parseHash);
+  const depthRef = useRef(getHistoryDepth());
   const [ready, setReady] = useState(false);
   const [meta, setMeta] = useState<DictionaryMeta | null>(null);
   const [index, setIndex] = useState<SearchIndex | null>(null);
@@ -137,14 +149,42 @@ export default function App() {
     [],
   );
 
-  const navigate = useCallback((next: Route) => {
-    const hash = routeToHash(next);
-    if (window.location.hash === hash) {
+  const navigate = useCallback(
+    (next: Route, options?: { replace?: boolean }) => {
+      const hash = routeToHash(next);
+      if (window.location.hash === hash) {
+        setRoute(next);
+        return;
+      }
+
+      const replace = options?.replace ?? false;
+      const depth = replace ? depthRef.current : depthRef.current + 1;
+      const state: SouziHistoryState = {
+        ...(window.history.state as SouziHistoryState | null),
+        souziDepth: depth,
+      };
+
+      if (replace) {
+        window.history.replaceState(state, "", hash);
+      } else {
+        window.history.pushState(state, "", hash);
+      }
+      depthRef.current = depth;
       setRoute(next);
-      return;
-    }
-    window.location.hash = hash;
-  }, []);
+    },
+    [],
+  );
+
+  const navigateBack = useCallback(
+    (fallback: Route = { name: "search" }) => {
+      if (depthRef.current > 0) {
+        window.history.back();
+        return;
+      }
+      navigate(fallback, { replace: true });
+    },
+    [navigate],
+  );
 
   const refreshFavorites = useCallback(async () => {
     setFavorites(await listFavorites());
@@ -167,7 +207,7 @@ export default function App() {
 
   const handleChineseInstalled = useCallback(async () => {
     await reloadDictionary();
-    showToast("Chinese words are ready");
+    showToast("Chinese dictionary is ready");
   }, [reloadDictionary, showToast]);
 
   const nativeDownload = useNativeCedictDownload({
@@ -175,9 +215,25 @@ export default function App() {
   });
 
   useEffect(() => {
-    const handleHash = () => setRoute(parseHash());
-    window.addEventListener("hashchange", handleHash);
-    return () => window.removeEventListener("hashchange", handleHash);
+    const handlePopState = () => {
+      depthRef.current = getHistoryDepth();
+      setRoute(parseHash());
+    };
+
+    if (typeof (window.history.state as SouziHistoryState | null)?.souziDepth !== "number") {
+      window.history.replaceState(
+        {
+          ...(window.history.state as SouziHistoryState | null),
+          souziDepth: 0,
+        },
+        "",
+        window.location.href,
+      );
+      depthRef.current = 0;
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   useEffect(() => {
@@ -247,6 +303,53 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let disposed = false;
+    let listener: { remove: () => Promise<void> } | undefined;
+
+    void CapacitorApp.addListener("backButton", () => {
+      const active = document.activeElement;
+      const typing =
+        active instanceof HTMLElement &&
+        active.matches(
+          "input, textarea, select, [contenteditable='true'], [contenteditable='']",
+        );
+      if (typing || document.documentElement.classList.contains("keyboard-open")) {
+        if (active instanceof HTMLElement) active.blur();
+        return;
+      }
+
+      if (!ready || setupMode) {
+        void CapacitorApp.exitApp();
+        return;
+      }
+      if (depthRef.current > 0) {
+        window.history.back();
+        return;
+      }
+      if (route.name === "search") {
+        void CapacitorApp.exitApp();
+        return;
+      }
+      navigateBack(
+        route.name === "import" ? { name: "settings" } : { name: "search" },
+      );
+    }).then((handle) => {
+      if (disposed) {
+        void handle.remove();
+        return;
+      }
+      listener = handle;
+    });
+
+    return () => {
+      disposed = true;
+      void listener?.remove();
+    };
+  }, [navigateBack, ready, route, setupMode]);
+
+  useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
       const resolved =
@@ -299,7 +402,7 @@ export default function App() {
     (choice: SetupChoice) => {
       saveSetupChoice(choice);
       setSetupMode(false);
-      navigate({ name: "search" });
+      navigate({ name: "search" }, { replace: true });
     },
     [navigate],
   );
@@ -427,7 +530,7 @@ export default function App() {
               <EntryView
                 id={route.id}
                 favorites={favorites}
-                onBack={() => navigate({ name: "search" })}
+                onBack={() => navigateBack({ name: "search" })}
                 onOpenEntry={(id) =>
                   navigate({ name: "entry", kind: "zh", id })
                 }
@@ -438,7 +541,7 @@ export default function App() {
               <EnglishEntryView
                 id={route.id}
                 favorites={englishFavorites}
-                onBack={() => navigate({ name: "search" })}
+                onBack={() => navigateBack({ name: "search" })}
                 onFavoriteChange={() => void refreshEnglishFavorites()}
                 onToast={showToast}
               />
@@ -473,15 +576,15 @@ export default function App() {
             />
           ) : route.name === "about" ? (
             <AboutView
-              onBack={() => navigate({ name: "search" })}
+              onBack={() => navigateBack({ name: "search" })}
               onOpenSettings={() => navigate({ name: "settings" })}
             />
           ) : (
             <ImportView
               meta={meta}
               onImported={() => void reloadDictionary()}
-              onDone={() => navigate({ name: "search" })}
-              onBack={() => navigate({ name: "search" })}
+              onDone={() => navigate({ name: "search" }, { replace: true })}
+              onBack={() => navigateBack({ name: "settings" })}
               onToast={showToast}
             />
           )}

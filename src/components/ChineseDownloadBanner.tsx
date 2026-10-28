@@ -40,16 +40,16 @@ export function ChineseDownloadBanner({
     !failed && (percent === null || download.phase === "checking");
 
   const title = failed
-    ? "Chinese words not added."
+    ? "Chinese dictionary not added."
     : installing
-      ? "Preparing Chinese words…"
+      ? "Preparing Chinese dictionary…"
       : paused
-        ? "Chinese words paused."
+        ? "Chinese dictionary paused."
         : download.phase === "checking"
-          ? "Getting Chinese words ready…"
+          ? "Getting Chinese dictionary ready…"
           : waiting
             ? "Waiting for Wi-Fi…"
-            : "Chinese words";
+            : "Chinese dictionary";
 
   return (
     <div
@@ -79,7 +79,7 @@ export function ChineseDownloadBanner({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={percent ?? undefined}
-            aria-label="Chinese words download progress"
+            aria-label="Chinese dictionary download progress"
           >
             <div
               className="progress-fill"
@@ -103,7 +103,7 @@ export function ChineseDownloadBanner({
                 type="button"
                 className="button button-secondary button-small download-icon-button"
                 onClick={download.cancel}
-                aria-label="Dismiss Chinese words download"
+                aria-label="Dismiss Chinese dictionary download"
                 title="Dismiss"
               >
                 <X size={17} />
@@ -115,7 +115,7 @@ export function ChineseDownloadBanner({
                 type="button"
                 className="button button-primary button-small download-icon-button"
                 onClick={download.resume}
-                aria-label="Continue Chinese words download"
+                aria-label="Continue Chinese dictionary download"
                 title="Continue"
               >
                 <Play size={17} />
@@ -124,7 +124,7 @@ export function ChineseDownloadBanner({
                 type="button"
                 className="button button-secondary button-small download-icon-button"
                 onClick={download.cancel}
-                aria-label="Cancel Chinese words download"
+                aria-label="Cancel Chinese dictionary download"
                 title="Cancel"
               >
                 <X size={17} />
@@ -137,7 +137,7 @@ export function ChineseDownloadBanner({
                 className="button button-secondary button-small download-icon-button"
                 onClick={download.pause}
                 disabled={download.phase === "checking"}
-                aria-label="Pause Chinese words download"
+                aria-label="Pause Chinese dictionary download"
                 title="Pause"
               >
                 <Pause size={17} />
@@ -146,7 +146,7 @@ export function ChineseDownloadBanner({
                 type="button"
                 className="button button-secondary button-small download-icon-button"
                 onClick={download.cancel}
-                aria-label="Cancel Chinese words download"
+                aria-label="Cancel Chinese dictionary download"
                 title="Cancel"
               >
                 <X size={17} />

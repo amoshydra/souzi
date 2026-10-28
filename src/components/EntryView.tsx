@@ -130,7 +130,7 @@ export function EntryView({
   return (
     <div className="page entry-page">
       <button type="button" className="back-button" onClick={onBack}>
-        <ArrowLeft size={18} /> Back to search
+        <ArrowLeft size={18} /> Back
       </button>
 
       <header className="entry-hero">

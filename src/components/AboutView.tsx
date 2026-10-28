@@ -16,7 +16,7 @@ export function AboutView({
   return (
     <div className="page about-page">
       <button type="button" className="back-button" onClick={onBack}>
-        <ArrowLeft size={18} /> Back to dictionary
+        <ArrowLeft size={18} /> Back
       </button>
 
       <section className="hero about-hero">
