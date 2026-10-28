@@ -2,6 +2,7 @@ package com.amoshydra.souzi;
 
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.util.Log;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -35,10 +36,12 @@ public class SpeechPlugin extends Plugin {
             new TextToSpeech(
                 getContext(),
                 status -> {
+                    Log.d("SouziSpeech", "init status=" + status);
                     if (status == TextToSpeech.SUCCESS) {
                         // Refuse to run with no installed TTS engine.
                         if (tts.getEngines() == null
                             || tts.getEngines().isEmpty()) {
+                            Log.d("SouziSpeech", "no engines");
                             failed.set(true);
                             PluginCall call = pendingSpeak;
                             pendingSpeak = null;
@@ -49,6 +52,7 @@ public class SpeechPlugin extends Plugin {
                             }
                             return;
                         }
+                        Log.d("SouziSpeech", "engines=" + tts.getEngines());
                         ready.set(true);
                         PluginCall call = pendingSpeak;
                         pendingSpeak = null;
@@ -60,7 +64,11 @@ public class SpeechPlugin extends Plugin {
                         PluginCall call = pendingSpeak;
                         pendingSpeak = null;
                         if (call != null) {
-                            call.reject("Speech engine is not available");
+                            call.reject(
+                    "Speech engine unavailable. On GrapheneOS, allow Souzi to " +
+                        "interact with your TTS app (Settings -> Apps -> " +
+                        "Souzi -> App communication)."
+                );
                         }
                     }
                 }
@@ -102,7 +110,11 @@ public class SpeechPlugin extends Plugin {
         if (ready.get()) {
             runSpeak(call);
         } else if (failed.get()) {
-            call.reject("Speech engine is not available");
+            call.reject(
+                    "Speech engine unavailable. On GrapheneOS, allow Souzi to " +
+                        "interact with your TTS app (Settings -> Apps -> " +
+                        "Souzi -> App communication)."
+                );
         } else {
             ensureEngine();
             // Engine still warming up; run once it is ready.
@@ -122,6 +134,7 @@ public class SpeechPlugin extends Plugin {
             ? Locale.US
             : new Locale("zh", "CN");
         int availability = tts.isLanguageAvailable(locale);
+        Log.d("SouziSpeech", "lang=" + lang + " availability=" + availability);
         if (availability == TextToSpeech.LANG_MISSING_DATA
             || availability == TextToSpeech.LANG_NOT_SUPPORTED) {
             call.reject(

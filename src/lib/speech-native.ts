@@ -1,5 +1,7 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
+export type SpeakResult = { ok: boolean; reason?: string };
+
 export type SpeechPluginInterface = {
   status(): Promise<{ ready?: boolean; failed?: boolean }>;
   speak(options: { text: string; lang: "zh-CN" | "en-US" }): Promise<void>;
@@ -10,13 +12,14 @@ const native = Capacitor.isNativePlatform()
   ? registerPlugin<SpeechPluginInterface>("SouziSpeech")
   : null;
 
-/** Aerospace utterance fallbacks on the web talk through Web Speech. */
 function webSpeak(
   text: string,
   lang: "zh-CN" | "en-US",
   rate: number,
-): boolean {
-  if (!("speechSynthesis" in window)) return false;
+): SpeakResult {
+  if (!("speechSynthesis" in window)) {
+    return { ok: false, reason: "No speech engine available in this browser." };
+  }
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
@@ -31,26 +34,28 @@ function webSpeak(
 
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
-  return true;
+  return { ok: true };
 }
 
 export async function speakText(
   text: string,
   lang: "zh-CN" | "en-US",
-): Promise<boolean> {
-  // GrapheneOS (and most Android WebViews) ship a working Web Speech
-  // Synthesis engine, so prefer it whenever it is available. The native
-  // plugin is only a fallback for WebViews without speechSynthesis.
+): Promise<SpeakResult> {
+  // Prefer the WebView engine when it exists.
   if (typeof window !== "undefined" && "speechSynthesis" in window) {
     return webSpeak(text, lang, lang === "en-US" ? 0.9 : 0.85);
   }
   if (native) {
     try {
       await native.speak({ text, lang });
-      return true;
-    } catch {
-      return false;
+      return { ok: true };
+    } catch (error) {
+      const reason =
+        error instanceof Error && error.message
+          ? error.message
+          : "Speech engine is not available.";
+      return { ok: false, reason };
     }
   }
-  return false;
+  return { ok: false, reason: "No speech engine available on this device." };
 }

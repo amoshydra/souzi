@@ -94,8 +94,9 @@ export function EntryView({
 
   const handleSpeak = async () => {
     if (!entry) return;
-    if (!(await speakChinese(entry.simp))) {
-      onToast("Speech is not available on this device", "error");
+    const result = await speakChinese(entry.simp);
+    if (!result.ok) {
+      onToast(result.reason ?? "Speech is not available on this device", "error");
     }
   };
 
