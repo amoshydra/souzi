@@ -75,6 +75,7 @@ export function SearchPage({
   const [chineseHits, setChineseHits] = useState<ChineseHit[]>([]);
   const [englishHits, setEnglishHits] = useState<EnglishHit[]>([]);
   const [searching, setSearching] = useState(false);
+  const [showSearchSpinner, setShowSearchSpinner] = useState(false);
   const [history, setHistory] = useState<RecentItem[]>([]);
   const [examples, setExamples] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -87,9 +88,8 @@ export function SearchPage({
     TONE_MARK.test(trimmedQuery) || NUMERIC_PINYIN.test(trimmedQuery);
   const isLatinQuery = hasQuery && !isHanQuery && !isPinyinHint;
   const total = chineseHits.length + englishHits.length;
-  const resultLabel = searching
-    ? "Searching…"
-    : total === 0
+  const resultLabel =
+    total === 0
       ? "No word found"
       : `${formatCount(total)} ${total === 1 ? "word" : "words"}`;
 
@@ -100,6 +100,15 @@ export function SearchPage({
       // Session storage can be unavailable in private modes.
     }
   }, [query]);
+
+  useEffect(() => {
+    if (!searching) {
+      setShowSearchSpinner(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setShowSearchSpinner(true), 250);
+    return () => window.clearTimeout(timer);
+  }, [searching]);
 
   useEffect(() => {
     let active = true;
@@ -271,7 +280,15 @@ export function SearchPage({
     <div className="page search-page">
       <div className={`search-area ${hasQuery ? "search-area-compact" : ""}`}>
         <div className="search-wrap">
-          <Search className="search-icon" size={21} aria-hidden="true" />
+          {showSearchSpinner ? (
+            <Loader2
+              className="search-icon search-spinner spin"
+              size={21}
+              aria-hidden="true"
+            />
+          ) : (
+            <Search className="search-icon" size={21} aria-hidden="true" />
+          )}
           <input
             ref={inputRef}
             className="search-input"
@@ -317,8 +334,12 @@ export function SearchPage({
       </div>
 
       {hasQuery ? (
-        <section className="results-section" aria-live="polite">
-          <p className="sr-only">{resultLabel}</p>
+        <section
+          className="results-section"
+          aria-live="polite"
+          aria-busy={searching}
+        >
+          <p className="sr-only">{searching ? "" : resultLabel}</p>
 
           {englishLoading && (
             <div className="english-note">
@@ -342,18 +363,6 @@ export function SearchPage({
           {chineseMissing && (
             <div className="english-note">
               The Chinese dictionary is not installed. You can add it in Settings.
-            </div>
-          )}
-
-          {searching && (
-            <div className="result-list">
-              {[0, 1, 2].map((item) => (
-                <div className="result-skeleton" key={item}>
-                  <div className="skeleton skeleton-title" />
-                  <div className="skeleton skeleton-line" />
-                  <div className="skeleton skeleton-line skeleton-short" />
-                </div>
-              ))}
             </div>
           )}
 
@@ -385,7 +394,7 @@ export function SearchPage({
             </div>
           )}
 
-          {!searching && englishHits.length > 0 && (
+          {englishHits.length > 0 && (
             <div className="result-group">
               <div className="result-group-head">
                 <span>English words</span>
@@ -403,7 +412,7 @@ export function SearchPage({
             </div>
           )}
 
-          {!searching && chineseHits.length > 0 && (
+          {chineseHits.length > 0 && (
             <div className="result-group">
               <div className="result-group-head">
                 <span>Chinese words</span>
