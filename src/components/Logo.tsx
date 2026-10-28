@@ -10,35 +10,23 @@ export function Logo({ size = 40 }: { size?: number }) {
       aria-label="Souzi"
       className="logo"
       style={{ width: remSize, height: remSize }}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="26"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      <rect width="512" height="512" rx="112" fill="currentColor" />
-      <circle cx="372" cy="148" r="34" fill="#c2553f" />
-      <path
-        d="M78 340H434"
-        stroke="#f7f3e8"
-        strokeWidth="18"
-        strokeLinecap="round"
-      />
-      <path
-        d="M96 340C140 214 372 214 416 340"
-        fill="none"
-        stroke="#f7f3e8"
-        strokeWidth="18"
-        strokeLinecap="round"
-      />
-      <path
-        d="M128 340V298M192 340V268M256 340V250M320 340V268M384 340V298"
-        stroke="#f7f3e8"
-        strokeWidth="10"
-        strokeLinecap="round"
-      />
-      <path
-        d="M64 394H448"
-        stroke="#f7f3e8"
-        strokeWidth="10"
-        strokeLinecap="round"
-        opacity=".4"
-      />
+      <circle cx="236" cy="230" r="118" />
+      <line x1="322" y1="316" x2="402" y2="396" strokeWidth="34" />
+      <circle cx="402" cy="396" r="14" fill="#c2553f" stroke="none" />
+      <g strokeWidth="16">
+        <line x1="176" y1="172" x2="296" y2="172" />
+        <line x1="196" y1="200" x2="276" y2="200" />
+        <line x1="186" y1="232" x2="286" y2="232" />
+        <line x1="236" y1="172" x2="236" y2="290" />
+        <line x1="236" y1="260" x2="196" y2="300" />
+        <line x1="236" y1="260" x2="276" y2="300" />
+      </g>
     </svg>
   );
 }
