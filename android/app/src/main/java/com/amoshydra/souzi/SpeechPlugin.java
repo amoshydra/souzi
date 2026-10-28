@@ -36,10 +36,19 @@ public class SpeechPlugin extends Plugin {
                 getContext(),
                 status -> {
                     if (status == TextToSpeech.SUCCESS) {
-                        // Preload both languages so the first speak avoids the
-                        // per-voice warm-up delay.
-                        tts.setLanguage(new Locale("zh", "CN"));
-                        tts.setLanguage(Locale.US);
+                        // Refuse to run with no installed TTS engine.
+                        if (tts.getEngines() == null
+                            || tts.getEngines().isEmpty()) {
+                            failed.set(true);
+                            PluginCall call = pendingSpeak;
+                            pendingSpeak = null;
+                            if (call != null) {
+                                call.reject(
+                                    "No text-to-speech engine is installed"
+                                );
+                            }
+                            return;
+                        }
                         ready.set(true);
                         PluginCall call = pendingSpeak;
                         pendingSpeak = null;
@@ -112,6 +121,17 @@ public class SpeechPlugin extends Plugin {
         Locale locale = "en-US".equalsIgnoreCase(lang)
             ? Locale.US
             : new Locale("zh", "CN");
+        int availability = tts.isLanguageAvailable(locale);
+        if (availability == TextToSpeech.LANG_MISSING_DATA
+            || availability == TextToSpeech.LANG_NOT_SUPPORTED) {
+            call.reject(
+                availability == TextToSpeech.LANG_MISSING_DATA
+                    ? "Missing voice data for " + lang
+                    : "Your TTS engine does not support " + lang
+            );
+            return;
+        }
+
         tts.setLanguage(locale);
         tts.setSpeechRate("en-US".equalsIgnoreCase(lang) ? 0.9f : 0.85f);
 
