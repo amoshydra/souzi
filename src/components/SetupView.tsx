@@ -7,7 +7,6 @@ import {
   Download,
   FileText,
   RefreshCw,
-  ShieldCheck,
   UploadCloud,
   Wifi,
 } from "lucide-react";
@@ -165,7 +164,7 @@ export function SetupView({
                 <BookOpen size={22} />
               </div>
               <div className="setup-card-title">
-                <h2>Add Chinese words</h2>
+                <h2>Chinese words</h2>
               </div>
             </div>
 
@@ -182,7 +181,7 @@ export function SetupView({
                 onClick={onStartDownload}
               >
                 <Download size={16} />
-                Download Chinese words
+                Download
               </button>
               <label className="setup-wifi-toggle">
                 <input
@@ -191,7 +190,7 @@ export function SetupView({
                   onChange={(event) => onWifiOnlyChange(event.target.checked)}
                 />
                 <Wifi size={14} />
-                Use Wi-Fi only
+                Wi-Fi only
               </label>
             </div>
           ) : (
@@ -307,10 +306,9 @@ export function SetupView({
               {importing ? "Cancel and skip" : "Skip for now"}
             </button>
           )}
-          <div className="setup-privacy setup-privacy-center">
-            <ShieldCheck size={14} />
+          <p className="setup-privacy setup-privacy-center">
             Your words never leave this device.
-          </div>
+          </p>
         </footer>
       </div>
     </div>
