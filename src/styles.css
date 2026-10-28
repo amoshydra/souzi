@@ -571,11 +571,6 @@ input:focus-visible {
   letter-spacing: -0.02em;
 }
 
-.section-icon {
-  color: var(--muted);
-  margin-bottom: 0.1875rem;
-}
-
 .starter-banner,
 .ready-banner {
   display: flex;
@@ -700,9 +695,8 @@ input:focus-visible {
 .history-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.5625rem;
   min-width: 0;
-  padding: 0.5rem 0.75rem 0.5rem 0.5625rem;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
@@ -717,6 +711,40 @@ input:focus-visible {
   border-color: var(--line-strong);
   transform: translateY(-0.0625rem);
   box-shadow: var(--shadow-soft);
+}
+
+.history-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5625rem;
+  min-width: 0;
+  padding: 0.5rem 0 0.5rem 0.5625rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-weight: 400;
+  letter-spacing: var(--type-body-tracking);
+}
+
+.history-remove {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  min-height: 2rem;
+  margin-right: 0.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.history-remove:hover {
+  background: var(--vermilion-soft);
+  color: var(--vermilion);
 }
 
 .history-hanzi {

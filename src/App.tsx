@@ -531,6 +531,7 @@ export default function App() {
               onOpenEnglish={openEnglish}
               onOpenSimp={openSimp}
               onAbout={() => navigate({ name: "about" })}
+              onToast={showToast}
             />
           ) : route.name === "entry" ? (
             route.kind === "zh" ? (

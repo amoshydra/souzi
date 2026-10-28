@@ -311,6 +311,16 @@ export async function listHistory(): Promise<HistoryWord[]> {
   return history.sort((a, b) => b.viewedAt - a.viewedAt).slice(0, 20);
 }
 
+export async function removeHistory(simp: string): Promise<void> {
+  const db = await getDB();
+  await db.delete("history", simp);
+}
+
+export async function removeEnglishHistory(key: string): Promise<void> {
+  const db = await getDB();
+  await db.delete("englishHistory", key);
+}
+
 export async function clearHistory(): Promise<void> {
   const db = await getDB();
   await Promise.all([db.clear("history"), db.clear("englishHistory")]);

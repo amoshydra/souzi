@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock3, Loader2, Search, X } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import type {
   EnglishCoreStatus,
   EnglishEntry,
@@ -16,6 +16,8 @@ import {
   getEntriesByIds,
   listEnglishHistory,
   listHistory,
+  removeEnglishHistory,
+  removeHistory,
 } from "../lib/db";
 import { englishFrequency, searchEnglishIndex } from "../lib/english";
 import { loadExampleQueries } from "../lib/examples";
@@ -52,6 +54,7 @@ export function SearchPage({
   onOpenEnglish,
   onOpenSimp,
   onAbout,
+  onToast,
 }: {
   index: SearchIndex | null;
   englishIndex: EnglishSearchIndex | null;
@@ -60,6 +63,7 @@ export function SearchPage({
   onOpenEnglish: (id: number) => void;
   onOpenSimp: (simp: string) => void;
   onAbout: () => void;
+  onToast: (message: string, tone?: "default" | "error") => void;
 }) {
   const [query, setQuery] = useState(() => {
     try {
@@ -244,6 +248,20 @@ export function SearchPage({
     inputRef.current?.focus();
   };
 
+  const handleRemoveRecent = async (item: RecentItem) => {
+    try {
+      if (item.kind === "zh") {
+        await removeHistory(item.data.simp);
+      } else {
+        await removeEnglishHistory(item.data.key);
+      }
+      setHistory((current) => current.filter((entry) => entry !== item));
+      onToast("Removed from recent words");
+    } catch {
+      onToast("Could not remove recent word", "error");
+    }
+  };
+
   const englishLoading = isLatinQuery && englishStatus === "loading";
   const englishError = isLatinQuery && englishStatus === "error";
   const englishMissing = isLatinQuery && englishStatus === "idle";
@@ -411,46 +429,69 @@ export function SearchPage({
                 <div>
                   <h2 className="section-title">Recent words</h2>
                 </div>
-                <Clock3 size={18} className="section-icon" />
+
               </div>
               <div className="history-list">
-                {history.map((item) =>
-                  item.kind === "zh" ? (
+                {history.map((item) => (
+                  <div
+                    className="history-item"
+                    key={
+                      item.kind === "zh"
+                        ? `zh:${item.data.simp}`
+                        : `en:${item.data.key}`
+                    }
+                  >
                     <button
                       type="button"
-                      className="history-item"
-                      key={`zh:${item.data.simp}`}
-                      onClick={() => onOpenSimp(item.data.simp)}
+                      className="history-main"
+                      onClick={() =>
+                        item.kind === "zh"
+                          ? onOpenSimp(item.data.simp)
+                          : onOpenEnglish(item.data.id)
+                      }
                     >
-                      <span className="hanzi history-hanzi">{item.data.simp}</span>
-                      <span className="history-copy">
-                        <span className="pinyin">{item.data.pinyin}</span>
-                        <span className="history-gloss">
-                          {item.data.definitions[0] ?? "View entry"}
-                        </span>
-                      </span>
+                      {item.kind === "zh" ? (
+                        <>
+                          <span className="hanzi history-hanzi">
+                            {item.data.simp}
+                          </span>
+                          <span className="history-copy">
+                            <span className="pinyin">{item.data.pinyin}</span>
+                            <span className="history-gloss">
+                              {item.data.definitions[0] ?? "View entry"}
+                            </span>
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="en-word history-en-word">
+                            {item.data.word}
+                          </span>
+                          <span className="history-copy">
+                            <span className="en-phonetic">
+                              {item.data.phonetic
+                                ? `/${item.data.phonetic}/`
+                                : "English"}
+                            </span>
+                            <span className="history-gloss">
+                              {item.data.translations[0] ?? "View entry"}
+                            </span>
+                          </span>
+                        </>
+                      )}
                     </button>
-                  ) : (
                     <button
                       type="button"
-                      className="history-item"
-                      key={`en:${item.data.key}`}
-                      onClick={() => onOpenEnglish(item.data.id)}
+                      className="history-remove"
+                      onClick={() => void handleRemoveRecent(item)}
+                      aria-label={`Remove ${
+                        item.kind === "zh" ? item.data.simp : item.data.word
+                      } from recent words`}
                     >
-                      <span className="en-word history-en-word">
-                        {item.data.word}
-                      </span>
-                      <span className="history-copy">
-                        <span className="en-phonetic">
-                          {item.data.phonetic ? `/${item.data.phonetic}/` : "English"}
-                        </span>
-                        <span className="history-gloss">
-                          {item.data.translations[0] ?? "View entry"}
-                        </span>
-                      </span>
+                      <X size={15} />
                     </button>
-                  ),
-                )}
+                  </div>
+                ))}
               </div>
             </section>
           )}
