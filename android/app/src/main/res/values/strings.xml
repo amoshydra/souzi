@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Souzi</string>
-    <string name="title_activity_main">Souzi</string>
-    <string name="package_name">com.amoshydra.souzi</string>
-    <string name="custom_url_scheme">com.amoshydra.souzi</string>
-</resources>

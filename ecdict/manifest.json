@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "version": 1,
+  "entries": 770611,
+  "file": "ecdict-full-v1.sqlite.gz",
+  "url": "https://github.com/amoshydra/souzi/releases/download/dict-v1/ecdict-full-v1.sqlite.gz",
+  "mirror": null,
+  "bytes": 43748512,
+  "sha256": "130bac0992eed6ef38f73b9f0d9799c5f95d9cf24cf2208aa8b2f8ce15bcede8",
+  "license": "MIT",
+  "source": "ECDICT",
+  "sourceCommit": "ab22ad36302cafc6349a050e2b60894855208055"
+}
