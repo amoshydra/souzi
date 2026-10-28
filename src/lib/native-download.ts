@@ -33,6 +33,7 @@ export interface NativeDictionaryDownloaderPlugin {
   status(options: { id: number }): Promise<NativeDownloadProgress>;
   pause(options: { id: number }): Promise<void>;
   resume(options: { id: number }): Promise<void>;
+  setWifiOnly(options: { id: number; wifiOnly: boolean }): Promise<void>;
   cancel(options: { id: number }): Promise<void>;
   readFile(options: { id: number }): Promise<NativeDownloadedFile>;
 }

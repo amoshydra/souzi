@@ -65,19 +65,29 @@ export function useNativeCedictDownload({
 
   const onInstalledRef = useRef(onInstalled);
   const sampleRef = useRef({ bytes: 0, time: 0 });
+  const wifiOnlyRef = useRef(wifiOnly);
 
   useEffect(() => {
     onInstalledRef.current = onInstalled;
   }, [onInstalled]);
 
   const setWifiOnly = useCallback((value: boolean) => {
+    wifiOnlyRef.current = value;
     setWifiOnlyState(value);
     try {
       localStorage.setItem(WIFI_KEY, String(value));
     } catch {
       // Storage can be unavailable in private modes.
     }
-  }, []);
+    if (downloadId !== null && Capacitor.isNativePlatform()) {
+      void NativeDictionaryDownloader.setWifiOnly({
+        id: downloadId,
+        wifiOnly: value,
+      }).catch(() => {
+        // The current download can still continue with its existing setting.
+      });
+    }
+  }, [downloadId]);
 
   const clearStoredDownload = useCallback(() => {
     try {
@@ -226,6 +236,16 @@ export function useNativeCedictDownload({
         fileName: CEDICT_FILE,
         wifiOnly,
       });
+      if (wifiOnlyRef.current !== wifiOnly) {
+        try {
+          await NativeDictionaryDownloader.setWifiOnly({
+            id,
+            wifiOnly: wifiOnlyRef.current,
+          });
+        } catch {
+          // The download can continue with the setting used at start.
+        }
+      }
       try {
         localStorage.setItem(
           STORAGE_KEY,

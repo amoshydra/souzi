@@ -1,10 +1,12 @@
-import { Loader2, Pause, Play, RefreshCw, X } from "lucide-react";
+import { ChevronRight, Loader2, Pause, Play, RefreshCw, X } from "lucide-react";
 import type { NativeCedictDownload } from "../hooks/useNativeCedictDownload";
 
 export function ChineseDownloadBanner({
   download,
+  onOpenDownloads,
 }: {
   download: NativeCedictDownload;
+  onOpenDownloads: () => void;
 }) {
   if (download.phase === "idle" || download.phase === "done") return null;
 
@@ -58,7 +60,12 @@ export function ChineseDownloadBanner({
       aria-live="polite"
     >
       <div className="shell download-banner-inner">
-        <div className="download-banner-copy">
+        <button
+          type="button"
+          className="download-banner-copy"
+          onClick={onOpenDownloads}
+          aria-label="Open downloads"
+        >
           <span className="download-banner-title">
             {(installing || download.phase === "checking") && (
               <Loader2 size={15} className="spin" aria-hidden="true" />
@@ -68,7 +75,8 @@ export function ChineseDownloadBanner({
           {percent !== null && !failed && (
             <span className="download-banner-percent">{percent}%</span>
           )}
-        </div>
+          <ChevronRight size={16} aria-hidden="true" />
+        </button>
 
         {!failed && (
           <div

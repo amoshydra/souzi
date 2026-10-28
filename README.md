@@ -26,7 +26,7 @@ An offline-first English–Chinese dictionary for web/PWA and Android. It bundle
 - Chinese→English from a local CC-CEDICT import (`.txt.gz`, `.txt`, or `.zip`).
 - Look up by simplified/traditional characters, pinyin (with or without tones), or English.
 - Entry pages with pinyin, HSK level, classifiers, character breakdown, and text-to-speech.
-- First-run setup: the bundled English→Chinese core installs automatically. The setup screen stays until the user chooses Download or Skip, even across app restarts. Choosing Download closes setup and shows a non-blocking progress banner; choosing Skip can be undone later in Settings.
+- First-run setup: the bundled English→Chinese core installs automatically. The setup screen stays until the user chooses Continue or Skip, even across app restarts. Download runs inline in setup with progress and an editable Wi-Fi-only option; Continue opens the app while the download finishes. Settings has a dedicated Downloads page for progress, retry, pause, and cancel.
 - Native CC-CEDICT download manager on Android with progress, pause/resume, retry, cancel, and a Wi-Fi-only option. Active downloads are monitored at app level so setup does not need to stay open; interrupted downloads can be retried.
 - Large, high-contrast interface designed for comfortable reading. Typography uses distinct heading, body, and label roles; inputs and buttons use the label style. Layout and type use rem/em units and follow the browser or device text-size setting. Border widths, corner radii, and shadows intentionally use fixed px for crisp hairlines.
 - Favorites and search history for both directions, stored locally.
@@ -87,7 +87,7 @@ does not have the native download bridge.
 
 English→Chinese is already included. This import adds the full Chinese→English side.
 
-On Android, open **Settings** and tap **Add** under Chinese dictionary. The
+On Android, open **Settings**, then **Downloads**, and tap **Download** under Chinese dictionary. The
 app downloads the official export directly, supports pause/resume and a
 Wi-Fi-only mode, and parses the file locally.
 

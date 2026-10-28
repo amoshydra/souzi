@@ -108,6 +108,15 @@ public class DictionaryDownloaderPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void setWifiOnly(PluginCall call) {
+        DownloadTask task = taskFor(call);
+        if (task == null) return;
+        Boolean value = call.getBoolean("wifiOnly", true);
+        task.setWifiOnly(Boolean.TRUE.equals(value));
+        call.resolve();
+    }
+
+    @PluginMethod
     public void cancel(PluginCall call) {
         DownloadTask task = taskFor(call);
         if (task == null) return;
@@ -169,7 +178,7 @@ public class DictionaryDownloaderPlugin extends Plugin {
         final long id;
         final String url;
         final String fileName;
-        final boolean wifiOnly;
+        volatile boolean wifiOnly;
         final File file;
 
         volatile String status = "pending";
@@ -211,6 +220,13 @@ public class DictionaryDownloaderPlugin extends Plugin {
             if (paused) {
                 paused = false;
                 start();
+            }
+        }
+
+        synchronized void setWifiOnly(boolean value) {
+            wifiOnly = value;
+            if (!value && "waiting".equals(status)) {
+                status = "running";
             }
         }
 

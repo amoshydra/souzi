@@ -12,7 +12,9 @@ import type {
   EnglishCoreStatus,
   ImportProgress,
 } from "../types";
+import type { NativeCedictDownload } from "../hooks/useNativeCedictDownload";
 import { startCedictImport } from "../lib/cedict-import";
+import { getActivePercent } from "../lib/download-progress";
 import { Logo } from "./Logo";
 
 const CEDICT_DIRECT =
@@ -40,21 +42,17 @@ export function SetupView({
   englishStatus,
   onInstallEnglish,
   onChineseImported,
-  onStartDownload,
   onSkip,
   onNext,
-  wifiOnly,
-  onWifiOnlyChange,
+  download,
 }: {
   chineseMeta: DictionaryMeta | null;
   englishStatus: EnglishCoreStatus;
   onInstallEnglish: () => void;
   onChineseImported: () => Promise<void>;
-  onStartDownload: () => void;
   onSkip: () => void;
   onNext: () => void;
-  wifiOnly: boolean;
-  onWifiOnlyChange: (value: boolean) => void;
+  download: NativeCedictDownload;
 }) {
   const [dragging, setDragging] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -65,6 +63,11 @@ export function SetupView({
   const native = Capacitor.isNativePlatform();
 
   const chineseReady = chineseMeta?.kind === "cedict";
+  const downloadStarted = download.phase !== "idle";
+  const activePercent = getActivePercent(download);
+  const waitingForWifi =
+    download.downloadStatus === "waiting" ||
+    (download.downloadStatus === "pending" && download.wifiOnly);
 
   useEffect(() => {
     if (!importing) return;
@@ -135,13 +138,6 @@ export function SetupView({
               <div className="setup-brand-sub">搜字</div>
             </div>
           </div>
-          <h1>
-            {englishStatus === "error"
-              ? "One more try"
-              : englishStatus === "loading"
-                ? "Getting ready"
-                : "Add Chinese dictionary"}
-          </h1>
           <p>
             {englishStatus === "error"
               ? "English dictionary could not be prepared."
@@ -152,23 +148,82 @@ export function SetupView({
         </header>
 
         <section className="setup-actions">
+          <h1 className="setup-title">
+            {chineseReady ? "Chinese dictionary" : "Add Chinese dictionary"}
+          </h1>
           {chineseReady ? (
             <p className="setup-installed">Chinese dictionary is ready.</p>
           ) : native ? (
             <div className="setup-download">
-              <button
-                type="button"
-                className="button button-primary setup-primary"
-                onClick={onStartDownload}
-              >
-                <Download size={16} />
-                Download
-              </button>
+              {download.phase === "idle" ? (
+                <button
+                  type="button"
+                  className="button button-primary setup-primary"
+                  onClick={() => void download.start()}
+                >
+                  <Download size={16} />
+                  Download
+                </button>
+              ) : download.phase === "error" ? (
+                <>
+                  <p className="setup-download-state">Download stopped.</p>
+                  <button
+                    type="button"
+                    className="button button-primary setup-primary"
+                    onClick={() => void download.retry()}
+                  >
+                    <RefreshCw size={16} />
+                    Try again
+                  </button>
+                </>
+              ) : (
+                <div className="setup-progress">
+                  <div className="setup-progress-head">
+                    <span>
+                      {download.phase === "installing"
+                        ? "Preparing dictionary…"
+                        : download.phase === "checking"
+                          ? "Starting download…"
+                          : download.phase === "paused"
+                            ? "Download paused."
+                            : waitingForWifi
+                              ? "Waiting for Wi-Fi…"
+                              : download.phase === "done"
+                                ? "Download complete."
+                                : "Downloading dictionary…"}
+                    </span>
+                    {activePercent !== null && <span>{activePercent}%</span>}
+                  </div>
+                  <div
+                    className={`progress-track ${
+                      activePercent === null || download.phase === "checking"
+                        ? "progress-indeterminate"
+                        : ""
+                    }`}
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={activePercent ?? undefined}
+                    aria-label="Chinese dictionary download progress"
+                  >
+                    <div
+                      className="progress-fill"
+                      style={
+                        activePercent !== null
+                          ? { width: `${activePercent}%` }
+                          : undefined
+                      }
+                    />
+                  </div>
+                </div>
+              )}
               <label className="setup-wifi-toggle">
                 <input
                   type="checkbox"
-                  checked={wifiOnly}
-                  onChange={(event) => onWifiOnlyChange(event.target.checked)}
+                  checked={download.wifiOnly}
+                  onChange={(event) =>
+                    download.setWifiOnly(event.target.checked)
+                  }
                 />
                 <Wifi size={14} />
                 Wi-Fi only
@@ -268,13 +323,13 @@ export function SetupView({
             >
               Please wait…
             </button>
-          ) : chineseReady ? (
+          ) : chineseReady || downloadStarted ? (
             <button
               type="button"
               className="button button-primary setup-next"
               onClick={onNext}
             >
-              Start using Souzi
+              Continue
               <ArrowRight size={16} />
             </button>
           ) : (

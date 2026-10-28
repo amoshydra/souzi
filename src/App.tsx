@@ -35,6 +35,7 @@ import { EnglishEntryView } from "./components/EnglishEntryView";
 import { ImportView } from "./components/ImportView";
 import { SavedView } from "./components/SavedView";
 import { SettingsView } from "./components/SettingsView";
+import { DownloadsView } from "./components/DownloadsView";
 import { AboutView } from "./components/AboutView";
 import { SetupView } from "./components/SetupView";
 import { Logo } from "./components/Logo";
@@ -48,6 +49,7 @@ type Route =
   | { name: "saved" }
   | { name: "settings" }
   | { name: "about" }
+  | { name: "downloads" }
   | { name: "import" };
 
 function parseHash(): Route {
@@ -63,6 +65,7 @@ function parseHash(): Route {
   if (name === "saved") return { name: "saved" };
   if (name === "settings") return { name: "settings" };
   if (name === "about") return { name: "about" };
+  if (name === "downloads") return { name: "downloads" };
   if (name === "import") return { name: "import" };
   return { name: "search" };
 }
@@ -77,6 +80,8 @@ function routeToHash(route: Route): string {
       return "#/settings";
     case "about":
       return "#/about";
+    case "downloads":
+      return "#/downloads";
     case "import":
       return "#/import";
     default:
@@ -333,7 +338,9 @@ export default function App() {
         return;
       }
       navigateBack(
-        route.name === "import" ? { name: "settings" } : { name: "search" },
+        route.name === "import" || route.name === "downloads"
+          ? { name: "settings" }
+          : { name: "search" },
       );
     }).then((handle) => {
       if (disposed) {
@@ -411,11 +418,6 @@ export default function App() {
     finishSetup("skip");
   }, [finishSetup]);
 
-  const handleStartChineseDownload = useCallback(() => {
-    void nativeDownload.start();
-    finishSetup("download");
-  }, [finishSetup, nativeDownload.start]);
-
   const handleFinishChineseSetup = useCallback(() => {
     finishSetup("download");
   }, [finishSetup]);
@@ -423,7 +425,9 @@ export default function App() {
   const savedCount = favorites.length + englishFavorites.length;
   const isNavActive = (name: "search" | "saved" | "settings") =>
     route.name === name ||
-    (name === "search" && (route.name === "entry" || route.name === "import"));
+    (name === "settings" && route.name === "downloads") ||
+    (name === "search" &&
+      (route.name === "entry" || route.name === "import"));
 
   if (!ready) {
     return (
@@ -452,11 +456,9 @@ export default function App() {
           englishStatus={englishStatus}
           onInstallEnglish={installEnglish}
           onChineseImported={handleChineseImported}
-          onStartDownload={handleStartChineseDownload}
           onSkip={handleSkipSetup}
           onNext={handleFinishChineseSetup}
-          wifiOnly={nativeDownload.wifiOnly}
-          onWifiOnlyChange={nativeDownload.setWifiOnly}
+          download={nativeDownload}
         />
         <Toast toast={toast} onDismiss={() => setToast(null)} />
       </div>
@@ -508,7 +510,12 @@ export default function App() {
             </button>
           </nav>
         </div>
-        <ChineseDownloadBanner download={nativeDownload} />
+        {route.name !== "downloads" && (
+          <ChineseDownloadBanner
+            download={nativeDownload}
+            onOpenDownloads={() => navigate({ name: "downloads" })}
+          />
+        )}
       </header>
 
       <main className="main">
@@ -566,13 +573,19 @@ export default function App() {
             />
           ) : route.name === "settings" ? (
             <SettingsView
-              meta={meta}
-              englishStatus={englishStatus}
               theme={theme}
               onThemeChange={setTheme}
-              onImport={() => navigate({ name: "import" })}
-              onInstallEnglish={installEnglish}
+              onDownloads={() => navigate({ name: "downloads" })}
               onAbout={() => navigate({ name: "about" })}
+            />
+          ) : route.name === "downloads" ? (
+            <DownloadsView
+              chineseMeta={meta}
+              englishStatus={englishStatus}
+              download={nativeDownload}
+              onBack={() => navigateBack({ name: "settings" })}
+              onInstallEnglish={installEnglish}
+              onImport={() => navigate({ name: "import" })}
             />
           ) : route.name === "about" ? (
             <AboutView
