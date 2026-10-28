@@ -25,6 +25,8 @@ import {
   ensureEnglishCore,
 } from "./lib/english-core";
 import { useKeyboardViewport } from "./hooks/useKeyboardViewport";
+import { useNativeCedictDownload } from "./hooks/useNativeCedictDownload";
+import { ChineseDownloadBanner } from "./components/ChineseDownloadBanner";
 import { SearchPage } from "./components/SearchPage";
 import { EntryView } from "./components/EntryView";
 import { EnglishEntryView } from "./components/EnglishEntryView";
@@ -88,6 +90,26 @@ function getInitialTheme(): Theme {
   return "system";
 }
 
+type SetupChoice = "download" | "skip";
+const SETUP_CHOICE_KEY = "souzi-setup-choice";
+
+function getSetupChoice(): SetupChoice | null {
+  try {
+    const stored = localStorage.getItem(SETUP_CHOICE_KEY);
+    return stored === "download" || stored === "skip" ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSetupChoice(choice: SetupChoice): void {
+  try {
+    localStorage.setItem(SETUP_CHOICE_KEY, choice);
+  } catch {
+    // The current session can still continue if storage is unavailable.
+  }
+}
+
 export default function App() {
   useKeyboardViewport();
   const [route, setRoute] = useState<Route>(parseHash);
@@ -143,6 +165,15 @@ export default function App() {
     setFavorites(nextFavorites);
   }, []);
 
+  const handleChineseInstalled = useCallback(async () => {
+    await reloadDictionary();
+    showToast("Chinese words are ready");
+  }, [reloadDictionary, showToast]);
+
+  const nativeDownload = useNativeCedictDownload({
+    onInstalled: handleChineseInstalled,
+  });
+
   useEffect(() => {
     const handleHash = () => setRoute(parseHash());
     window.addEventListener("hashchange", handleHash);
@@ -168,7 +199,7 @@ export default function App() {
       ]);
       if (!active) return;
 
-      const englishWasMissing = !currentEnglish;
+      const setupChoice = getSetupChoice();
       const chineseIsReady =
         currentMeta?.kind === "cedict" && currentIndex !== null;
       let nextEnglish = currentEnglish;
@@ -201,7 +232,7 @@ export default function App() {
       setEnglishStatus(
         englishIsCurrent ? "ready" : englishFailed ? "error" : "idle",
       );
-      setSetupMode(englishWasMissing && !chineseIsReady);
+      setSetupMode(setupChoice === null && !chineseIsReady);
       setReady(true);
 
       navigator.storage?.persist?.().catch(() => {
@@ -264,10 +295,27 @@ export default function App() {
     await reloadDictionary();
   };
 
-  const finishSetup = () => {
-    setSetupMode(false);
-    navigate({ name: "search" });
-  };
+  const finishSetup = useCallback(
+    (choice: SetupChoice) => {
+      saveSetupChoice(choice);
+      setSetupMode(false);
+      navigate({ name: "search" });
+    },
+    [navigate],
+  );
+
+  const handleSkipSetup = useCallback(() => {
+    finishSetup("skip");
+  }, [finishSetup]);
+
+  const handleStartChineseDownload = useCallback(() => {
+    void nativeDownload.start();
+    finishSetup("download");
+  }, [finishSetup, nativeDownload.start]);
+
+  const handleFinishChineseSetup = useCallback(() => {
+    finishSetup("download");
+  }, [finishSetup]);
 
   const savedCount = favorites.length + englishFavorites.length;
   const isNavActive = (name: "search" | "saved" | "settings") =>
@@ -301,7 +349,11 @@ export default function App() {
           englishStatus={englishStatus}
           onInstallEnglish={installEnglish}
           onChineseImported={handleChineseImported}
-          onNext={finishSetup}
+          onStartDownload={handleStartChineseDownload}
+          onSkip={handleSkipSetup}
+          onNext={handleFinishChineseSetup}
+          wifiOnly={nativeDownload.wifiOnly}
+          onWifiOnlyChange={nativeDownload.setWifiOnly}
         />
         <Toast toast={toast} onDismiss={() => setToast(null)} />
       </div>
@@ -353,6 +405,7 @@ export default function App() {
             </button>
           </nav>
         </div>
+        <ChineseDownloadBanner download={nativeDownload} />
       </header>
 
       <main className="main">

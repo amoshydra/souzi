@@ -217,7 +217,7 @@ export function useNativeCedictDownload({
     setBytesDownloaded(0);
     setTotalBytes(0);
     setSpeed(0);
-    setPhase("downloading");
+    setPhase("checking");
     sampleRef.current = { bytes: 0, time: Date.now() };
 
     try {
@@ -335,3 +335,5 @@ export function useNativeCedictDownload({
     retry,
   };
 }
+
+export type NativeCedictDownload = ReturnType<typeof useNativeCedictDownload>;

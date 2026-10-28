@@ -26,8 +26,8 @@ An offline-first English–Chinese dictionary for web/PWA and Android. It bundle
 - Chinese→English from a local CC-CEDICT import (`.txt.gz`, `.txt`, or `.zip`).
 - Look up by simplified/traditional characters, pinyin (with or without tones), or English.
 - Entry pages with pinyin, HSK level, classifiers, character breakdown, and text-to-speech.
-- First-run setup: the bundled English→Chinese core installs automatically. Adding Chinese→English is optional and can be done now or later.
-- Native CC-CEDICT download manager on Android with progress, pause/resume, retry, cancel, and a Wi-Fi-only option.
+- First-run setup: the bundled English→Chinese core installs automatically. The setup screen stays until the user chooses Download or Skip, even across app restarts. Choosing Download closes setup and shows a non-blocking progress banner; choosing Skip can be undone later in Settings.
+- Native CC-CEDICT download manager on Android with progress, pause/resume, retry, cancel, and a Wi-Fi-only option. Active downloads are monitored at app level so setup does not need to stay open; interrupted downloads can be retried.
 - Large, high-contrast interface designed for comfortable reading. Typography uses distinct heading, body, and label roles; inputs and buttons use the label style. Layout and type use rem/em units and follow the browser or device text-size setting. Border widths, corner radii, and shadows intentionally use fixed px for crisp hairlines.
 - Favorites and search history for both directions, stored locally.
 - Installable PWA with an offline app shell.
