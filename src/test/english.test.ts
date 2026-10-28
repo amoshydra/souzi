@@ -4,6 +4,7 @@ import {
   buildEnglishIndex,
   normalizeEnglishWord,
   searchEnglishIndex,
+  suggestEnglishSpellings,
 } from "../lib/english";
 import { lemmaCandidates } from "../lib/lemma";
 
@@ -57,6 +58,18 @@ const entries: EnglishEntry[] = [
     exchange: "i:studying/3:studies",
     frq: 579,
   }),
+  entry({
+    id: 6,
+    word: "engineer",
+    translations: ["n. 工程师"],
+    frq: 1000,
+  }),
+  entry({
+    id: 7,
+    word: "receive",
+    translations: ["v. 收到"],
+    frq: 800,
+  }),
 ];
 
 const index = buildEnglishIndex(entries);
@@ -72,6 +85,19 @@ describe("lemmaCandidates", () => {
   it("links y and ily adjective forms", () => {
     expect(lemmaCandidates("body")).toContain("bodily");
     expect(lemmaCandidates("bodily")).toContain("body");
+  });
+});
+
+describe("suggestEnglishSpellings", () => {
+  it("suggests near English headwords", () => {
+    expect(suggestEnglishSpellings(index, "enginer")).toContain("engineer");
+    expect(suggestEnglishSpellings(index, "recieve")).toContain("receive");
+  });
+
+  it("does not suggest for valid or very short queries", () => {
+    expect(suggestEnglishSpellings(index, "engineer")).toEqual([]);
+    expect(suggestEnglishSpellings(index, "bank")).toEqual([]);
+    expect(suggestEnglishSpellings(index, "eng")).toEqual([]);
   });
 });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildIndex } from "../lib/indexer";
-import { searchIndex } from "../lib/search";
+import { searchIndex, suggestPinyinSpellings } from "../lib/search";
 import { STARTER_ENTRIES } from "../lib/starter";
 
 const index = buildIndex(STARTER_ENTRIES);
@@ -37,6 +37,11 @@ describe("searchIndex", () => {
   it("finds words containing a character", () => {
     expect(simps("銀")).toContain("银行");
     expect(simps("银")).toContain("银行");
+  });
+
+  it("suggests near pinyin spellings", () => {
+    expect(suggestPinyinSpellings(index, "yinhng")).toContain("yinhang");
+    expect(suggestPinyinSpellings(index, "yinhang")).toEqual([]);
   });
 
   it("returns nothing for an empty query", () => {

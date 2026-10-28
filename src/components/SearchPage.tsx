@@ -19,11 +19,15 @@ import {
   removeEnglishHistory,
   removeHistory,
 } from "../lib/db";
-import { englishFrequency, searchEnglishIndex } from "../lib/english";
+import {
+  englishFrequency,
+  searchEnglishIndex,
+  suggestEnglishSpellings,
+} from "../lib/english";
 import { loadExampleQueries } from "../lib/examples";
 import { formatCount } from "../lib/format";
 import { lemmaCandidates } from "../lib/lemma";
-import { searchIndex } from "../lib/search";
+import { searchIndex, suggestPinyinSpellings } from "../lib/search";
 import { EnglishResultCard } from "./EnglishResultCard";
 import { ResultCard } from "./ResultCard";
 
@@ -79,6 +83,10 @@ export function SearchPage({
   const [showSearchSpinner, setShowSearchSpinner] = useState(false);
   const [history, setHistory] = useState<RecentItem[]>([]);
   const [examples, setExamples] = useState<string[]>([]);
+  const [spellingSuggestion, setSpellingSuggestion] = useState<{
+    query: string;
+    words: string[];
+  }>({ query: "", words: [] });
   const inputRef = useRef<HTMLInputElement>(null);
   const tokenRef = useRef(0);
 
@@ -89,6 +97,8 @@ export function SearchPage({
     TONE_MARK.test(trimmedQuery) || NUMERIC_PINYIN.test(trimmedQuery);
   const isLatinQuery = hasQuery && !isHanQuery && !isPinyinHint;
   const total = chineseHits.length + englishHits.length;
+  const spellingSuggestions =
+    spellingSuggestion.query === trimmedQuery ? spellingSuggestion.words : [];
   const resultLabel =
     total === 0
       ? "No word found"
@@ -156,6 +166,7 @@ export function SearchPage({
     if (!trimmed || (!index && !englishIndex)) {
       setChineseHits([]);
       setEnglishHits([]);
+      setSpellingSuggestion({ query: "", words: [] });
       setSearching(false);
       return;
     }
@@ -183,6 +194,34 @@ export function SearchPage({
           : Promise.resolve([]),
       ]);
       if (token !== tokenRef.current) return;
+
+      const hasStrongEnglishMatch = englishCandidates.some(
+        (candidate) =>
+          candidate.match === "word" || candidate.match === "variant",
+      );
+      const hasStrongPinyinMatch = chineseCandidates.some(
+        (candidate) => candidate.match === "pinyin",
+      );
+      const suggestions = new Set<string>();
+      if (!hasStrongEnglishMatch && !hasStrongPinyinMatch) {
+        if (englishIndex) {
+          for (const suggestion of suggestEnglishSpellings(
+            englishIndex,
+            trimmed,
+          )) {
+            suggestions.add(suggestion);
+          }
+        }
+        if (index) {
+          for (const suggestion of suggestPinyinSpellings(index, trimmed, 2)) {
+            suggestions.add(suggestion);
+          }
+        }
+      }
+      setSpellingSuggestion({
+        query: trimmed,
+        words: [...suggestions].slice(0, 3),
+      });
 
       const normalizedQuery = trimmed.toLowerCase();
       const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
@@ -396,7 +435,29 @@ export function SearchPage({
             </div>
           )}
 
-          {!searching && total === 0 && (
+          {!searching && spellingSuggestions.length > 0 && (
+            <div className="spelling-hint" role="status">
+              <span className="spelling-label">
+                {total === 0 ? "No exact match. Did you mean" : "Did you mean"}
+              </span>
+              <span className="spelling-options">
+                {spellingSuggestions.map((suggestion) => (
+                  <button
+                    type="button"
+                    className="hint-chip"
+                    key={suggestion}
+                    onClick={() => setExample(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </span>
+            </div>
+          )}
+
+          {!searching &&
+            total === 0 &&
+            spellingSuggestions.length === 0 && (
             <div className="empty-card">
               <div className="empty-icon">
                 <Search size={22} />

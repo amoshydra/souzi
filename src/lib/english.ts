@@ -8,6 +8,8 @@ import { lemmaCandidates } from "./lemma";
 import { prefixIds } from "./prefix";
 
 const ENGLISH_WORD = /^[a-z][a-z' .-]*$/;
+const TYPO_QUERY = /^[a-z]{4,}$/;
+const LETTERS = "abcdefghijklmnopqrstuvwxyz";
 
 export function normalizeEnglishWord(value: string): string {
   return value
@@ -91,6 +93,87 @@ export function buildEnglishIndex(entries: EnglishEntry[]): EnglishSearchIndex {
     variants,
     keys: Object.keys(words).sort(),
   };
+}
+
+export function suggestEnglishSpellings(
+  index: EnglishSearchIndex,
+  rawQuery: string,
+  limit = 3,
+): string[] {
+  const query = normalizeEnglishWord(rawQuery);
+  if (!TYPO_QUERY.test(query)) return [];
+
+  const candidates = new Set<string>();
+  const add = (candidate: string) => {
+    if (candidate !== query && candidate.length > 1) candidates.add(candidate);
+  };
+
+  for (let position = 0; position < query.length; position += 1) {
+    add(query.slice(0, position) + query.slice(position + 1));
+    if (position < query.length - 1) {
+      add(
+        query.slice(0, position) +
+          query[position + 1] +
+          query[position] +
+          query.slice(position + 2),
+      );
+    }
+    for (const letter of LETTERS) {
+      add(
+        query.slice(0, position) +
+          letter +
+          query.slice(position + 1),
+      );
+      add(
+        query.slice(0, position) +
+          letter +
+          query.slice(position),
+      );
+    }
+  }
+
+  const existing = [...candidates].filter(
+    (candidate) =>
+      Boolean(index.words[candidate]?.length) ||
+      Boolean(index.variants[candidate]?.length),
+  );
+
+  const firstId = (candidate: string) =>
+    index.words[candidate]?.[0] ??
+    index.variants[candidate]?.[0] ??
+    1e9;
+  const commonPrefix = (candidate: string) => {
+    let length = 0;
+    while (
+      length < candidate.length &&
+      length < query.length &&
+      candidate[length] === query[length]
+    ) {
+      length += 1;
+    }
+    return length;
+  };
+
+  return existing
+    .sort((a, b) => {
+      const firstA = a[0] === query[0] ? 0 : 1;
+      const firstB = b[0] === query[0] ? 0 : 1;
+      const lastA = a.at(-1) === query.at(-1) ? 0 : 1;
+      const lastB = b.at(-1) === query.at(-1) ? 0 : 1;
+      const wordA = index.words[a] ? 0 : 1;
+      const wordB = index.words[b] ? 0 : 1;
+      return (
+        commonPrefix(b) - commonPrefix(a) ||
+        firstA - firstB ||
+        lastA - lastB ||
+        Math.abs(a.length - query.length) -
+          Math.abs(b.length - query.length) ||
+        wordA - wordB ||
+        firstId(a) - firstId(b) ||
+        a.localeCompare(b)
+      );
+    })
+    .slice(0, limit);
 }
 
 export function searchEnglishIndex(
