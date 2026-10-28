@@ -65,30 +65,32 @@ jobs:
           git config user.name "souzi-bot"
           git config user.email "actions@users.noreply.github.com"
 
+          site_dir="$RUNNER_TEMP/site"
+          rm -rf "$site_dir"
+          mkdir -p "$site_dir"
+
+          # Fetch the existing gh-pages branch if it exists and re-attach
+          # previously published dictionary packs only — nothing else.
           if git ls-remote --exit-code origin gh-pages >/dev/null 2>&1; then
-            git fetch origin gh-pages --depth 1
-            git checkout gh-pages
-            git pull --ff-only origin gh-pages || true
-          else
-            git checkout --orphan gh-pages
-            git rm --cached -r . >/dev/null 2>&1 || true
+            git fetch --quiet origin gh-pages
+            if git cat-file -e "origin/gh-pages:ecdict" 2>/dev/null; then
+              git archive "origin/gh-pages" ecdict | tar -x -C "$site_dir"
+            fi
           fi
 
-          # Replace the app files but keep previously published packs and the
-          # downloaded dist-pages artifact directory.
-          if [ -d ecdict ]; then
-            mv ecdict ecdict-keep
-          fi
-          find . -mindepth 1 -maxdepth 1 \
-            ! -name ecdict-keep ! -name dist-pages ! -name .git \
-            -exec rm -rf {} +
-          if [ -d ecdict-keep ]; then
-            mv ecdict-keep ecdict
-          fi
-          rsync -a dist-pages/ .
+          # Copy just the freshly built web assets in.
+          cp -a dist-pages/. "$site_dir"/
+
+          # Build the commit without ever checking out gh-pages in this
+          # working tree (avoids conflicts with the main source tree).
+          export GIT_WORK_TREE="$site_dir"
+          export GIT_INDEX_FILE="$RUNNER_TEMP/gh-pages-index"
+          git read-tree --empty
           git add -A
-          git commit -m "deploy app web assets" --allow-empty
-          git push origin gh-pages
+          tree=$(git write-tree)
+          commit=$(git commit-tree "$tree" -m "deploy web app")
+          git update-ref refs/heads/gh-pages "$commit"
+          git push --force origin refs/heads/gh-pages:gh-pages
 
   build-apk:
     if: startsWith(github.ref, 'refs/tags/app-v')
