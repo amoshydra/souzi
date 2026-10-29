@@ -12,12 +12,19 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "icons/*.png"],
+      includeAssets: [
+        "favicon.svg",
+        "apple-touch-icon.png",
+        "og-image.png",
+        "robots.txt",
+        "sitemap.xml",
+        "icons/*.png",
+      ],
       manifest: {
         name: "Souzi — Chinese Dictionary",
         short_name: "Souzi",
         description:
-          "An offline-first English–Chinese dictionary with a bundled ECDICT core. Import CC-CEDICT for full Chinese coverage.",
+          "A free, offline-first English–Chinese dictionary for web and Android. No account, no tracking, and no server.",
         id: base,
         lang: "en",
         categories: ["education", "reference"],
