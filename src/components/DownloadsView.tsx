@@ -360,6 +360,8 @@ export function DownloadsView({
                 </button>
               </div>
             </>
+          ) : examplePack.phase === "loading" ? (
+            <p className="download-state">Checking example pack…</p>
           ) : examplePack.phase === "error" ? (
             <>
               <p className="download-state download-error">
