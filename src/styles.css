@@ -2868,6 +2868,60 @@ html.keyboard-open .bottom-nav {
   margin-inline: auto;
 }
 
+.pack-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+}
+
+.pack-summary-stat {
+  display: grid;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 0.125rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.pack-summary-value {
+  color: var(--ink);
+  font-family: var(--font-han);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.pack-summary-label {
+  color: var(--muted);
+  font-size: var(--type-label-small-size);
+  letter-spacing: var(--type-label-tracking);
+  line-height: var(--type-label-line);
+  text-transform: uppercase;
+}
+
+.pack-section-head {
+  margin: 1.75rem 0 0.625rem;
+}
+
+.pack-section-head h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-han);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.pack-section-head p {
+  margin: 0.1875rem 0 0;
+  color: var(--muted);
+  font-size: var(--type-body-small-size);
+  line-height: var(--type-body-line);
+}
+
 .download-card-head {
   display: flex;
   align-items: flex-start;

@@ -91,6 +91,28 @@ export function DownloadsView({
               download.phase === "done"
             ? "Downloading"
             : "Not added";
+  const totalPacks = 5;
+  const installedCount = [
+    englishStatus === "ready",
+    Boolean(fullEnglishMeta),
+    chineseReady,
+    Boolean(examplePack.meta),
+    Boolean(relatedPack.meta),
+  ].filter(Boolean).length;
+  const updateCount = [
+    examplePack.remoteVersion !== null &&
+      examplePack.meta !== null &&
+      examplePack.remoteVersion > examplePack.meta.version,
+    relatedPack.remoteVersion !== null &&
+      relatedPack.meta !== null &&
+      relatedPack.remoteVersion > relatedPack.meta.version,
+  ].filter(Boolean).length;
+  const storageBytes =
+    (fullEnglishMeta?.size ?? 0) +
+    (examplePack.meta?.bytes ?? 0) +
+    (relatedPack.meta?.bytes ?? 0);
+  const storageLabel =
+    storageBytes > 0 ? `${(storageBytes / 1024 / 1024).toFixed(1)} MB` : "0 MB";
 
   return (
     <div className="page downloads-page">
@@ -99,10 +121,36 @@ export function DownloadsView({
       </button>
 
       <header className="page-heading">
-        <div className="section-kicker">Dictionaries</div>
-        <h1>Downloads</h1>
-        <p>Dictionary download status.</p>
+        <div className="section-kicker">Library</div>
+        <h1>Packs</h1>
+        <p>Dictionaries and extras. Everything stays on this device.</p>
       </header>
+
+      <section className="pack-summary" aria-label="Pack summary">
+        <div className="pack-summary-stat">
+          <span className="pack-summary-value">
+            {installedCount}/{totalPacks}
+          </span>
+          <span className="pack-summary-label">installed</span>
+        </div>
+        <div className="pack-summary-stat">
+          <span className="pack-summary-value">{storageLabel}</span>
+          <span className="pack-summary-label">optional storage</span>
+        </div>
+        <div className="pack-summary-stat">
+          <span className="pack-summary-value">
+            {updateCount > 0 ? updateCount : "—"}
+          </span>
+          <span className="pack-summary-label">
+            {updateCount > 0 ? "updates ready" : "up to date"}
+          </span>
+        </div>
+      </section>
+
+      <div className="pack-section-head">
+        <h2>Dictionaries</h2>
+        <p>Core and full dictionaries.</p>
+      </div>
 
       <section className="settings-card download-card">
         <div className="download-card-head">
@@ -325,6 +373,163 @@ export function DownloadsView({
           </div>
         )}
       </section>
+
+      <section className="settings-card download-card">
+        <div className="download-card-head">
+          <div>
+            <h2>Chinese dictionary</h2>
+            <p>Chinese to English.</p>
+          </div>
+          <span
+            className={`status-pill ${
+              chineseReady ? "status-good" : "status-muted"
+            }`}
+          >
+            {chineseStatus}
+          </span>
+        </div>
+
+        {chineseReady ? (
+          <p className="download-ready">
+            <CheckCircle2 size={17} />
+            Downloaded and ready.
+          </p>
+        ) : native ? (
+          <div className="download-card-body">
+            {download.phase === "idle" ? (
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => void download.start()}
+              >
+                Download
+              </button>
+            ) : download.phase === "error" ? (
+              <>
+                <p className="download-state">Download stopped.</p>
+                <div className="download-actions">
+                  <button
+                    type="button"
+                    className="button button-primary button-small"
+                    onClick={() => void download.retry()}
+                  >
+                    <RefreshCw size={15} />
+                    Try again
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-secondary button-small"
+                    onClick={() => void download.cancel()}
+                  >
+                    <X size={15} />
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="download-progress-head">
+                  <span>
+                    {download.phase === "installing"
+                      ? "Preparing dictionary…"
+                      : download.phase === "checking"
+                        ? "Starting download…"
+                        : download.phase === "paused"
+                          ? "Paused."
+                          : waitingForWifi
+                            ? "Waiting for Wi-Fi…"
+                            : download.phase === "done"
+                              ? "Download complete."
+                              : "Downloading dictionary…"}
+                  </span>
+                  {percent !== null && <span>{percent}%</span>}
+                </div>
+                <div
+                  className={`progress-track ${
+                    percent === null || download.phase === "checking"
+                      ? "progress-indeterminate"
+                      : ""
+                  }`}
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={percent ?? undefined}
+                  aria-label="Chinese dictionary download progress"
+                >
+                  <div
+                    className="progress-fill"
+                    style={percent !== null ? { width: `${percent}%` } : undefined}
+                  />
+                </div>
+
+                {download.phase !== "installing" && (
+                  <div className="download-actions">
+                    {download.phase === "paused" ? (
+                      <button
+                        type="button"
+                        className="button button-primary button-small"
+                        onClick={() => void download.resume()}
+                      >
+                        <Play size={15} />
+                        Continue
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="button button-secondary button-small"
+                        onClick={() => void download.pause()}
+                        disabled={download.phase === "checking"}
+                      >
+                        <Pause size={15} />
+                        Pause
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="button button-secondary button-small"
+                      onClick={() => void download.cancel()}
+                    >
+                      <X size={15} />
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            <label className="setup-wifi-toggle">
+              <input
+                type="checkbox"
+                checked={download.wifiOnly}
+                onChange={(event) =>
+                  download.setWifiOnly(event.target.checked)
+                }
+              />
+              <Wifi size={14} />
+              Wi-Fi only
+            </label>
+          </div>
+        ) : (
+          <div className="download-card-body">
+            <p className="download-state">
+              Choose the dictionary file on this device.
+            </p>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={onImport}
+            >
+              <Plus size={16} />
+              Add dictionary
+            </button>
+          </div>
+        )}
+      </section>
+
+      <div className="pack-section-head">
+        <h2>Content packs</h2>
+        <p>Optional extras for entries.</p>
+      </div>
 
       <section className="settings-card download-card">
         <div className="download-card-head">
@@ -588,158 +793,6 @@ export function DownloadsView({
             </>
           )}
         </div>
-      </section>
-
-      <section className="settings-card download-card">
-        <div className="download-card-head">
-          <div>
-            <h2>Chinese dictionary</h2>
-            <p>Chinese to English.</p>
-          </div>
-          <span
-            className={`status-pill ${
-              chineseReady ? "status-good" : "status-muted"
-            }`}
-          >
-            {chineseStatus}
-          </span>
-        </div>
-
-        {chineseReady ? (
-          <p className="download-ready">
-            <CheckCircle2 size={17} />
-            Downloaded and ready.
-          </p>
-        ) : native ? (
-          <div className="download-card-body">
-            {download.phase === "idle" ? (
-              <button
-                type="button"
-                className="button button-primary"
-                onClick={() => void download.start()}
-              >
-                Download
-              </button>
-            ) : download.phase === "error" ? (
-              <>
-                <p className="download-state">Download stopped.</p>
-                <div className="download-actions">
-                  <button
-                    type="button"
-                    className="button button-primary button-small"
-                    onClick={() => void download.retry()}
-                  >
-                    <RefreshCw size={15} />
-                    Try again
-                  </button>
-                  <button
-                    type="button"
-                    className="button button-secondary button-small"
-                    onClick={() => void download.cancel()}
-                  >
-                    <X size={15} />
-                    Cancel
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="download-progress-head">
-                  <span>
-                    {download.phase === "installing"
-                      ? "Preparing dictionary…"
-                      : download.phase === "checking"
-                        ? "Starting download…"
-                        : download.phase === "paused"
-                          ? "Paused."
-                          : waitingForWifi
-                            ? "Waiting for Wi-Fi…"
-                            : download.phase === "done"
-                              ? "Download complete."
-                              : "Downloading dictionary…"}
-                  </span>
-                  {percent !== null && <span>{percent}%</span>}
-                </div>
-                <div
-                  className={`progress-track ${
-                    percent === null || download.phase === "checking"
-                      ? "progress-indeterminate"
-                      : ""
-                  }`}
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={percent ?? undefined}
-                  aria-label="Chinese dictionary download progress"
-                >
-                  <div
-                    className="progress-fill"
-                    style={percent !== null ? { width: `${percent}%` } : undefined}
-                  />
-                </div>
-
-                {download.phase !== "installing" && (
-                  <div className="download-actions">
-                    {download.phase === "paused" ? (
-                      <button
-                        type="button"
-                        className="button button-primary button-small"
-                        onClick={() => void download.resume()}
-                      >
-                        <Play size={15} />
-                        Continue
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="button button-secondary button-small"
-                        onClick={() => void download.pause()}
-                        disabled={download.phase === "checking"}
-                      >
-                        <Pause size={15} />
-                        Pause
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="button button-secondary button-small"
-                      onClick={() => void download.cancel()}
-                    >
-                      <X size={15} />
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-
-            <label className="setup-wifi-toggle">
-              <input
-                type="checkbox"
-                checked={download.wifiOnly}
-                onChange={(event) =>
-                  download.setWifiOnly(event.target.checked)
-                }
-              />
-              <Wifi size={14} />
-              Wi-Fi only
-            </label>
-          </div>
-        ) : (
-          <div className="download-card-body">
-            <p className="download-state">
-              Choose the dictionary file on this device.
-            </p>
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={onImport}
-            >
-              <Plus size={16} />
-              Add dictionary
-            </button>
-          </div>
-        )}
       </section>
 
       <p className="download-privacy">

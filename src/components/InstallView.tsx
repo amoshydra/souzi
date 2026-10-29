@@ -42,7 +42,7 @@ export function InstallView({ onBack }: { onBack: () => void }) {
             <div>
               <h2>Open Souzi</h2>
               <p>
-                Install the file, open Souzi, then go to Downloads and add the
+                Install the file, open Souzi, then go to Packs and add the
                 full English dictionary.
               </p>
             </div>

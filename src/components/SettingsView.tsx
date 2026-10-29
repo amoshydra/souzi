@@ -17,14 +17,14 @@ export function SettingsView({
       <header className="page-heading">
         <div className="section-kicker">Preferences</div>
         <h1>Settings</h1>
-        <p>Downloads and appearance.</p>
+        <p>Packs and appearance.</p>
       </header>
 
       <section className="settings-card">
         <div className="settings-card-head">
           <div>
-            <h2>Downloads</h2>
-            <p>Dictionary downloads.</p>
+            <h2>Packs</h2>
+            <p>Dictionaries and extras.</p>
           </div>
         </div>
         <button
