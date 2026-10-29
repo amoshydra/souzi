@@ -1,0 +1,35 @@
+{
+  "run": [
+    {
+      "text": "I run every morning before work.",
+      "translation": "我每天上班前跑步。",
+      "source": "starter"
+    },
+    {
+      "text": "The program will run for three hours.",
+      "translation": "程序将运行三小时。",
+      "source": "starter"
+    }
+  ],
+  "look up": [
+    {
+      "text": "Look up the word in the dictionary.",
+      "translation": "在字典里查这个词。",
+      "source": "starter"
+    }
+  ],
+  "give up": [
+    {
+      "text": "Don't give up too easily.",
+      "translation": "不要轻易放弃。",
+      "source": "starter"
+    }
+  ],
+  "make": [
+    {
+      "text": "She made a cake for the party.",
+      "translation": "她为聚会做了一个蛋糕。",
+      "source": "starter"
+    }
+  ]
+}

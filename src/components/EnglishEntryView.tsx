@@ -14,6 +14,12 @@ import {
 } from "../lib/db";
 import { getFullEnglishEntriesByIds } from "../lib/full-english";
 import { speakEnglish } from "../lib/speech";
+import {
+  loadExampleSentences,
+  exampleSentencesFor,
+  exchangeForms,
+  type ExampleSentence,
+} from "../lib/example-sentences";
 
 export function EnglishEntryView({
   id,
@@ -32,6 +38,7 @@ export function EnglishEntryView({
 }) {
   const [entry, setEntry] = useState<EnglishEntry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [examples, setExamples] = useState<ExampleSentence[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -92,6 +99,20 @@ export function EnglishEntryView({
       onToast(result.reason ?? "Speech is not available on this device", "error");
     }
   };
+
+  useEffect(() => {
+    if (!entry) {
+      setExamples([]);
+      return;
+    }
+    let active = true;
+    void loadExampleSentences("en").then((map) => {
+      if (active) setExamples(exampleSentencesFor(map, entry.word));
+    });
+    return () => {
+      active = false;
+    };
+  }, [entry]);
 
   if (loading) {
     return (
@@ -194,6 +215,35 @@ export function EnglishEntryView({
           <ul>
             {entry.definitions.map((definition, index) => (
               <li key={`${definition}-${index}`}>{definition}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {exchangeForms(entry.exchange).length > 0 && (
+        <section className="panel forms-panel">
+          <div className="panel-kicker">Forms</div>
+          <div className="form-chips">
+            {exchangeForms(entry.exchange)
+              .filter((form) => form !== entry.word.toLowerCase())
+              .map((form) => (
+                <span className="form-chip" key={form}>
+                  {form}
+                </span>
+              ))}
+          </div>
+        </section>
+      )}
+
+      {examples.length > 0 && (
+        <section className="panel examples-panel">
+          <div className="panel-kicker">Examples</div>
+          <ul className="example-list">
+            {examples.map((example, index) => (
+              <li className="example-item" key={`${example.text}-${index}`}>
+                <p className="example-text">{example.text}</p>
+                <p className="example-translation">{example.translation}</p>
+              </li>
             ))}
           </ul>
         </section>

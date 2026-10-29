@@ -9,6 +9,7 @@ import {
 import type { Entry, UserWord } from "../types";
 import { addHistory, getEntriesByIds, getEntryBySimp, toggleFavorite } from "../lib/db";
 import { speakChinese } from "../lib/speech";
+import { loadExampleSentences, exampleSentencesFor } from "../lib/example-sentences";
 
 export function EntryView({
   id,
@@ -28,6 +29,9 @@ export function EntryView({
   const [entry, setEntry] = useState<Entry | null>(null);
   const [characters, setCharacters] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [examples, setExamples] = useState<
+    { text: string; translation: string; source?: string }[]
+  >([]);
 
   useEffect(() => {
     let active = true;
@@ -99,6 +103,20 @@ export function EntryView({
       onToast(result.reason ?? "Speech is not available on this device", "error");
     }
   };
+
+  useEffect(() => {
+    if (!entry) {
+      setExamples([]);
+      return;
+    }
+    let active = true;
+    void loadExampleSentences("zh").then((map) => {
+      if (active) setExamples(exampleSentencesFor(map, entry.simp));
+    });
+    return () => {
+      active = false;
+    };
+  }, [entry]);
 
   if (loading) {
     return (
@@ -217,6 +235,22 @@ export function EntryView({
           </div>
         )}
       </section>
+
+      {examples.length > 0 && (
+        <section className="panel examples-panel">
+          <div className="panel-kicker">Examples</div>
+          <ul className="example-list">
+            {examples.map((example, index) => (
+              <li className="example-item" key={`${example.text}-${index}`}>
+                <p className="example-text" lang="zh">
+                  {example.text}
+                </p>
+                <p className="example-translation">{example.translation}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {characters.length > 0 && (
         <section className="character-section">
