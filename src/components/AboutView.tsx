@@ -126,6 +126,17 @@ export function AboutView({
                 (MIT license)
               </li>
               <li>
+                Example sentences:{" "}
+                <a
+                  href="https://tatoeba.org"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Tatoeba
+                </a>{" "}
+                (CC BY 2.0 FR)
+              </li>
+              <li>
                 App code:{" "}
                 <a
                   href="https://github.com/amoshydra/souzi"

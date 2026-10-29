@@ -340,6 +340,17 @@ export function DownloadsView({
                 From Tatoeba ({examplePack.meta.license}).
               </p>
               <div className="download-actions">
+                {examplePack.remoteVersion !== null &&
+                  examplePack.remoteVersion > examplePack.meta.version && (
+                    <button
+                      type="button"
+                      className="button button-primary button-small"
+                      onClick={() => void examplePack.install()}
+                    >
+                      <RefreshCw size={15} />
+                      Update to v{examplePack.remoteVersion}
+                    </button>
+                  )}
                 <button
                   type="button"
                   className="button button-secondary button-small"
