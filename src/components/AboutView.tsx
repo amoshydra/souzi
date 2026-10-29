@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   BookOpen,
+  Github,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -127,16 +128,37 @@ export function AboutView({
               <li>
                 App code:{" "}
                 <a
+                  href="https://github.com/amoshydra/souzi"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Souzi on GitHub
+                </a>{" "}
+                (
+                <a
                   href="https://www.apache.org/licenses/LICENSE-2.0"
                   target="_blank"
                   rel="noreferrer"
                 >
                   Apache License 2.0
                 </a>
+                )
               </li>
             </ul>
           </details>
+          <p className="about-source-note">
+            Source code, releases, and bug reports are on the GitHub project.
+          </p>
           <div className="button-row">
+            <a
+              className="button button-secondary"
+              href="https://github.com/amoshydra/souzi"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Github size={18} />
+              View on GitHub
+            </a>
             <button
               type="button"
               className="button button-secondary"

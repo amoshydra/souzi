@@ -876,6 +876,10 @@ input:focus-visible {
   margin-top: 0.875rem;
 }
 
+.about-source-note {
+  margin-top: 0.75rem;
+}
+
 .about-content .how-grid {
   margin-top: 0;
 }
