@@ -269,7 +269,7 @@ export function SetupView({
                   <span>Download the file first.</span>
                   <span className="setup-dropzone-actions">
                     <a
-                      className="button button-secondary button-small"
+                      className="button button-primary"
                       href={CEDICT_DIRECT}
                       target="_blank"
                       rel="noreferrer"
@@ -279,7 +279,7 @@ export function SetupView({
                     </a>
                     <button
                       type="button"
-                      className="button button-primary"
+                      className="button button-secondary"
                       onClick={() => inputRef.current?.click()}
                       disabled={importing}
                     >

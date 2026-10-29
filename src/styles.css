@@ -2998,6 +2998,7 @@ html.keyboard-open .bottom-nav {
 }
 
 .setup-dropzone-actions .button {
+  flex: 1 1 auto;
   min-width: 0;
   max-width: 100%;
 }
@@ -3298,11 +3299,21 @@ html.keyboard-open .bottom-nav {
 
   .segmented {
     width: 100%;
+    row-gap: 0.25rem;
   }
 
   .segment {
     flex: 1 1 auto;
     justify-content: center;
+  }
+
+  .segment:first-child {
+    flex: 1 0 100%;
+  }
+
+  .segment:nth-child(2),
+  .segment:nth-child(3) {
+    flex: 1 1 0;
   }
 }
 
