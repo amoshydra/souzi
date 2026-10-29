@@ -1,0 +1,16 @@
+{
+  "id": "related-en",
+  "name": "Related Words",
+  "version": 1,
+  "schema": 1,
+  "entries": 97457,
+  "words": 25372,
+  "file": "souzi-related-v1.json.gz",
+  "url": "https://raw.githubusercontent.com/amoshydra/souzi/dict-manifest/related/v1/souzi-related-v1.json.gz",
+  "bytes": 532582,
+  "sha256": "a0b3a0363004b5557e93066e3c60e08eee54df7fb238ddf201af59d0a472080e",
+  "license": "WordNet License",
+  "source": "Princeton WordNet 3.1",
+  "sourceUrl": "https://wordnet.princeton.edu",
+  "builtAt": "2026-10-29T19:33:44Z"
+}
