@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=overlays-content"
+    />
+    <meta
+      name="description"
+      content="Souzi is a free, offline-first English–Chinese dictionary for web and Android. Bundled English core, optional 770,000-word pack, local CC-CEDICT import, no account or tracking."
+    />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f3e8" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d1411" />
+    <link rel="canonical" href="https://amoshydra.github.io/souzi/" />
+    <meta name="application-name" content="Souzi" />
+    <meta name="apple-mobile-web-app-title" content="Souzi" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Souzi" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://amoshydra.github.io/souzi/" />
+    <meta property="og:title" content="Souzi — Offline English–Chinese Dictionary" />
+    <meta
+      property="og:description"
+      content="Look up English and Chinese offline. Free, private, and made to be easy to read. No account, no tracking, no server."
+    />
+    <meta property="og:image" content="https://amoshydra.github.io/souzi/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Souzi logo with the Chinese character 字 inside a magnifying glass"
+    />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Souzi — Offline English–Chinese Dictionary" />
+    <meta
+      name="twitter:description"
+      content="Look up English and Chinese offline. Free, private, and made to be easy to read. No account, no tracking, no server."
+    />
+    <meta name="twitter:image" content="https://amoshydra.github.io/souzi/og-image.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Souzi logo with the Chinese character 字 inside a magnifying glass"
+    />
+
+    <link rel="icon" type="image/svg+xml" href="/souzi/favicon.svg" />
+    <link rel="apple-touch-icon" href="/souzi/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Souzi",
+        "alternateName": "搜字",
+        "url": "https://amoshydra.github.io/souzi/",
+        "description": "A free, offline-first English–Chinese dictionary for web and Android. No account, no tracking, and no server.",
+        "applicationCategory": "ReferenceApplication",
+        "operatingSystem": "Web, Android",
+        "browserRequirements": "Requires JavaScript",
+        "inLanguage": ["en", "zh"],
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "image": "https://amoshydra.github.io/souzi/og-image.png",
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "sameAs": ["https://github.com/amoshydra/souzi"]
+      }
+    </script>
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem("souzi-theme");
+          var dark =
+            theme === "dark" ||
+            ((!theme || theme === "system") &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        } catch (_) {
+          /* localStorage can be unavailable in private modes. */
+        }
+      })();
+    </script>
+    <title>Souzi — Offline English–Chinese Dictionary</title>
+    <script type="module" crossorigin src="/souzi/assets/index-BQdYvATT.js"></script>
+    <link rel="stylesheet" crossorigin href="/souzi/assets/index-CnhOK8SF.css">
+  <link rel="manifest" href="/souzi/manifest.webmanifest"></head>
+  <body>
+    <div id="root"></div>
+    <noscript>This app needs JavaScript enabled.</noscript>
+  </body>
+</html>
