@@ -9,7 +9,11 @@ import {
 import type { Entry, UserWord } from "../types";
 import { addHistory, getEntriesByIds, getEntryBySimp, toggleFavorite } from "../lib/db";
 import { speakChinese } from "../lib/speech";
-import { loadExampleSentences, exampleSentencesFor } from "../lib/example-sentences";
+import {
+  loadExampleSentences,
+  exampleSentencesFor,
+  exampleAttribution,
+} from "../lib/example-sentences";
 import { loadRelatedWords, relatedWordsFor } from "../lib/related";
 
 export function EntryView({
@@ -17,6 +21,7 @@ export function EntryView({
   favorites,
   onBack,
   onOpenEntry,
+  onOpenSimp,
   onFavoriteChange,
   onToast,
 }: {
@@ -24,6 +29,7 @@ export function EntryView({
   favorites: UserWord[];
   onBack: () => void;
   onOpenEntry: (id: number) => void;
+  onOpenSimp: (simp: string) => void;
   onFavoriteChange: () => void;
   onToast: (message: string, tone?: "default" | "error") => void;
 }) {
@@ -265,6 +271,7 @@ export function EntryView({
               </li>
             ))}
           </ul>
+          <p className="content-attribution">{exampleAttribution(examples)}</p>
         </section>
       )}
 
@@ -273,11 +280,18 @@ export function EntryView({
           <div className="panel-kicker">Related words</div>
           <div className="form-chips">
             {related.map((word) => (
-              <span className="form-chip" key={word} lang="zh">
+              <button
+                type="button"
+                className="form-chip form-chip-button"
+                key={word}
+                lang="zh"
+                onClick={() => onOpenSimp(word)}
+              >
                 {word}
-              </span>
+              </button>
             ))}
           </div>
+          <p className="content-attribution">Starter related words</p>
         </section>
       )}
 

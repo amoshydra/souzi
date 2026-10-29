@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import {
   getDictionaryMeta,
+  getEnglishEntryByWord,
   getEntryBySimp,
   listEnglishFavorites,
   listFavorites,
@@ -30,7 +31,7 @@ import type { FullEnglishMeta } from "./types";
 import { useKeyboardViewport } from "./hooks/useKeyboardViewport";
 import { useNativeCedictDownload } from "./hooks/useNativeCedictDownload";
 import { useFullEnglishDownload } from "./hooks/useFullEnglishDownload";
-import { getFullEnglishStatus, removeFullEnglishPack } from "./lib/full-english";
+import { getFullEnglishStatus, removeFullEnglishPack, searchFullEnglish } from "./lib/full-english";
 import { ChineseDownloadBanner } from "./components/ChineseDownloadBanner";
 import { SearchPage } from "./components/SearchPage";
 import { EntryView } from "./components/EntryView";
@@ -352,6 +353,29 @@ export default function App() {
     navigate({ name: "entry", kind: "en", id });
   };
 
+  const openEnglishWord = async (word: string) => {
+    try {
+      if (fullEnglishMeta) {
+        const matches = await searchFullEnglish(word);
+        const exact =
+          matches.find((match) => match.match === "word") ?? matches[0];
+        if (exact) {
+          openEnglish(exact.id);
+          return;
+        }
+      } else {
+        const entry = await getEnglishEntryByWord(word);
+        if (entry) {
+          openEnglish(entry.id);
+          return;
+        }
+      }
+      showToast("That word is not in the dictionary", "error");
+    } catch {
+      showToast("Could not open that word", "error");
+    }
+  };
+
   const installEnglish = async () => {
     setEnglishStatus("loading");
     try {
@@ -504,6 +528,7 @@ export default function App() {
                 onOpenEntry={(id) =>
                   navigate({ name: "entry", kind: "zh", id })
                 }
+                onOpenSimp={openSimp}
                 onFavoriteChange={() => void refreshFavorites()}
                 onToast={showToast}
               />
@@ -513,6 +538,7 @@ export default function App() {
                 favorites={englishFavorites}
                 fullEnglish={fullEnglishMeta !== null}
                 onBack={handleBack}
+                onOpenWord={openEnglishWord}
                 onFavoriteChange={() => void refreshEnglishFavorites()}
                 onToast={showToast}
               />

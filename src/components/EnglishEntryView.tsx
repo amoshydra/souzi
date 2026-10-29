@@ -17,6 +17,7 @@ import { speakEnglish } from "../lib/speech";
 import {
   loadExampleSentences,
   exampleSentencesFor,
+  exampleAttribution,
   exchangeForms,
   type ExampleSentence,
 } from "../lib/example-sentences";
@@ -27,6 +28,7 @@ export function EnglishEntryView({
   favorites,
   fullEnglish,
   onBack,
+  onOpenWord,
   onFavoriteChange,
   onToast,
 }: {
@@ -34,6 +36,7 @@ export function EnglishEntryView({
   favorites: EnglishSavedWord[];
   fullEnglish: boolean;
   onBack: () => void;
+  onOpenWord: (word: string) => void;
   onFavoriteChange: () => void;
   onToast: (message: string, tone?: "default" | "error") => void;
 }) {
@@ -243,9 +246,14 @@ export function EnglishEntryView({
             {exchangeForms(entry.exchange)
               .filter((form) => form !== entry.word.toLowerCase())
               .map((form) => (
-                <span className="form-chip" key={form}>
+                <button
+                  type="button"
+                  className="form-chip form-chip-button"
+                  key={form}
+                  onClick={() => onOpenWord(form)}
+                >
                   {form}
-                </span>
+                </button>
               ))}
           </div>
         </section>
@@ -262,6 +270,7 @@ export function EnglishEntryView({
               </li>
             ))}
           </ul>
+          <p className="content-attribution">{exampleAttribution(examples)}</p>
         </section>
       )}
 
@@ -270,11 +279,17 @@ export function EnglishEntryView({
           <div className="panel-kicker">Related words</div>
           <div className="form-chips">
             {related.map((word) => (
-              <span className="form-chip" key={word}>
+              <button
+                type="button"
+                className="form-chip form-chip-button"
+                key={word}
+                onClick={() => onOpenWord(word)}
+              >
                 {word}
-              </span>
+              </button>
             ))}
           </div>
+          <p className="content-attribution">Starter related words</p>
         </section>
       )}
 

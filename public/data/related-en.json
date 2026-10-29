@@ -2,5 +2,16 @@
   "run": ["jog", "sprint", "dash", "operate", "function"],
   "make": ["create", "build", "produce", "manufacture"],
   "look": ["see", "watch", "observe", "search"],
-  "give": ["provide", "offer", "grant", "donate"]
+  "give": ["provide", "offer", "grant", "donate"],
+  "learn": ["study", "master", "discover", "practise"],
+  "work": ["job", "labour", "task", "effort"],
+  "time": ["period", "moment", "duration", "hour"],
+  "book": ["volume", "text", "publication", "title"],
+  "water": ["liquid", "drink", "rain", "sea"],
+  "friend": ["companion", "ally", "buddy", "mate"],
+  "read": ["peruse", "study", "scan", "browse"],
+  "write": ["compose", "record", "scribble", "draft"],
+  "speak": ["talk", "say", "tell", "express"],
+  "eat": ["consume", "devour", "dine", "chew"],
+  "drink": ["sip", "swallow", "consume", "gulp"]
 }

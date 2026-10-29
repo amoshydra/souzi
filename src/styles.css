@@ -2797,6 +2797,29 @@ html.keyboard-open .bottom-nav {
   line-height: var(--type-label-line);
 }
 
+.form-chip-button {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.form-chip-button:hover {
+  border-color: var(--jade);
+  background: var(--jade-soft);
+  color: var(--jade);
+}
+
+.content-attribution {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: var(--type-label-small-size);
+  line-height: var(--type-label-line);
+}
+
 
 .history-en-word {
   max-width: 9.375rem;
