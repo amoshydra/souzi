@@ -10,6 +10,7 @@ import type { Entry, UserWord } from "../types";
 import { addHistory, getEntriesByIds, getEntryBySimp, toggleFavorite } from "../lib/db";
 import { speakChinese } from "../lib/speech";
 import { loadExampleSentences, exampleSentencesFor } from "../lib/example-sentences";
+import { loadRelatedWords, relatedWordsFor } from "../lib/related";
 
 export function EntryView({
   id,
@@ -32,6 +33,7 @@ export function EntryView({
   const [examples, setExamples] = useState<
     { text: string; translation: string; source?: string }[]
   >([]);
+  const [related, setRelated] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -112,6 +114,20 @@ export function EntryView({
     let active = true;
     void loadExampleSentences("zh").then((map) => {
       if (active) setExamples(exampleSentencesFor(map, entry.simp));
+    });
+    return () => {
+      active = false;
+    };
+  }, [entry]);
+
+  useEffect(() => {
+    if (!entry) {
+      setRelated([]);
+      return;
+    }
+    let active = true;
+    void loadRelatedWords("zh").then((map) => {
+      if (active) setRelated(relatedWordsFor(map, entry.simp));
     });
     return () => {
       active = false;
@@ -249,6 +265,19 @@ export function EntryView({
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {related.length > 0 && (
+        <section className="panel related-panel">
+          <div className="panel-kicker">Related words</div>
+          <div className="form-chips">
+            {related.map((word) => (
+              <span className="form-chip" key={word} lang="zh">
+                {word}
+              </span>
+            ))}
+          </div>
         </section>
       )}
 

@@ -1,0 +1,6 @@
+{
+  "run": ["jog", "sprint", "dash", "operate", "function"],
+  "make": ["create", "build", "produce", "manufacture"],
+  "look": ["see", "watch", "observe", "search"],
+  "give": ["provide", "offer", "grant", "donate"]
+}

@@ -20,6 +20,7 @@ import {
   exchangeForms,
   type ExampleSentence,
 } from "../lib/example-sentences";
+import { loadRelatedWords, relatedWordsFor } from "../lib/related";
 
 export function EnglishEntryView({
   id,
@@ -39,6 +40,7 @@ export function EnglishEntryView({
   const [entry, setEntry] = useState<EnglishEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [examples, setExamples] = useState<ExampleSentence[]>([]);
+  const [related, setRelated] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -108,6 +110,20 @@ export function EnglishEntryView({
     let active = true;
     void loadExampleSentences("en").then((map) => {
       if (active) setExamples(exampleSentencesFor(map, entry.word));
+    });
+    return () => {
+      active = false;
+    };
+  }, [entry]);
+
+  useEffect(() => {
+    if (!entry) {
+      setRelated([]);
+      return;
+    }
+    let active = true;
+    void loadRelatedWords("en").then((map) => {
+      if (active) setRelated(relatedWordsFor(map, entry.word));
     });
     return () => {
       active = false;
@@ -246,6 +262,19 @@ export function EnglishEntryView({
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {related.length > 0 && (
+        <section className="panel related-panel">
+          <div className="panel-kicker">Related words</div>
+          <div className="form-chips">
+            {related.map((word) => (
+              <span className="form-chip" key={word}>
+                {word}
+              </span>
+            ))}
+          </div>
         </section>
       )}
 
