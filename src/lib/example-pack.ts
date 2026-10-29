@@ -38,9 +38,16 @@ function toHex(buffer: ArrayBuffer): string {
 }
 
 export async function fetchExamplePackManifest(): Promise<ExamplePackManifest> {
-  const response = await fetch(`${EXAMPLE_PACK_MANIFEST_URL}?t=${Date.now()}`, {
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${EXAMPLE_PACK_MANIFEST_URL}?t=${Date.now()}`, {
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error(
+      "Could not reach the pack server. Check the internet connection or the app's network permission.",
+    );
+  }
   if (!response.ok) {
     throw new Error("Could not check the example pack.");
   }
@@ -81,7 +88,15 @@ export async function installExamplePack(
   if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
 
   onProgress?.({ phase: "downloading", loaded: 0, total: manifest.bytes });
-  const response = await fetch(manifest.url, { cache: "no-store", signal });
+  let response: Response;
+  try {
+    response = await fetch(manifest.url, { cache: "no-store", signal });
+  } catch {
+    if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
+    throw new Error(
+      "Could not download the example pack. Check the internet connection or the app's network permission.",
+    );
+  }
   if (!response.ok || !response.body) {
     throw new Error("The example pack could not be downloaded.");
   }
