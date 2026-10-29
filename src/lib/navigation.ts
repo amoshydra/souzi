@@ -7,6 +7,7 @@ export type Route =
   | { name: "settings" }
   | { name: "about" }
   | { name: "downloads" }
+  | { name: "install" }
   | { name: "import" };
 
 export type Tab = "search" | "saved" | "settings";
@@ -37,6 +38,7 @@ export function parseHash(): Route {
   if (name === "settings") return { name: "settings" };
   if (name === "about") return { name: "about" };
   if (name === "downloads") return { name: "downloads" };
+  if (name === "install") return { name: "install" };
   if (name === "import") return { name: "import" };
   return { name: "search" };
 }
@@ -53,6 +55,8 @@ export function routeToHash(route: Route): string {
       return "#/about";
     case "downloads":
       return "#/downloads";
+    case "install":
+      return "#/install";
     case "import":
       return "#/import";
     default:

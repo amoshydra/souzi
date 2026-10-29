@@ -29,6 +29,7 @@ export function DownloadsView({
   onBack,
   onInstallEnglish,
   onImport,
+  onOpenInstall,
 }: {
   chineseMeta: DictionaryMeta | null;
   englishStatus: EnglishCoreStatus;
@@ -39,6 +40,7 @@ export function DownloadsView({
   onBack: () => void;
   onInstallEnglish: () => void;
   onImport: () => void;
+  onOpenInstall: () => void;
 }) {
   const native = Capacitor.isNativePlatform();
   const chineseReady = chineseMeta?.kind === "cedict";
@@ -279,7 +281,16 @@ export function DownloadsView({
         ) : (
           <div className="download-card-body">
             <p className="download-state">
-              The full English dictionary can be downloaded in the Android app.
+              The full English dictionary can be downloaded in the Android app.{" "}
+              {!native && (
+                <button
+                  type="button"
+                  className="text-link download-install-link"
+                  onClick={onOpenInstall}
+                >
+                  How to install
+                </button>
+              )}
             </p>
           </div>
         )}

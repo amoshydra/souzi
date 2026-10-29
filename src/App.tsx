@@ -39,6 +39,7 @@ import { ImportView } from "./components/ImportView";
 import { SavedView } from "./components/SavedView";
 import { SettingsView } from "./components/SettingsView";
 import { DownloadsView } from "./components/DownloadsView";
+import { InstallView } from "./components/InstallView";
 import { AboutView } from "./components/AboutView";
 import { SetupView } from "./components/SetupView";
 import { Logo } from "./components/Logo";
@@ -552,7 +553,10 @@ export default function App() {
               onBack={handleBack}
               onInstallEnglish={installEnglish}
               onImport={() => navigate({ name: "import" })}
+              onOpenInstall={() => navigate({ name: "install" })}
             />
+          ) : route.name === "install" ? (
+            <InstallView onBack={handleBack} />
           ) : route.name === "about" ? (
             <AboutView
               onBack={handleBack}
