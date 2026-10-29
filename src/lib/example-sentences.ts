@@ -1,8 +1,5 @@
-export interface ExampleSentence {
-  text: string;
-  translation: string;
-  source?: string;
-}
+import type { ExampleSentence } from "../types";
+import { getInstalledExamplePack } from "./db";
 
 type ExampleMap = Record<string, ExampleSentence[]>;
 
@@ -13,6 +10,14 @@ export async function loadExampleSentences(
 ): Promise<ExampleMap> {
   const cached = cache.get(language);
   if (cached) return cached;
+
+  if (language === "en") {
+    const installed = await getInstalledExamplePack();
+    if (installed?.examples) {
+      cache.set(language, installed.examples);
+      return installed.examples;
+    }
+  }
 
   try {
     const response = await fetch(
@@ -29,6 +34,10 @@ export async function loadExampleSentences(
     cache.set(language, {});
     return {};
   }
+}
+
+export function clearExampleSentenceCache(): void {
+  cache.clear();
 }
 
 export function exampleSentencesFor(

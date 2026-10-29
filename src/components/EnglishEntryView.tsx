@@ -6,7 +6,7 @@ import {
   Star,
   Volume2,
 } from "lucide-react";
-import type { EnglishEntry, EnglishSavedWord } from "../types";
+import type { EnglishEntry, EnglishSavedWord, ExampleSentence } from "../types";
 import {
   addEnglishHistory,
   getEnglishEntriesByIds,
@@ -19,7 +19,6 @@ import {
   exampleSentencesFor,
   exampleAttribution,
   exchangeForms,
-  type ExampleSentence,
 } from "../lib/example-sentences";
 import { loadRelatedWords, relatedWordsFor } from "../lib/related";
 

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { NativeCedictDownload } from "../hooks/useNativeCedictDownload";
 import type { FullEnglishDownload } from "../hooks/useFullEnglishDownload";
+import type { ExamplePackState } from "../hooks/useExamplePack";
 import { getActivePercent } from "../lib/download-progress";
 import type {
   DictionaryMeta,
@@ -26,6 +27,7 @@ export function DownloadsView({
   download,
   fullEnglishMeta,
   fullDownload,
+  examplePack,
   onRemoveFullEnglish,
   onBack,
   onInstallEnglish,
@@ -37,6 +39,7 @@ export function DownloadsView({
   download: NativeCedictDownload;
   fullEnglishMeta: FullEnglishMeta | null;
   fullDownload: FullEnglishDownload;
+  examplePack: ExamplePackState;
   onRemoveFullEnglish: () => void;
   onBack: () => void;
   onInstallEnglish: () => void;
@@ -53,6 +56,15 @@ export function DownloadsView({
   const fullWaitingForWifi =
     fullDownload.downloadStatus === "waiting" ||
     (fullDownload.downloadStatus === "pending" && fullDownload.wifiOnly);
+  const examplePercent =
+    examplePack.progress?.total && examplePack.progress.total > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (examplePack.progress.loaded / examplePack.progress.total) * 100,
+          ),
+        )
+      : null;
 
   const chineseStatus = chineseReady
     ? "Ready"
@@ -300,6 +312,125 @@ export function DownloadsView({
             )}
           </div>
         )}
+      </section>
+
+      <section className="settings-card download-card">
+        <div className="download-card-head">
+          <div>
+            <h2>Example sentences</h2>
+            <p>Tatoeba · English–Chinese pairs.</p>
+          </div>
+          <span
+            className={`status-pill ${
+              examplePack.meta ? "status-good" : "status-muted"
+            }`}
+          >
+            {examplePack.meta ? "READY" : "OPTIONAL"}
+          </span>
+        </div>
+
+        <div className="download-card-body">
+          {examplePack.meta ? (
+            <>
+              <p className="download-state">
+                {examplePack.meta.entries.toLocaleString()} examples installed ·
+                version {examplePack.meta.version}
+              </p>
+              <p className="download-source">
+                From Tatoeba ({examplePack.meta.license}).
+              </p>
+              <div className="download-actions">
+                <button
+                  type="button"
+                  className="button button-secondary button-small"
+                  onClick={() => void examplePack.remove()}
+                >
+                  Remove
+                </button>
+              </div>
+            </>
+          ) : examplePack.phase === "error" ? (
+            <>
+              <p className="download-state download-error">
+                {examplePack.error}
+              </p>
+              <div className="download-actions">
+                <button
+                  type="button"
+                  className="button button-primary button-small"
+                  onClick={() => void examplePack.install()}
+                >
+                  <RefreshCw size={15} />
+                  Try again
+                </button>
+              </div>
+            </>
+          ) : examplePack.phase === "checking" ||
+            examplePack.phase === "downloading" ||
+            examplePack.phase === "installing" ? (
+            <>
+              <div className="setup-progress">
+                <div className="setup-progress-head">
+                  <span>
+                    {examplePack.phase === "checking"
+                      ? "Checking pack…"
+                      : examplePack.phase === "installing"
+                        ? "Installing examples…"
+                        : "Downloading examples…"}
+                  </span>
+                  {examplePercent !== null && <span>{examplePercent}%</span>}
+                </div>
+                <div
+                  className={`progress-track ${
+                    examplePercent === null ? "progress-indeterminate" : ""
+                  }`}
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={examplePercent ?? undefined}
+                  aria-label="Example pack download progress"
+                >
+                  <div
+                    className="progress-fill"
+                    style={
+                      examplePercent !== null
+                        ? { width: `${examplePercent}%` }
+                        : undefined
+                    }
+                  />
+                </div>
+              </div>
+              {examplePack.phase !== "installing" && (
+                <div className="download-actions">
+                  <button
+                    type="button"
+                    className="button button-secondary button-small"
+                    onClick={examplePack.cancel}
+                  >
+                    <X size={15} />
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="download-state">
+                Add real example sentences to English entries. About 1 MB.
+              </p>
+              <div className="download-actions">
+                <button
+                  type="button"
+                  className="button button-primary button-small"
+                  onClick={() => void examplePack.install()}
+                >
+                  <Plus size={15} />
+                  Install
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </section>
 
       <section className="settings-card download-card">

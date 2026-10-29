@@ -7,6 +7,7 @@ import type {
   EnglishSavedWord,
   EnglishSearchIndex,
   Entry,
+  ExamplePack,
   HistoryWord,
   SearchIndex,
   UserWord,
@@ -53,10 +54,14 @@ interface SouziDB extends DBSchema {
     key: string;
     value: EnglishHistoryWord;
   };
+  examplePacks: {
+    key: string;
+    value: ExamplePack;
+  };
 }
 
 const DB_NAME = "souzi";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 let dbPromise: Promise<IDBPDatabase<SouziDB>> | null = null;
 let cachedIndex: SearchIndex | null = null;
@@ -97,6 +102,9 @@ export function getDB(): Promise<IDBPDatabase<SouziDB>> {
         }
         if (!db.objectStoreNames.contains("englishHistory")) {
           db.createObjectStore("englishHistory", { keyPath: "key" });
+        }
+        if (!db.objectStoreNames.contains("examplePacks")) {
+          db.createObjectStore("examplePacks");
         }
       },
     });
@@ -505,4 +513,21 @@ export async function getStorageEstimate(): Promise<{
 export async function requestPersistence(): Promise<boolean> {
   if (!navigator.storage?.persist) return false;
   return navigator.storage.persist();
+}
+
+export async function getInstalledExamplePack(): Promise<
+  ExamplePack | undefined
+> {
+  const db = await getDB();
+  return db.get("examplePacks", "en");
+}
+
+export async function putInstalledExamplePack(pack: ExamplePack): Promise<void> {
+  const db = await getDB();
+  await db.put("examplePacks", pack, "en");
+}
+
+export async function removeInstalledExamplePack(): Promise<void> {
+  const db = await getDB();
+  await db.delete("examplePacks", "en");
 }

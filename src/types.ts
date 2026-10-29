@@ -94,6 +94,34 @@ export interface FullEnglishMeta {
   sourceCommit?: string;
 }
 
+export interface ExampleSentence {
+  text: string;
+  translation: string;
+  source?: string;
+}
+
+export interface ExamplePack {
+  version: number;
+  source: string;
+  sourceUrl?: string;
+  license: string;
+  installedAt: string;
+  entries: number;
+  bytes: number;
+  sha256: string;
+  examples: Record<string, ExampleSentence[]>;
+}
+
+export interface ExamplePackMeta {
+  version: number;
+  entries: number;
+  bytes: number;
+  sha256: string;
+  source: string;
+  license: string;
+  installedAt: string;
+}
+
 export interface DictionaryMeta {
   count: number;
   importedAt: string;
