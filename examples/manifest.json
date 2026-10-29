@@ -1,0 +1,16 @@
+{
+  "id": "examples-en-zh",
+  "name": "Example Sentences",
+  "version": 1,
+  "schema": 1,
+  "entries": 25509,
+  "words": 11278,
+  "file": "souzi-examples-v1.json.gz",
+  "url": "https://raw.githubusercontent.com/amoshydra/souzi/dict-manifest/examples/v1/souzi-examples-v1.json.gz",
+  "bytes": 1019466,
+  "sha256": "cb447da7323bcb04ef2bf0d279744c9ffb02aa51bf739c59ebb2b114dbdb9bc2",
+  "license": "CC BY 2.0 FR",
+  "source": "Tatoeba",
+  "sourceUrl": "https://tatoeba.org",
+  "builtAt": "2026-10-29T18:55:54Z"
+}
