@@ -2,6 +2,7 @@ import { Capacitor } from "@capacitor/core";
 import {
   ArrowLeft,
   CheckCircle2,
+  ChevronRight,
   Loader2,
   Pause,
   Play,
@@ -280,18 +281,23 @@ export function DownloadsView({
           </div>
         ) : (
           <div className="download-card-body">
-            <p className="download-state">
-              The full English dictionary can be downloaded in the Android app.{" "}
-              {!native && (
-                <button
-                  type="button"
-                  className="text-link download-install-link"
-                  onClick={onOpenInstall}
-                >
-                  How to install
-                </button>
-              )}
-            </p>
+            {native ? (
+              <p className="download-state">
+                The full English dictionary is available in the Android app.
+              </p>
+            ) : (
+              <button
+                type="button"
+                className="download-install-notice"
+                onClick={onOpenInstall}
+              >
+                <span>
+                  The full English dictionary is available in the Android app.
+                  <span className="download-install-cta">How to install</span>
+                </span>
+                <ChevronRight size={18} />
+              </button>
+            )}
           </div>
         )}
       </section>
