@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import {
   ArrowRight,
+  ChevronRight,
   Download,
   RefreshCw,
   UploadCloud,
@@ -18,6 +19,7 @@ import type { FullEnglishMeta } from "../types";
 import { startCedictImport } from "../lib/cedict-import";
 import { getActivePercent } from "../lib/download-progress";
 import { Logo } from "./Logo";
+import { InstallView } from "./InstallView";
 
 const CEDICT_DIRECT =
   "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz";
@@ -64,6 +66,7 @@ export function SetupView({
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState<ImportProgress | null>(null);
   const [error, setError] = useState("");
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const workerRef = useRef<Worker | null>(null);
   const native = Capacitor.isNativePlatform();
@@ -132,6 +135,16 @@ export function SetupView({
     }
     onSkip();
   };
+
+  if (showInstallGuide) {
+    return (
+      <div className="setup-page">
+        <div className="setup-shell">
+          <InstallView onBack={() => setShowInstallGuide(false)} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="setup-page">
@@ -426,9 +439,17 @@ export function SetupView({
               </label>
             </div>
           ) : (
-            <p className="setup-installed">
-              The full English dictionary is available in the Android app.
-            </p>
+            <button
+              type="button"
+              className="download-install-notice setup-install-notice"
+              onClick={() => setShowInstallGuide(true)}
+            >
+              <span>
+                The full English dictionary is available in the Android app.
+                <span className="download-install-cta">How to install</span>
+              </span>
+              <ChevronRight size={18} />
+            </button>
           )}
         </section>
 

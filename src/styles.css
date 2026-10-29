@@ -3494,3 +3494,7 @@ html.keyboard-open .bottom-nav {
   text-decoration: underline;
   text-underline-offset: 0.1875rem;
 }
+
+.setup-install-notice {
+  margin-top: 0.25rem;
+}
