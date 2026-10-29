@@ -122,6 +122,26 @@ export interface ExamplePackMeta {
   installedAt: string;
 }
 
+export interface RelatedWordGroups {
+  synonyms?: string[];
+  antonyms?: string[];
+  related?: string[];
+}
+
+export interface RelatedPack {
+  version: number;
+  source: string;
+  sourceUrl?: string;
+  license: string;
+  installedAt: string;
+  entries: number;
+  bytes: number;
+  sha256: string;
+  relations: Record<string, RelatedWordGroups>;
+}
+
+export type RelatedPackMeta = ExamplePackMeta;
+
 export interface DictionaryMeta {
   count: number;
   importedAt: string;

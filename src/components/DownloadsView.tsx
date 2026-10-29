@@ -14,6 +14,7 @@ import {
 import type { NativeCedictDownload } from "../hooks/useNativeCedictDownload";
 import type { FullEnglishDownload } from "../hooks/useFullEnglishDownload";
 import type { ExamplePackState } from "../hooks/useExamplePack";
+import type { RelatedPackState } from "../hooks/useRelatedPack";
 import { getActivePercent } from "../lib/download-progress";
 import type {
   DictionaryMeta,
@@ -28,6 +29,7 @@ export function DownloadsView({
   fullEnglishMeta,
   fullDownload,
   examplePack,
+  relatedPack,
   onRemoveFullEnglish,
   onBack,
   onInstallEnglish,
@@ -40,6 +42,7 @@ export function DownloadsView({
   fullEnglishMeta: FullEnglishMeta | null;
   fullDownload: FullEnglishDownload;
   examplePack: ExamplePackState;
+  relatedPack: RelatedPackState;
   onRemoveFullEnglish: () => void;
   onBack: () => void;
   onInstallEnglish: () => void;
@@ -62,6 +65,15 @@ export function DownloadsView({
           100,
           Math.round(
             (examplePack.progress.loaded / examplePack.progress.total) * 100,
+          ),
+        )
+      : null;
+  const relatedPercent =
+    relatedPack.progress?.total && relatedPack.progress.total > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (relatedPack.progress.loaded / relatedPack.progress.total) * 100,
           ),
         )
       : null;
@@ -436,6 +448,138 @@ export function DownloadsView({
                   type="button"
                   className="button button-primary button-small"
                   onClick={() => void examplePack.install()}
+                >
+                  <Plus size={15} />
+                  Install
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      <section className="settings-card download-card">
+        <div className="download-card-head">
+          <div>
+            <h2>Related words</h2>
+            <p>WordNet · synonyms and antonyms.</p>
+          </div>
+          <span
+            className={`status-pill ${
+              relatedPack.meta ? "status-good" : "status-muted"
+            }`}
+          >
+            {relatedPack.meta ? "READY" : "OPTIONAL"}
+          </span>
+        </div>
+
+        <div className="download-card-body">
+          {relatedPack.meta ? (
+            <>
+              <p className="download-state">
+                {relatedPack.meta.entries.toLocaleString()} relations installed ·
+                version {relatedPack.meta.version}
+              </p>
+              <p className="download-source">
+                From {relatedPack.meta.source} ({relatedPack.meta.license}).
+              </p>
+              <div className="download-actions">
+                {relatedPack.remoteVersion !== null &&
+                  relatedPack.remoteVersion > relatedPack.meta.version && (
+                    <button
+                      type="button"
+                      className="button button-primary button-small"
+                      onClick={() => void relatedPack.install()}
+                    >
+                      <RefreshCw size={15} />
+                      Update to v{relatedPack.remoteVersion}
+                    </button>
+                  )}
+                <button
+                  type="button"
+                  className="button button-secondary button-small"
+                  onClick={() => void relatedPack.remove()}
+                >
+                  Remove
+                </button>
+              </div>
+            </>
+          ) : relatedPack.phase === "loading" ? (
+            <p className="download-state">Checking related-words pack…</p>
+          ) : relatedPack.phase === "error" ? (
+            <>
+              <p className="download-state download-error">
+                {relatedPack.error}
+              </p>
+              <div className="download-actions">
+                <button
+                  type="button"
+                  className="button button-primary button-small"
+                  onClick={() => void relatedPack.install()}
+                >
+                  <RefreshCw size={15} />
+                  Try again
+                </button>
+              </div>
+            </>
+          ) : relatedPack.phase === "checking" ||
+            relatedPack.phase === "downloading" ||
+            relatedPack.phase === "installing" ? (
+            <>
+              <div className="setup-progress">
+                <div className="setup-progress-head">
+                  <span>
+                    {relatedPack.phase === "checking"
+                      ? "Checking pack…"
+                      : relatedPack.phase === "installing"
+                        ? "Installing related words…"
+                        : "Downloading related words…"}
+                  </span>
+                  {relatedPercent !== null && <span>{relatedPercent}%</span>}
+                </div>
+                <div
+                  className={`progress-track ${
+                    relatedPercent === null ? "progress-indeterminate" : ""
+                  }`}
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={relatedPercent ?? undefined}
+                  aria-label="Related-words pack download progress"
+                >
+                  <div
+                    className="progress-fill"
+                    style={
+                      relatedPercent !== null
+                        ? { width: `${relatedPercent}%` }
+                        : undefined
+                    }
+                  />
+                </div>
+              </div>
+              {relatedPack.phase !== "installing" && (
+                <div className="download-actions">
+                  <button
+                    type="button"
+                    className="button button-secondary button-small"
+                    onClick={relatedPack.cancel}
+                  >
+                    <X size={15} />
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="download-state">
+                Add synonyms and antonyms to English entries. About 0.6 MB.
+              </p>
+              <div className="download-actions">
+                <button
+                  type="button"
+                  className="button button-primary button-small"
+                  onClick={() => void relatedPack.install()}
                 >
                   <Plus size={15} />
                   Install

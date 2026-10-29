@@ -6,7 +6,12 @@ import {
   Star,
   Volume2,
 } from "lucide-react";
-import type { EnglishEntry, EnglishSavedWord, ExampleSentence } from "../types";
+import type {
+  EnglishEntry,
+  EnglishSavedWord,
+  ExampleSentence,
+  RelatedWordGroups,
+} from "../types";
 import {
   addEnglishHistory,
   getEnglishEntriesByIds,
@@ -21,6 +26,7 @@ import {
   exchangeForms,
 } from "../lib/example-sentences";
 import { loadRelatedWords, relatedWordsFor } from "../lib/related";
+import { getRelatedPackMeta } from "../lib/related-pack";
 
 export function EnglishEntryView({
   id,
@@ -42,7 +48,8 @@ export function EnglishEntryView({
   const [entry, setEntry] = useState<EnglishEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [examples, setExamples] = useState<ExampleSentence[]>([]);
-  const [related, setRelated] = useState<string[]>([]);
+  const [related, setRelated] = useState<RelatedWordGroups>({});
+  const [relatedSource, setRelatedSource] = useState("Starter related words");
 
   useEffect(() => {
     let active = true;
@@ -120,13 +127,19 @@ export function EnglishEntryView({
 
   useEffect(() => {
     if (!entry) {
-      setRelated([]);
+      setRelated({});
       return;
     }
     let active = true;
-    void loadRelatedWords("en").then((map) => {
-      if (active) setRelated(relatedWordsFor(map, entry.word));
-    });
+    void Promise.all([loadRelatedWords("en"), getRelatedPackMeta()]).then(
+      ([map, meta]) => {
+        if (!active) return;
+        setRelated(relatedWordsFor(map, entry.word));
+        setRelatedSource(
+          meta ? `${meta.source} (${meta.license})` : "Starter related words",
+        );
+      },
+    );
     return () => {
       active = false;
     };
@@ -159,6 +172,12 @@ export function EnglishEntryView({
       </div>
     );
   }
+
+  const relatedGroups = [
+    { label: "Synonyms", words: related.synonyms ?? [] },
+    { label: "Antonyms", words: related.antonyms ?? [] },
+    { label: "Related", words: related.related ?? [] },
+  ].filter((group) => group.words.length > 0);
 
   const wordClass =
     entry.word.length > 24
@@ -273,22 +292,29 @@ export function EnglishEntryView({
         </section>
       )}
 
-      {related.length > 0 && (
+      {relatedGroups.length > 0 && (
         <section className="panel related-panel">
           <div className="panel-kicker">Related words</div>
-          <div className="form-chips">
-            {related.map((word) => (
-              <button
-                type="button"
-                className="form-chip form-chip-button"
-                key={word}
-                onClick={() => onOpenWord(word)}
-              >
-                {word}
-              </button>
+          <div className="related-groups">
+            {relatedGroups.map((group) => (
+              <div className="related-group" key={group.label}>
+                <span className="related-label">{group.label}</span>
+                <div className="form-chips">
+                  {group.words.map((word) => (
+                    <button
+                      type="button"
+                      className="form-chip form-chip-button"
+                      key={`${group.label}-${word}`}
+                      onClick={() => onOpenWord(word)}
+                    >
+                      {word}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-          <p className="content-attribution">Starter related words</p>
+          <p className="content-attribution">{relatedSource}</p>
         </section>
       )}
 

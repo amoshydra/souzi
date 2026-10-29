@@ -32,6 +32,7 @@ import { useKeyboardViewport } from "./hooks/useKeyboardViewport";
 import { useNativeCedictDownload } from "./hooks/useNativeCedictDownload";
 import { useFullEnglishDownload } from "./hooks/useFullEnglishDownload";
 import { useExamplePack } from "./hooks/useExamplePack";
+import { useRelatedPack } from "./hooks/useRelatedPack";
 import { getFullEnglishStatus, removeFullEnglishPack, searchFullEnglish } from "./lib/full-english";
 import { ChineseDownloadBanner } from "./components/ChineseDownloadBanner";
 import { SearchPage } from "./components/SearchPage";
@@ -196,6 +197,7 @@ export default function App() {
   });
 
   const examplePack = useExamplePack();
+  const relatedPack = useRelatedPack();
 
   const removeFullEnglish = useCallback(async () => {
     try {
@@ -579,6 +581,7 @@ export default function App() {
               fullEnglishMeta={fullEnglishMeta}
               fullDownload={fullEnglishDownload}
               examplePack={examplePack}
+              relatedPack={relatedPack}
               onRemoveFullEnglish={() => void removeFullEnglish()}
               onBack={handleBack}
               onInstallEnglish={installEnglish}

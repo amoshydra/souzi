@@ -9,6 +9,7 @@ import type {
   Entry,
   ExamplePack,
   HistoryWord,
+  RelatedPack,
   SearchIndex,
   UserWord,
 } from "../types";
@@ -58,10 +59,14 @@ interface SouziDB extends DBSchema {
     key: string;
     value: ExamplePack;
   };
+  relatedPacks: {
+    key: string;
+    value: RelatedPack;
+  };
 }
 
 const DB_NAME = "souzi";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 let dbPromise: Promise<IDBPDatabase<SouziDB>> | null = null;
 let cachedIndex: SearchIndex | null = null;
@@ -105,6 +110,9 @@ export function getDB(): Promise<IDBPDatabase<SouziDB>> {
         }
         if (!db.objectStoreNames.contains("examplePacks")) {
           db.createObjectStore("examplePacks");
+        }
+        if (!db.objectStoreNames.contains("relatedPacks")) {
+          db.createObjectStore("relatedPacks");
         }
       },
     });
@@ -530,4 +538,19 @@ export async function putInstalledExamplePack(pack: ExamplePack): Promise<void> 
 export async function removeInstalledExamplePack(): Promise<void> {
   const db = await getDB();
   await db.delete("examplePacks", "en");
+}
+
+export async function getInstalledRelatedPack(): Promise<RelatedPack | undefined> {
+  const db = await getDB();
+  return db.get("relatedPacks", "en");
+}
+
+export async function putInstalledRelatedPack(pack: RelatedPack): Promise<void> {
+  const db = await getDB();
+  await db.put("relatedPacks", pack, "en");
+}
+
+export async function removeInstalledRelatedPack(): Promise<void> {
+  const db = await getDB();
+  await db.delete("relatedPacks", "en");
 }

@@ -1,0 +1,84 @@
+name: Related words pack
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Pack version
+        required: true
+        default: "1"
+  push:
+    tags:
+      - "related-v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: related-words-pack
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ github.event.inputs.version }}"
+          else
+            version="${GITHUB_REF#refs/tags/related-v}"
+          fi
+          echo "value=$version" >>"$GITHUB_OUTPUT"
+
+      - name: Download WordNet
+        run: |
+          mkdir -p /tmp/wordnet
+          curl -fsSL --retry 3 \
+            -o /tmp/wordnet/wn3.1.dict.tar.gz \
+            https://wordnetcode.princeton.edu/wn3.1.dict.tar.gz
+          tar xzf /tmp/wordnet/wn3.1.dict.tar.gz -C /tmp/wordnet
+
+      - name: Build related-words pack
+        run: |
+          version="${{ steps.version.outputs.value }}"
+          python3 scripts/build-wordnet-related.py \
+            --dict /tmp/wordnet/dict \
+            --output-dir build/related \
+            --version "$version" \
+            --base-url "https://raw.githubusercontent.com/amoshydra/souzi/dict-manifest/related/v${version}"
+
+      - name: Publish to dict-manifest
+        run: |
+          version="${{ steps.version.outputs.value }}"
+          git config user.name "souzi-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git fetch origin dict-manifest
+          git worktree add /tmp/dict-manifest -B dict-manifest origin/dict-manifest
+
+          mkdir -p "/tmp/dict-manifest/related/v${version}"
+          cp "build/related/souzi-related-v${version}.json.gz" \
+            "/tmp/dict-manifest/related/v${version}/"
+          cp build/related/manifest.json /tmp/dict-manifest/related/manifest.json
+
+          cd /tmp/dict-manifest
+          git add -A related
+          if git diff --cached --quiet; then
+            echo "No pack changes to publish."
+            exit 0
+          fi
+          git commit -m "related: publish v${version}"
+          git push origin HEAD:dict-manifest
+
+      - name: Upload pack artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: related-pack-v${{ steps.version.outputs.value }}
+          path: build/related
+          retention-days: 30

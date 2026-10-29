@@ -6,7 +6,7 @@ import {
   Star,
   Volume2,
 } from "lucide-react";
-import type { Entry, UserWord } from "../types";
+import type { Entry, RelatedWordGroups, UserWord } from "../types";
 import { addHistory, getEntriesByIds, getEntryBySimp, toggleFavorite } from "../lib/db";
 import { speakChinese } from "../lib/speech";
 import {
@@ -39,7 +39,7 @@ export function EntryView({
   const [examples, setExamples] = useState<
     { text: string; translation: string; source?: string }[]
   >([]);
-  const [related, setRelated] = useState<string[]>([]);
+  const [related, setRelated] = useState<RelatedWordGroups>({});
 
   useEffect(() => {
     let active = true;
@@ -128,7 +128,7 @@ export function EntryView({
 
   useEffect(() => {
     if (!entry) {
-      setRelated([]);
+      setRelated({});
       return;
     }
     let active = true;
@@ -275,11 +275,11 @@ export function EntryView({
         </section>
       )}
 
-      {related.length > 0 && (
+      {(related.related?.length ?? 0) > 0 && (
         <section className="panel related-panel">
           <div className="panel-kicker">Related words</div>
           <div className="form-chips">
-            {related.map((word) => (
+            {(related.related ?? []).map((word) => (
               <button
                 type="button"
                 className="form-chip form-chip-button"

@@ -2787,6 +2787,25 @@ html.keyboard-open .bottom-nav {
   margin-top: 0.75rem;
 }
 
+.related-groups {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.related-group {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.related-label {
+  color: var(--muted);
+  font-size: var(--type-label-small-size);
+  font-weight: var(--type-label-weight);
+  letter-spacing: var(--type-label-tracking);
+  text-transform: uppercase;
+}
+
 .form-chip {
   padding: 0.25rem 0.625rem;
   border: 1px solid var(--line);

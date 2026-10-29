@@ -137,6 +137,17 @@ export function AboutView({
                 (CC BY 2.0 FR)
               </li>
               <li>
+                Related words:{" "}
+                <a
+                  href="https://wordnet.princeton.edu"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Princeton WordNet 3.1
+                </a>{" "}
+                (WordNet License)
+              </li>
+              <li>
                 App code:{" "}
                 <a
                   href="https://github.com/amoshydra/souzi"
