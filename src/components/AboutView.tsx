@@ -185,7 +185,7 @@ export function AboutView({
           <span>{t("app.name")} {t("app.brandHan")}</span>
         </div>
         <p className="fine-print">
-          {t("about.versionLine", { version: "0.1.0" })}
+          {t("about.versionLine", { version: __APP_VERSION__ })}
         </p>
       </div>
     </div>
