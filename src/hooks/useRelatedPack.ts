@@ -8,6 +8,7 @@ import {
 } from "../lib/related-pack";
 import { clearRelatedWordsCache } from "../lib/related";
 import type { RelatedPackMeta } from "../types";
+import { asAppError, type AppError } from "../i18n/errors";
 
 export type RelatedPackPhase =
   | "loading"
@@ -23,7 +24,7 @@ export type RelatedPackState = {
   meta: RelatedPackMeta | null;
   remoteVersion: number | null;
   progress: RelatedPackProgress | null;
-  error: string;
+  error: AppError | null;
   install: () => Promise<void>;
   remove: () => Promise<void>;
   cancel: () => void;
@@ -34,7 +35,7 @@ export function useRelatedPack(): RelatedPackState {
   const [meta, setMeta] = useState<RelatedPackMeta | null>(null);
   const [remoteVersion, setRemoteVersion] = useState<number | null>(null);
   const [progress, setProgress] = useState<RelatedPackProgress | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<AppError | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -65,7 +66,7 @@ export function useRelatedPack(): RelatedPackState {
   }, [meta]);
 
   const install = useCallback(async () => {
-    setError("");
+    setError(null);
     setProgress(null);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -85,11 +86,7 @@ export function useRelatedPack(): RelatedPackState {
         setPhase(meta ? "ready" : "idle");
         return;
       }
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "The related-words pack could not be installed.",
-      );
+      setError(asAppError(reason, "errors.relatedInstall"));
       setPhase("error");
     } finally {
       abortRef.current = null;

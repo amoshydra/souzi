@@ -27,6 +27,7 @@ export default defineConfig({
           "A free, offline-first English–Chinese dictionary for web and Android. No account, no tracking, and no server.",
         id: base,
         lang: "en",
+        dir: "ltr",
         categories: ["education", "reference"],
         theme_color: "#1f4d40",
         background_color: "#f7f3e8",
@@ -66,6 +67,30 @@ export default defineConfig({
   build: {
     target: "es2022",
     outDir: process.env.VITE_OUT_DIR || "dist",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/scheduler/")
+          ) {
+            return "react";
+          }
+          if (
+            id.includes("node_modules/i18next/") ||
+            id.includes("node_modules/react-i18next/")
+          ) {
+            return "i18n";
+          }
+          if (id.includes("node_modules/lucide-react/")) {
+            return "icons";
+          }
+          return "vendor";
+        },
+      },
+    },
   },
   server: {
     host: "127.0.0.1",

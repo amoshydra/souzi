@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import type {
   EnglishCoreStatus,
   EnglishEntry,
@@ -78,6 +80,8 @@ export function SearchPage({
   onAbout: () => void;
   onToast: (message: string, tone?: "default" | "error") => void;
 }) {
+  const { t } = useTranslation();
+  useDocumentTitle();
   const [query, setQuery] = useState(() => {
     try {
       return sessionStorage.getItem("souzi-query") ?? "";
@@ -95,6 +99,7 @@ export function SearchPage({
     query: string;
     words: string[];
   }>({ query: "", words: [] });
+  const [announcement, setAnnouncement] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const tokenRef = useRef(0);
 
@@ -107,10 +112,18 @@ export function SearchPage({
   const total = chineseHits.length + englishHits.length;
   const spellingSuggestions =
     spellingSuggestion.query === trimmedQuery ? spellingSuggestion.words : [];
-  const resultLabel =
-    total === 0
-      ? "No word found"
-      : `${formatCount(total)} ${total === 1 ? "word" : "words"}`;
+
+  useEffect(() => {
+    if (!hasQuery || searching) {
+      setAnnouncement("");
+      return;
+    }
+    setAnnouncement(
+      total === 0
+        ? t("search.noResultsFor", { query: trimmedQuery })
+        : t("search.resultsFor", { count: total, query: trimmedQuery }),
+    );
+  }, [hasQuery, searching, total, trimmedQuery, t]);
 
   useEffect(() => {
     try {
@@ -355,9 +368,9 @@ export function SearchPage({
         await removeEnglishHistory(item.data.key);
       }
       setHistory((current) => current.filter((entry) => entry !== item));
-      onToast("Removed from recent words");
+      onToast(t("search.removedRecent"));
     } catch {
-      onToast("Could not remove recent word", "error");
+      onToast(t("search.removeRecentError"), "error");
     }
   };
 
@@ -368,6 +381,7 @@ export function SearchPage({
 
   return (
     <div className="page search-page">
+      <h1 className="sr-only">{t("search.title")}</h1>
       <div className={`search-area ${hasQuery ? "search-area-compact" : ""}`}>
         <div className="search-wrap">
           {showSearchSpinner ? (
@@ -381,11 +395,13 @@ export function SearchPage({
           )}
           <input
             ref={inputRef}
+            id="dictionary-search"
+            name="q"
             className="search-input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Look up a word"
-            aria-label="Search the dictionary"
+            placeholder={t("search.placeholder")}
+            aria-label={t("search.ariaLabel")}
             autoComplete="off"
             autoCapitalize="off"
             spellCheck={false}
@@ -399,22 +415,23 @@ export function SearchPage({
                 setQuery("");
                 inputRef.current?.focus();
               }}
-              aria-label="Clear search"
+              aria-label={t("search.clear")}
             >
-              <X size={18} />
+              <X size={18} aria-hidden="true" />
             </button>
           )}
         </div>
 
         {!hasQuery && examples.length > 0 && (
           <div className="search-hint">
-            <span className="hint-label">Try</span>
+            <span className="hint-label">{t("search.try")}</span>
             {examples.map((example) => (
               <button
                 type="button"
                 className="hint-chip"
                 key={example}
                 onClick={() => setExample(example)}
+                lang={HAN.test(example) ? "zh" : "en"}
               >
                 {example}
               </button>
@@ -423,43 +440,49 @@ export function SearchPage({
         )}
       </div>
 
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </p>
+
       {hasQuery ? (
         <section
           className="results-section"
-          aria-live="polite"
+          aria-labelledby="search-results-title"
           aria-busy={searching}
         >
-          <p className="sr-only">{searching ? "" : resultLabel}</p>
+          <h2 id="search-results-title" className="sr-only">
+            {t("a11y.searchResults")}
+          </h2>
 
           {englishLoading && (
             <div className="english-note">
-              <Loader2 size={15} className="spin" />
-              Opening the English dictionary…
+              <Loader2 size={15} className="spin" aria-hidden="true" />
+              {t("search.openingEnglish")}
             </div>
           )}
 
           {englishError && (
-            <div className="english-note english-note-error">
-              The English dictionary did not load. Please try again.
+            <div className="english-note english-note-error" role="alert">
+              {t("search.englishLoadError")}
             </div>
           )}
 
           {englishMissing && (
-            <div className="english-note">
-              The English dictionary is not installed. You can add it in Settings.
-            </div>
+            <div className="english-note">{t("search.englishNotInstalled")}</div>
           )}
 
           {chineseMissing && (
             <div className="english-note">
-              The Chinese dictionary is not installed. You can add it in Settings.
+              {t("search.chineseNotInstalled")}
             </div>
           )}
 
           {!searching && spellingSuggestions.length > 0 && (
             <div className="spelling-hint" role="status">
               <span className="spelling-label">
-                {total === 0 ? "No exact match. Did you mean" : "Did you mean"}
+                {total === 0
+                  ? t("search.noExactMatch")
+                  : t("search.didYouMean")}
               </span>
               <span className="spelling-options">
                 {spellingSuggestions.map((suggestion) => (
@@ -468,6 +491,7 @@ export function SearchPage({
                     className="hint-chip"
                     key={suggestion}
                     onClick={() => setExample(suggestion)}
+                    lang={HAN.test(suggestion) ? "zh" : "en"}
                   >
                     {suggestion}
                   </button>
@@ -481,13 +505,17 @@ export function SearchPage({
             spellingSuggestions.length === 0 && (
             <div className="empty-card">
               <div className="empty-icon">
-                <Search size={22} />
+                <Search size={22} aria-hidden="true" />
               </div>
-              <h3>{englishLoading ? "Opening the English dictionary" : "Try another word"}</h3>
+              <h2>
+                {englishLoading
+                  ? t("search.openingEnglishTitle")
+                  : t("search.emptyTitle")}
+              </h2>
               <p>
                 {englishLoading
-                  ? "The English dictionary is being installed. Please wait."
-                  : "Try a Chinese character, an English word, or how the word sounds."}
+                  ? t("search.openingEnglishBody")
+                  : t("search.emptyBody")}
               </p>
               {!englishLoading && examples.length > 0 && (
                 <div className="empty-examples">
@@ -497,6 +525,7 @@ export function SearchPage({
                       className="hint-chip"
                       key={example}
                       onClick={() => setExample(example)}
+                      lang={HAN.test(example) ? "zh" : "en"}
                     >
                       {example}
                     </button>
@@ -507,11 +536,17 @@ export function SearchPage({
           )}
 
           {englishHits.length > 0 && (
-            <div className="result-group">
-              <div className="result-group-head">
-                <span>English words</span>
+            <section
+              className="result-group"
+              aria-labelledby="english-results-heading"
+            >
+              <h2
+                className="result-group-head"
+                id="english-results-heading"
+              >
+                <span>{t("search.englishWords")}</span>
                 <span>{formatCount(englishHits.length)}</span>
-              </div>
+              </h2>
               <div className="result-list">
                 {englishHits.map((hit) => (
                   <EnglishResultCard
@@ -521,15 +556,21 @@ export function SearchPage({
                   />
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
           {chineseHits.length > 0 && (
-            <div className="result-group">
-              <div className="result-group-head">
-                <span>Chinese words</span>
+            <section
+              className="result-group"
+              aria-labelledby="chinese-results-heading"
+            >
+              <h2
+                className="result-group-head"
+                id="chinese-results-heading"
+              >
+                <span>{t("search.chineseWords")}</span>
                 <span>{formatCount(chineseHits.length)}</span>
-              </div>
+              </h2>
               <div className="result-list">
                 {chineseHits.map((hit) => (
                   <ResultCard
@@ -539,7 +580,7 @@ export function SearchPage({
                   />
                 ))}
               </div>
-            </div>
+            </section>
           )}
         </section>
       ) : (
@@ -548,7 +589,7 @@ export function SearchPage({
             <section className="home-section">
               <div className="section-head">
                 <div>
-                  <h2 className="section-title">Recent words</h2>
+                  <h2 className="section-title">{t("search.recentWords")}</h2>
                 </div>
 
               </div>
@@ -573,29 +614,33 @@ export function SearchPage({
                     >
                       {item.kind === "zh" ? (
                         <>
-                          <span className="hanzi history-hanzi">
+                          <span className="hanzi history-hanzi" lang="zh-Hans">
                             {item.data.simp}
                           </span>
                           <span className="history-copy">
-                            <span className="pinyin">{item.data.pinyin}</span>
-                            <span className="history-gloss">
-                              {item.data.definitions[0] ?? "View entry"}
+                            <span className="pinyin" lang="zh-Latn">
+                              {item.data.pinyin}
+                            </span>
+                            <span className="history-gloss" lang="en">
+                              {item.data.definitions[0] ??
+                                t("common.viewEntry")}
                             </span>
                           </span>
                         </>
                       ) : (
                         <>
-                          <span className="en-word history-en-word">
+                          <span className="en-word history-en-word" lang="en">
                             {item.data.word}
                           </span>
                           <span className="history-copy">
-                            <span className="en-phonetic">
+                            <span className="en-phonetic" lang="en">
                               {item.data.phonetic
                                 ? `/${item.data.phonetic}/`
-                                : "English"}
+                                : t("common.english")}
                             </span>
-                            <span className="history-gloss">
-                              {item.data.translations[0] ?? "View entry"}
+                            <span className="history-gloss" lang="zh">
+                              {item.data.translations[0] ??
+                                t("common.viewEntry")}
                             </span>
                           </span>
                         </>
@@ -605,11 +650,12 @@ export function SearchPage({
                       type="button"
                       className="history-remove"
                       onClick={() => void handleRemoveRecent(item)}
-                      aria-label={`Remove ${
-                        item.kind === "zh" ? item.data.simp : item.data.word
-                      } from recent words`}
+                      aria-label={t("a11y.removeRecent", {
+                        word:
+                          item.kind === "zh" ? item.data.simp : item.data.word,
+                      })}
                     >
-                      <X size={15} />
+                      <X size={15} aria-hidden="true" />
                     </button>
                   </div>
                 ))}
@@ -619,7 +665,7 @@ export function SearchPage({
 
           <div className="home-footer">
             <button type="button" className="text-link" onClick={onAbout}>
-              About Souzi
+              {t("search.about")}
             </button>
           </div>
         </div>

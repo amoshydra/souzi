@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -16,6 +17,9 @@ import type { FullEnglishDownload } from "../hooks/useFullEnglishDownload";
 import type { ExamplePackState } from "../hooks/useExamplePack";
 import type { RelatedPackState } from "../hooks/useRelatedPack";
 import { getActivePercent } from "../lib/download-progress";
+import { formatBytes, formatCount } from "../lib/format";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { translateError, type AppError } from "../i18n/errors";
 import type {
   DictionaryMeta,
   EnglishCoreStatus,
@@ -49,6 +53,8 @@ export function DownloadsView({
   onImport: () => void;
   onOpenInstall: () => void;
 }) {
+  const { t } = useTranslation();
+  useDocumentTitle(t("packs.title"));
   const native = Capacitor.isNativePlatform();
   const chineseReady = chineseMeta?.kind === "cedict";
   const percent = getActivePercent(download);
@@ -77,20 +83,60 @@ export function DownloadsView({
           ),
         )
       : null;
+  const examplePhaseLabel =
+    examplePack.phase === "checking"
+      ? t("packs.checkingPack")
+      : examplePack.phase === "installing"
+        ? t("packs.installingExamples")
+        : t("packs.downloadingExamples");
+  const relatedPhaseLabel =
+    relatedPack.phase === "checking"
+      ? t("packs.checkingPack")
+      : relatedPack.phase === "installing"
+        ? t("packs.installingRelated")
+        : t("packs.downloadingRelated");
+
+  const errorText = (error: AppError | null): string =>
+    error ? translateError(t, error) : "";
 
   const chineseStatus = chineseReady
-    ? "Ready"
+    ? t("common.ready")
     : download.phase === "error"
-      ? "Stopped"
+      ? t("common.stopped")
       : download.phase === "paused"
-        ? "Paused"
+        ? t("common.paused")
         : download.phase === "installing"
-          ? "Preparing"
+          ? t("common.preparing")
           : download.phase === "checking" ||
               download.phase === "downloading" ||
               download.phase === "done"
-            ? "Downloading"
-            : "Not added";
+            ? t("common.downloading")
+            : t("common.notAdded");
+  const fullPhaseLabel =
+    fullDownload.phase === "installing"
+      ? t("common.preparingDictionary")
+      : fullDownload.phase === "checking"
+        ? t("common.startingDownload")
+        : fullDownload.phase === "paused"
+          ? t("common.paused")
+          : fullWaitingForWifi
+            ? t("common.waitingForWifi")
+            : fullDownload.phase === "done"
+              ? t("common.downloadComplete")
+              : t("common.downloadingDictionary");
+  const chinesePhaseLabel =
+    download.phase === "installing"
+      ? t("common.preparingDictionary")
+      : download.phase === "checking"
+        ? t("common.startingDownload")
+        : download.phase === "paused"
+          ? t("common.paused")
+          : waitingForWifi
+            ? t("common.waitingForWifi")
+            : download.phase === "done"
+              ? t("common.downloadComplete")
+              : t("common.downloadingDictionary");
+
   const totalPacks = 5;
   const installedCount = [
     englishStatus === "ready",
@@ -111,55 +157,58 @@ export function DownloadsView({
     (fullEnglishMeta?.size ?? 0) +
     (examplePack.meta?.bytes ?? 0) +
     (relatedPack.meta?.bytes ?? 0);
-  const storageLabel =
-    storageBytes > 0 ? `${(storageBytes / 1024 / 1024).toFixed(1)} MB` : "0 MB";
+  const storageLabel = formatBytes(storageBytes);
 
   return (
     <div className="page downloads-page">
       <button type="button" className="back-button" onClick={onBack}>
-        <ArrowLeft size={18} /> Back
+        <ArrowLeft size={18} aria-hidden="true" /> {t("common.back")}
       </button>
 
       <header className="page-heading">
-        <div className="section-kicker">Library</div>
-        <h1>Packs</h1>
-        <p>Dictionaries and extras. Everything stays on this device.</p>
+        <div className="section-kicker">{t("packs.kicker")}</div>
+        <h1>{t("packs.title")}</h1>
+        <p>{t("packs.subtitle")}</p>
       </header>
 
-      <section className="pack-summary" aria-label="Pack summary">
+      <section className="pack-summary" aria-label={t("packs.summary")}>
         <div className="pack-summary-stat">
           <span className="pack-summary-value">
             {installedCount}/{totalPacks}
           </span>
-          <span className="pack-summary-label">installed</span>
+          <span className="pack-summary-label">{t("packs.installed")}</span>
         </div>
         <div className="pack-summary-stat">
           <span className="pack-summary-value">{storageLabel}</span>
-          <span className="pack-summary-label">optional storage</span>
+          <span className="pack-summary-label">
+            {t("packs.optionalStorage")}
+          </span>
         </div>
         <div className="pack-summary-stat">
           <span className="pack-summary-value">
             {updateCount > 0 ? updateCount : "—"}
           </span>
           <span className="pack-summary-label">
-            {updateCount > 0 ? "updates ready" : "up to date"}
+            {updateCount > 0
+              ? t("packs.updatesReady")
+              : t("packs.upToDate")}
           </span>
         </div>
       </section>
 
       <div className="pack-section-head">
-        <h2>Dictionaries</h2>
-        <p>Core and full dictionaries.</p>
+        <h2>{t("packs.dictionaries")}</h2>
+        <p>{t("packs.dictionariesBody")}</p>
       </div>
 
       <section className="settings-card download-card">
         <div className="download-card-head">
           <div>
-            <h2>English dictionary</h2>
-            <p>Included with Souzi.</p>
+            <h2>{t("packs.englishDictionary")}</h2>
+            <p>{t("packs.includedWithSouzi")}</p>
           </div>
           {englishStatus === "ready" ? (
-            <span className="status-pill status-good">Ready</span>
+            <span className="status-pill status-good">{t("common.ready")}</span>
           ) : (
             <button
               type="button"
@@ -168,11 +217,13 @@ export function DownloadsView({
               disabled={englishStatus === "loading"}
             >
               {englishStatus === "loading" ? (
-                <Loader2 size={15} className="spin" />
+                <Loader2 size={15} className="spin" aria-hidden="true" />
               ) : (
-                <RefreshCw size={15} />
+                <RefreshCw size={15} aria-hidden="true" />
               )}
-              {englishStatus === "loading" ? "Preparing…" : "Try again"}
+              {englishStatus === "loading"
+                ? t("common.preparing")
+                : t("common.retry")}
             </button>
           )}
         </div>
@@ -181,8 +232,8 @@ export function DownloadsView({
       <section className="settings-card download-card">
         <div className="download-card-head">
           <div>
-            <h2>Full English dictionary</h2>
-            <p>770,000 English words.</p>
+            <h2>{t("packs.fullEnglishDictionary")}</h2>
+            <p>{t("packs.fullEnglishWords")}</p>
           </div>
           <span
             className={`status-pill ${
@@ -190,25 +241,25 @@ export function DownloadsView({
             }`}
           >
             {fullEnglishMeta
-              ? "Ready"
+              ? t("common.ready")
               : fullDownload.phase === "error"
-                ? "Stopped"
+                ? t("common.stopped")
                 : fullDownload.phase === "installing"
-                  ? "Preparing"
+                  ? t("common.preparing")
                   : fullDownload.phase === "paused"
-                    ? "Paused"
+                    ? t("common.paused")
                     : fullDownload.phase === "checking" ||
                         fullDownload.phase === "downloading"
-                      ? "Downloading"
-                      : "Optional"}
+                      ? t("common.downloading")
+                      : t("common.optional")}
           </span>
         </div>
 
         {fullEnglishMeta ? (
           <div className="download-card-body">
             <p className="download-ready">
-              <CheckCircle2 size={17} />
-              Downloaded and ready.
+              <CheckCircle2 size={17} aria-hidden="true" />
+              {t("packs.downloadedAndReady")}
             </p>
             <div className="download-actions">
               <button
@@ -216,8 +267,8 @@ export function DownloadsView({
                 className="button button-secondary button-small"
                 onClick={onRemoveFullEnglish}
               >
-                <X size={15} />
-                Remove
+                <X size={15} aria-hidden="true" />
+                {t("common.remove")}
               </button>
             </div>
           </div>
@@ -230,19 +281,19 @@ export function DownloadsView({
                   className="button button-primary"
                   onClick={() => void fullDownload.start()}
                 >
-                  Download
+                  {t("common.download")}
                 </button>
                 {fullDownload.error && (
-                  <p className="download-state download-error">
-                    {fullDownload.error}
+                  <p className="download-state download-error" role="alert">
+                    {errorText(fullDownload.error)}
                   </p>
                 )}
               </>
             ) : fullDownload.phase === "error" ? (
               <>
-                <p className="download-state">Download stopped.</p>
-                <p className="download-state download-error">
-                  {fullDownload.error}
+                <p className="download-state">{t("packs.downloadStopped")}</p>
+                <p className="download-state download-error" role="alert">
+                  {errorText(fullDownload.error)}
                 </p>
                 <div className="download-actions">
                   <button
@@ -250,35 +301,23 @@ export function DownloadsView({
                     className="button button-primary button-small"
                     onClick={() => void fullDownload.retry()}
                   >
-                    <RefreshCw size={15} />
-                    Try again
+                    <RefreshCw size={15} aria-hidden="true" />
+                    {t("common.retry")}
                   </button>
                   <button
                     type="button"
                     className="button button-secondary button-small"
                     onClick={() => void fullDownload.cancel()}
                   >
-                    <X size={15} />
-                    Cancel
+                    <X size={15} aria-hidden="true" />
+                    {t("common.cancel")}
                   </button>
                 </div>
               </>
             ) : (
               <>
                 <div className="download-progress-head">
-                  <span>
-                    {fullDownload.phase === "installing"
-                      ? "Preparing dictionary…"
-                      : fullDownload.phase === "checking"
-                        ? "Starting download…"
-                        : fullDownload.phase === "paused"
-                          ? "Paused."
-                          : fullWaitingForWifi
-                            ? "Waiting for Wi-Fi…"
-                            : fullDownload.phase === "done"
-                              ? "Download complete."
-                              : "Downloading dictionary…"}
-                  </span>
+                  <span>{fullPhaseLabel}</span>
                   {fullPercent !== null && <span>{fullPercent}%</span>}
                 </div>
                 <div
@@ -292,7 +331,12 @@ export function DownloadsView({
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={fullPercent ?? undefined}
-                  aria-label="Full English dictionary download progress"
+                  aria-valuetext={
+                    fullPercent !== null
+                      ? `${fullPhaseLabel} ${fullPercent}%`
+                      : fullPhaseLabel
+                  }
+                  aria-label={t("a11y.fullEnglishDownloadProgress")}
                 >
                   <div
                     className="progress-fill"
@@ -312,8 +356,8 @@ export function DownloadsView({
                         className="button button-primary button-small"
                         onClick={() => void fullDownload.resume()}
                       >
-                        <Play size={15} />
-                        Continue
+                        <Play size={15} aria-hidden="true" />
+                        {t("common.continue")}
                       </button>
                     ) : (
                       <button
@@ -322,8 +366,8 @@ export function DownloadsView({
                         onClick={() => void fullDownload.pause()}
                         disabled={fullDownload.phase === "checking"}
                       >
-                        <Pause size={15} />
-                        Pause
+                        <Pause size={15} aria-hidden="true" />
+                        {t("common.pause")}
                       </button>
                     )}
                     <button
@@ -331,22 +375,24 @@ export function DownloadsView({
                       className="button button-secondary button-small"
                       onClick={() => void fullDownload.cancel()}
                     >
-                      <X size={15} />
-                      Cancel
+                      <X size={15} aria-hidden="true" />
+                      {t("common.cancel")}
                     </button>
                   </div>
                 )}
 
                 <label className="setup-wifi-toggle">
                   <input
+                    id="full-english-wifi"
+                    name="full-english-wifi-only"
                     type="checkbox"
                     checked={fullDownload.wifiOnly}
                     onChange={(event) =>
                       fullDownload.setWifiOnly(event.target.checked)
                     }
                   />
-                  <Wifi size={14} />
-                  Wi-Fi only
+                  <Wifi size={14} aria-hidden="true" />
+                  {t("common.wifiOnly")}
                 </label>
               </>
             )}
@@ -355,7 +401,7 @@ export function DownloadsView({
           <div className="download-card-body">
             {native ? (
               <p className="download-state">
-                The full English dictionary is available in the Android app.
+                {t("packs.fullAvailableAndroid")}
               </p>
             ) : (
               <button
@@ -364,10 +410,12 @@ export function DownloadsView({
                 onClick={onOpenInstall}
               >
                 <span>
-                  The full English dictionary is available in the Android app.
-                  <span className="download-install-cta">How to install</span>
+                  {t("packs.fullAvailableAndroid")}
+                  <span className="download-install-cta">
+                    {t("packs.howToInstall")}
+                  </span>
                 </span>
-                <ChevronRight size={18} />
+                <ChevronRight size={18} aria-hidden="true" />
               </button>
             )}
           </div>
@@ -377,8 +425,8 @@ export function DownloadsView({
       <section className="settings-card download-card">
         <div className="download-card-head">
           <div>
-            <h2>Chinese dictionary</h2>
-            <p>Chinese to English.</p>
+            <h2>{t("packs.chineseDictionary")}</h2>
+            <p>{t("packs.chineseToEnglish")}</p>
           </div>
           <span
             className={`status-pill ${
@@ -391,8 +439,8 @@ export function DownloadsView({
 
         {chineseReady ? (
           <p className="download-ready">
-            <CheckCircle2 size={17} />
-            Downloaded and ready.
+            <CheckCircle2 size={17} aria-hidden="true" />
+            {t("packs.downloadedAndReady")}
           </p>
         ) : native ? (
           <div className="download-card-body">
@@ -402,46 +450,37 @@ export function DownloadsView({
                 className="button button-primary"
                 onClick={() => void download.start()}
               >
-                Download
+                {t("common.download")}
               </button>
             ) : download.phase === "error" ? (
               <>
-                <p className="download-state">Download stopped.</p>
+                <p className="download-state">{t("packs.downloadStopped")}</p>
+                <p className="download-state download-error" role="alert">
+                  {errorText(download.error)}
+                </p>
                 <div className="download-actions">
                   <button
                     type="button"
                     className="button button-primary button-small"
                     onClick={() => void download.retry()}
                   >
-                    <RefreshCw size={15} />
-                    Try again
+                    <RefreshCw size={15} aria-hidden="true" />
+                    {t("common.retry")}
                   </button>
                   <button
                     type="button"
                     className="button button-secondary button-small"
                     onClick={() => void download.cancel()}
                   >
-                    <X size={15} />
-                    Cancel
+                    <X size={15} aria-hidden="true" />
+                    {t("common.cancel")}
                   </button>
                 </div>
               </>
             ) : (
               <>
                 <div className="download-progress-head">
-                  <span>
-                    {download.phase === "installing"
-                      ? "Preparing dictionary…"
-                      : download.phase === "checking"
-                        ? "Starting download…"
-                        : download.phase === "paused"
-                          ? "Paused."
-                          : waitingForWifi
-                            ? "Waiting for Wi-Fi…"
-                            : download.phase === "done"
-                              ? "Download complete."
-                              : "Downloading dictionary…"}
-                  </span>
+                  <span>{chinesePhaseLabel}</span>
                   {percent !== null && <span>{percent}%</span>}
                 </div>
                 <div
@@ -454,7 +493,12 @@ export function DownloadsView({
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={percent ?? undefined}
-                  aria-label="Chinese dictionary download progress"
+                  aria-valuetext={
+                    percent !== null
+                      ? `${chinesePhaseLabel} ${percent}%`
+                      : chinesePhaseLabel
+                  }
+                  aria-label={t("a11y.chineseDownloadProgress")}
                 >
                   <div
                     className="progress-fill"
@@ -470,8 +514,8 @@ export function DownloadsView({
                         className="button button-primary button-small"
                         onClick={() => void download.resume()}
                       >
-                        <Play size={15} />
-                        Continue
+                        <Play size={15} aria-hidden="true" />
+                        {t("common.continue")}
                       </button>
                     ) : (
                       <button
@@ -480,8 +524,8 @@ export function DownloadsView({
                         onClick={() => void download.pause()}
                         disabled={download.phase === "checking"}
                       >
-                        <Pause size={15} />
-                        Pause
+                        <Pause size={15} aria-hidden="true" />
+                        {t("common.pause")}
                       </button>
                     )}
                     <button
@@ -489,8 +533,8 @@ export function DownloadsView({
                       className="button button-secondary button-small"
                       onClick={() => void download.cancel()}
                     >
-                      <X size={15} />
-                      Cancel
+                      <X size={15} aria-hidden="true" />
+                      {t("common.cancel")}
                     </button>
                   </div>
                 )}
@@ -499,50 +543,52 @@ export function DownloadsView({
 
             <label className="setup-wifi-toggle">
               <input
+                id="chinese-wifi"
+                name="chinese-wifi-only"
                 type="checkbox"
                 checked={download.wifiOnly}
                 onChange={(event) =>
                   download.setWifiOnly(event.target.checked)
                 }
               />
-              <Wifi size={14} />
-              Wi-Fi only
+              <Wifi size={14} aria-hidden="true" />
+              {t("common.wifiOnly")}
             </label>
           </div>
         ) : (
           <div className="download-card-body">
-            <p className="download-state">
-              Choose the dictionary file on this device.
-            </p>
+            <p className="download-state">{t("packs.chooseFile")}</p>
             <button
               type="button"
               className="button button-primary"
               onClick={onImport}
             >
-              <Plus size={16} />
-              Add dictionary
+              <Plus size={16} aria-hidden="true" />
+              {t("packs.addDictionary")}
             </button>
           </div>
         )}
       </section>
 
       <div className="pack-section-head">
-        <h2>Content packs</h2>
-        <p>Optional extras for entries.</p>
+        <h2>{t("packs.contentPacks")}</h2>
+        <p>{t("packs.contentPacksBody")}</p>
       </div>
 
       <section className="settings-card download-card">
         <div className="download-card-head">
           <div>
-            <h2>Example sentences</h2>
-            <p>Tatoeba · English–Chinese pairs.</p>
+            <h2>{t("packs.exampleSentences")}</h2>
+            <p>{t("packs.exampleSource")}</p>
           </div>
           <span
             className={`status-pill ${
               examplePack.meta ? "status-good" : "status-muted"
             }`}
           >
-            {examplePack.meta ? "READY" : "OPTIONAL"}
+            {examplePack.meta
+              ? t("common.statusReady")
+              : t("common.statusOptional")}
           </span>
         </div>
 
@@ -550,11 +596,16 @@ export function DownloadsView({
           {examplePack.meta ? (
             <>
               <p className="download-state">
-                {examplePack.meta.entries.toLocaleString()} examples installed ·
-                version {examplePack.meta.version}
+                {t("packs.examplesInstalled", {
+                  count: examplePack.meta.entries,
+                  version: examplePack.meta.version,
+                })}
               </p>
               <p className="download-source">
-                From Tatoeba ({examplePack.meta.license}).
+                {t("packs.attribution", {
+                  source: "Tatoeba",
+                  license: examplePack.meta.license,
+                })}
               </p>
               <div className="download-actions">
                 {examplePack.remoteVersion !== null &&
@@ -564,8 +615,10 @@ export function DownloadsView({
                       className="button button-primary button-small"
                       onClick={() => void examplePack.install()}
                     >
-                      <RefreshCw size={15} />
-                      Update to v{examplePack.remoteVersion}
+                      <RefreshCw size={15} aria-hidden="true" />
+                      {t("common.updateTo", {
+                        version: examplePack.remoteVersion,
+                      })}
                     </button>
                   )}
                 <button
@@ -573,16 +626,16 @@ export function DownloadsView({
                   className="button button-secondary button-small"
                   onClick={() => void examplePack.remove()}
                 >
-                  Remove
+                  {t("common.remove")}
                 </button>
               </div>
             </>
           ) : examplePack.phase === "loading" ? (
-            <p className="download-state">Checking example pack…</p>
+            <p className="download-state">{t("packs.checkExamples")}</p>
           ) : examplePack.phase === "error" ? (
             <>
-              <p className="download-state download-error">
-                {examplePack.error}
+              <p className="download-state download-error" role="alert">
+                {errorText(examplePack.error)}
               </p>
               <div className="download-actions">
                 <button
@@ -590,8 +643,8 @@ export function DownloadsView({
                   className="button button-primary button-small"
                   onClick={() => void examplePack.install()}
                 >
-                  <RefreshCw size={15} />
-                  Try again
+                  <RefreshCw size={15} aria-hidden="true" />
+                  {t("common.retry")}
                 </button>
               </div>
             </>
@@ -601,13 +654,7 @@ export function DownloadsView({
             <>
               <div className="setup-progress">
                 <div className="setup-progress-head">
-                  <span>
-                    {examplePack.phase === "checking"
-                      ? "Checking pack…"
-                      : examplePack.phase === "installing"
-                        ? "Installing examples…"
-                        : "Downloading examples…"}
-                  </span>
+                  <span>{examplePhaseLabel}</span>
                   {examplePercent !== null && <span>{examplePercent}%</span>}
                 </div>
                 <div
@@ -618,7 +665,12 @@ export function DownloadsView({
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={examplePercent ?? undefined}
-                  aria-label="Example pack download progress"
+                  aria-valuetext={
+                    examplePercent !== null
+                      ? `${examplePhaseLabel} ${examplePercent}%`
+                      : examplePhaseLabel
+                  }
+                  aria-label={t("a11y.exampleDownloadProgress")}
                 >
                   <div
                     className="progress-fill"
@@ -637,25 +689,23 @@ export function DownloadsView({
                     className="button button-secondary button-small"
                     onClick={examplePack.cancel}
                   >
-                    <X size={15} />
-                    Cancel
+                    <X size={15} aria-hidden="true" />
+                    {t("common.cancel")}
                   </button>
                 </div>
               )}
             </>
           ) : (
             <>
-              <p className="download-state">
-                Add real example sentences to English entries. About 1 MB.
-              </p>
+              <p className="download-state">{t("packs.addExamples")}</p>
               <div className="download-actions">
                 <button
                   type="button"
                   className="button button-primary button-small"
                   onClick={() => void examplePack.install()}
                 >
-                  <Plus size={15} />
-                  Install
+                  <Plus size={15} aria-hidden="true" />
+                  {t("common.install")}
                 </button>
               </div>
             </>
@@ -666,15 +716,17 @@ export function DownloadsView({
       <section className="settings-card download-card">
         <div className="download-card-head">
           <div>
-            <h2>Related words</h2>
-            <p>WordNet · synonyms and antonyms.</p>
+            <h2>{t("packs.relatedWords")}</h2>
+            <p>{t("packs.relatedSource")}</p>
           </div>
           <span
             className={`status-pill ${
               relatedPack.meta ? "status-good" : "status-muted"
             }`}
           >
-            {relatedPack.meta ? "READY" : "OPTIONAL"}
+            {relatedPack.meta
+              ? t("common.statusReady")
+              : t("common.statusOptional")}
           </span>
         </div>
 
@@ -682,11 +734,16 @@ export function DownloadsView({
           {relatedPack.meta ? (
             <>
               <p className="download-state">
-                {relatedPack.meta.entries.toLocaleString()} relations installed ·
-                version {relatedPack.meta.version}
+                {t("packs.relationsInstalled", {
+                  count: relatedPack.meta.entries,
+                  version: relatedPack.meta.version,
+                })}
               </p>
               <p className="download-source">
-                From {relatedPack.meta.source} ({relatedPack.meta.license}).
+                {t("packs.attribution", {
+                  source: relatedPack.meta.source,
+                  license: relatedPack.meta.license,
+                })}
               </p>
               <div className="download-actions">
                 {relatedPack.remoteVersion !== null &&
@@ -696,8 +753,10 @@ export function DownloadsView({
                       className="button button-primary button-small"
                       onClick={() => void relatedPack.install()}
                     >
-                      <RefreshCw size={15} />
-                      Update to v{relatedPack.remoteVersion}
+                      <RefreshCw size={15} aria-hidden="true" />
+                      {t("common.updateTo", {
+                        version: relatedPack.remoteVersion,
+                      })}
                     </button>
                   )}
                 <button
@@ -705,16 +764,16 @@ export function DownloadsView({
                   className="button button-secondary button-small"
                   onClick={() => void relatedPack.remove()}
                 >
-                  Remove
+                  {t("common.remove")}
                 </button>
               </div>
             </>
           ) : relatedPack.phase === "loading" ? (
-            <p className="download-state">Checking related-words pack…</p>
+            <p className="download-state">{t("packs.checkRelated")}</p>
           ) : relatedPack.phase === "error" ? (
             <>
-              <p className="download-state download-error">
-                {relatedPack.error}
+              <p className="download-state download-error" role="alert">
+                {errorText(relatedPack.error)}
               </p>
               <div className="download-actions">
                 <button
@@ -722,8 +781,8 @@ export function DownloadsView({
                   className="button button-primary button-small"
                   onClick={() => void relatedPack.install()}
                 >
-                  <RefreshCw size={15} />
-                  Try again
+                  <RefreshCw size={15} aria-hidden="true" />
+                  {t("common.retry")}
                 </button>
               </div>
             </>
@@ -733,13 +792,7 @@ export function DownloadsView({
             <>
               <div className="setup-progress">
                 <div className="setup-progress-head">
-                  <span>
-                    {relatedPack.phase === "checking"
-                      ? "Checking pack…"
-                      : relatedPack.phase === "installing"
-                        ? "Installing related words…"
-                        : "Downloading related words…"}
-                  </span>
+                  <span>{relatedPhaseLabel}</span>
                   {relatedPercent !== null && <span>{relatedPercent}%</span>}
                 </div>
                 <div
@@ -750,7 +803,12 @@ export function DownloadsView({
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={relatedPercent ?? undefined}
-                  aria-label="Related-words pack download progress"
+                  aria-valuetext={
+                    relatedPercent !== null
+                      ? `${relatedPhaseLabel} ${relatedPercent}%`
+                      : relatedPhaseLabel
+                  }
+                  aria-label={t("a11y.relatedDownloadProgress")}
                 >
                   <div
                     className="progress-fill"
@@ -769,25 +827,23 @@ export function DownloadsView({
                     className="button button-secondary button-small"
                     onClick={relatedPack.cancel}
                   >
-                    <X size={15} />
-                    Cancel
+                    <X size={15} aria-hidden="true" />
+                    {t("common.cancel")}
                   </button>
                 </div>
               )}
             </>
           ) : (
             <>
-              <p className="download-state">
-                Add synonyms and antonyms to English entries. About 0.6 MB.
-              </p>
+              <p className="download-state">{t("packs.addRelated")}</p>
               <div className="download-actions">
                 <button
                   type="button"
                   className="button button-primary button-small"
                   onClick={() => void relatedPack.install()}
                 >
-                  <Plus size={15} />
-                  Install
+                  <Plus size={15} aria-hidden="true" />
+                  {t("common.install")}
                 </button>
               </div>
             </>
@@ -795,9 +851,7 @@ export function DownloadsView({
         </div>
       </section>
 
-      <p className="download-privacy">
-        Dictionary files stay on this device.
-      </p>
+      <p className="download-privacy">{t("packs.privacy")}</p>
     </div>
   );
 }

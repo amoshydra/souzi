@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Copy,
@@ -22,11 +23,15 @@ import { speakEnglish } from "../lib/speech";
 import {
   loadExampleSentences,
   exampleSentencesFor,
-  exampleAttribution,
   exchangeForms,
 } from "../lib/example-sentences";
 import { loadRelatedWords, relatedWordsFor } from "../lib/related";
 import { getRelatedPackMeta } from "../lib/related-pack";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { translateError } from "../i18n/errors";
+import { ExampleAttribution } from "./ExampleAttribution";
+
+type RelatedSource = { source: string; license: string } | null;
 
 export function EnglishEntryView({
   id,
@@ -45,11 +50,23 @@ export function EnglishEntryView({
   onFavoriteChange: () => void;
   onToast: (message: string, tone?: "default" | "error") => void;
 }) {
+  const { t } = useTranslation();
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const [entry, setEntry] = useState<EnglishEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [examples, setExamples] = useState<ExampleSentence[]>([]);
   const [related, setRelated] = useState<RelatedWordGroups>({});
-  const [relatedSource, setRelatedSource] = useState("Starter related words");
+  const [relatedSource, setRelatedSource] = useState<RelatedSource>(null);
+
+  useDocumentTitle(entry?.word);
+
+  useEffect(() => {
+    if (!entry) return;
+    const heading = headingRef.current;
+    if (!heading) return;
+    heading.setAttribute("tabindex", "-1");
+    heading.focus({ preventScroll: true });
+  }, [entry]);
 
   useEffect(() => {
     let active = true;
@@ -83,7 +100,9 @@ export function EnglishEntryView({
     if (!entry) return;
     const saved = await toggleEnglishFavorite(entry);
     onFavoriteChange();
-    onToast(saved ? "Saved to your words" : "Removed from saved words");
+    onToast(
+      saved ? t("entry.savedToast") : t("entry.removedSavedToast"),
+    );
   };
 
   const handleCopy = async () => {
@@ -97,9 +116,9 @@ export function EnglishEntryView({
 
     try {
       await navigator.clipboard.writeText(text);
-      onToast("Copied entry");
+      onToast(t("entry.copied"));
     } catch {
-      onToast("Could not copy", "error");
+      onToast(t("entry.copyFailed"), "error");
     }
   };
 
@@ -107,7 +126,7 @@ export function EnglishEntryView({
     if (!entry) return;
     const result = await speakEnglish(entry.word);
     if (!result.ok) {
-      onToast(result.reason ?? "Speech is not available on this device", "error");
+      onToast(translateError(t, result.error), "error");
     }
   };
 
@@ -136,7 +155,7 @@ export function EnglishEntryView({
         if (!active) return;
         setRelated(relatedWordsFor(map, entry.word));
         setRelatedSource(
-          meta ? `${meta.source} (${meta.license})` : "Starter related words",
+          meta ? { source: meta.source, license: meta.license } : null,
         );
       },
     );
@@ -148,12 +167,13 @@ export function EnglishEntryView({
   if (loading) {
     return (
       <div className="page entry-page">
+        <h1 className="sr-only">{t("entry.opening")}</h1>
         <button type="button" className="back-button" onClick={onBack}>
-          <ArrowLeft size={18} /> Back
+          <ArrowLeft size={18} aria-hidden="true" /> {t("common.back")}
         </button>
-        <div className="entry-loading">
-          <Loader2 className="spin" size={24} />
-          <span>Opening entry…</span>
+        <div className="entry-loading" role="status">
+          <Loader2 className="spin" size={24} aria-hidden="true" />
+          <span>{t("entry.opening")}</span>
         </div>
       </div>
     );
@@ -162,21 +182,22 @@ export function EnglishEntryView({
   if (!entry) {
     return (
       <div className="page entry-page">
+        <h1 className="sr-only">{t("entry.englishNotFound")}</h1>
         <button type="button" className="back-button" onClick={onBack}>
-          <ArrowLeft size={18} /> Back
+          <ArrowLeft size={18} aria-hidden="true" /> {t("common.back")}
         </button>
         <div className="empty-card">
-          <h3>English word not found</h3>
-          <p>The English dictionary may not be installed yet. Please try again.</p>
+          <h2>{t("entry.englishNotFound")}</h2>
+          <p>{t("entry.englishNotFoundBody")}</p>
         </div>
       </div>
     );
   }
 
   const relatedGroups = [
-    { label: "Synonyms", words: related.synonyms ?? [] },
-    { label: "Antonyms", words: related.antonyms ?? [] },
-    { label: "Related", words: related.related ?? [] },
+    { label: t("entry.synonyms"), words: related.synonyms ?? [] },
+    { label: t("entry.antonyms"), words: related.antonyms ?? [] },
+    { label: t("entry.related"), words: related.related ?? [] },
   ].filter((group) => group.words.length > 0);
 
   const wordClass =
@@ -189,15 +210,20 @@ export function EnglishEntryView({
   return (
     <div className="page entry-page">
       <button type="button" className="back-button" onClick={onBack}>
-        <ArrowLeft size={18} /> Back
+        <ArrowLeft size={18} aria-hidden="true" /> {t("common.back")}
       </button>
 
       <header className="entry-hero en-entry-hero">
-        <h1 className={wordClass} lang="en">
+        <h1 ref={headingRef} className={wordClass} lang="en">
           {entry.word}
         </h1>
         {entry.phonetic && (
-          <div className="entry-phonetic">/{entry.phonetic}/</div>
+          <div className="entry-phonetic" lang="en">
+            <span className="sr-only">{t("entry.pronunciation")} </span>
+            <span aria-hidden="true">/</span>
+            {entry.phonetic}
+            <span aria-hidden="true">/</span>
+          </div>
         )}
 
         <div className="entry-actions">
@@ -205,10 +231,10 @@ export function EnglishEntryView({
             type="button"
             className="button button-secondary entry-action"
             onClick={handleSpeak}
-            aria-label={`Listen to ${entry.word}`}
+            aria-label={t("a11y.listenTo", { word: entry.word })}
           >
-            <Volume2 size={19} />
-            <span>Listen</span>
+            <Volume2 size={19} aria-hidden="true" />
+            <span>{t("entry.listen")}</span>
           </button>
           <button
             type="button"
@@ -216,40 +242,57 @@ export function EnglishEntryView({
               starred ? "entry-action-saved" : ""
             }`}
             onClick={handleFavorite}
-            aria-label={starred ? "Remove from saved words" : "Save word"}
+            aria-label={
+              starred ? t("a11y.savedRemove") : t("a11y.saveWord")
+            }
+            aria-pressed={starred}
           >
-            <Star size={19} fill={starred ? "currentColor" : "none"} />
-            <span>{starred ? "Saved" : "Save"}</span>
+            <Star
+              size={19}
+              fill={starred ? "currentColor" : "none"}
+              aria-hidden="true"
+            />
+            <span>{starred ? t("entry.saved") : t("entry.save")}</span>
           </button>
           <button
             type="button"
             className="button button-secondary entry-action"
             onClick={handleCopy}
-            aria-label="Copy word"
+            aria-label={t("a11y.copyWord")}
           >
-            <Copy size={18} />
-            <span>Copy</span>
+            <Copy size={18} aria-hidden="true" />
+            <span>{t("entry.copy")}</span>
           </button>
         </div>
       </header>
 
-      <section className="panel definitions-panel">
-        <div className="panel-kicker">Chinese meaning</div>
+      <section
+        className="panel definitions-panel"
+        aria-labelledby="chinese-meaning-heading"
+      >
+        <h2 className="panel-kicker" id="chinese-meaning-heading">
+          {t("entry.chineseMeaning")}
+        </h2>
         {entry.translations.length > 0 ? (
-          <ol className="definition-list">
+          <ol className="definition-list" lang="zh">
             {entry.translations.map((translation, index) => (
               <li key={`${translation}-${index}`}>{translation}</li>
             ))}
           </ol>
         ) : (
-          <p className="muted">No meaning is available for this word.</p>
+          <p className="muted">{t("entry.noMeaning")}</p>
         )}
       </section>
 
       {entry.definitions.length > 0 && (
-        <section className="panel english-definition-panel">
-          <div className="panel-kicker">More in English</div>
-          <ul>
+        <section
+          className="panel english-definition-panel"
+          aria-labelledby="more-english-heading"
+        >
+          <h2 className="panel-kicker" id="more-english-heading">
+            {t("entry.moreInEnglish")}
+          </h2>
+          <ul lang="en">
             {entry.definitions.map((definition, index) => (
               <li key={`${definition}-${index}`}>{definition}</li>
             ))}
@@ -258,8 +301,10 @@ export function EnglishEntryView({
       )}
 
       {exchangeForms(entry.exchange).length > 0 && (
-        <section className="panel forms-panel">
-          <div className="panel-kicker">Forms</div>
+        <section className="panel forms-panel" aria-labelledby="forms-heading">
+          <h2 className="panel-kicker" id="forms-heading">
+            {t("entry.forms")}
+          </h2>
           <div className="form-chips">
             {exchangeForms(entry.exchange)
               .filter((form) => form !== entry.word.toLowerCase())
@@ -268,6 +313,7 @@ export function EnglishEntryView({
                   type="button"
                   className="form-chip form-chip-button"
                   key={form}
+                  lang="en"
                   onClick={() => onOpenWord(form)}
                 >
                   {form}
@@ -278,23 +324,34 @@ export function EnglishEntryView({
       )}
 
       {examples.length > 0 && (
-        <section className="panel examples-panel">
-          <div className="panel-kicker">Examples</div>
+        <section className="panel examples-panel" aria-labelledby="examples-heading">
+          <h2 className="panel-kicker" id="examples-heading">
+            {t("entry.examples")}
+          </h2>
           <ul className="example-list">
             {examples.map((example, index) => (
               <li className="example-item" key={`${example.text}-${index}`}>
-                <p className="example-text">{example.text}</p>
-                <p className="example-translation">{example.translation}</p>
+                <p className="example-text" lang="en">
+                  {example.text}
+                </p>
+                <p className="example-translation" lang="zh">
+                  {example.translation}
+                </p>
               </li>
             ))}
           </ul>
-          <p className="content-attribution">{exampleAttribution(examples)}</p>
+          <ExampleAttribution examples={examples} />
         </section>
       )}
 
       {relatedGroups.length > 0 && (
-        <section className="panel related-panel">
-          <div className="panel-kicker">Related words</div>
+        <section
+          className="panel related-panel"
+          aria-labelledby="related-heading"
+        >
+          <h2 className="panel-kicker" id="related-heading">
+            {t("entry.relatedWords")}
+          </h2>
           <div className="related-groups">
             {relatedGroups.map((group) => (
               <div className="related-group" key={group.label}>
@@ -305,6 +362,7 @@ export function EnglishEntryView({
                       type="button"
                       className="form-chip form-chip-button"
                       key={`${group.label}-${word}`}
+                      lang="en"
                       onClick={() => onOpenWord(word)}
                     >
                       {word}
@@ -314,12 +372,19 @@ export function EnglishEntryView({
               </div>
             ))}
           </div>
-          <p className="content-attribution">{relatedSource}</p>
+          <p className="content-attribution">
+            {relatedSource
+              ? t("entry.relatedSource", {
+                  source: relatedSource.source,
+                  license: relatedSource.license,
+                })
+              : t("entry.starterRelatedWords")}
+          </p>
         </section>
       )}
 
       <p className="entry-source">
-        From the English dictionary on this device.
+        {t("entry.fromEnglishDictionary")}
       </p>
     </div>
   );

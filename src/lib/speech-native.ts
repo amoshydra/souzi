@@ -1,6 +1,9 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
+import { AppError } from "../i18n/errors";
 
-export type SpeakResult = { ok: boolean; reason?: string };
+export type SpeakResult =
+  | { ok: true }
+  | { ok: false; error: AppError };
 
 export type SpeechPluginInterface = {
   status(): Promise<{ ready?: boolean; failed?: boolean }>;
@@ -18,7 +21,7 @@ function webSpeak(
   rate: number,
 ): SpeakResult {
   if (!("speechSynthesis" in window)) {
-    return { ok: false, reason: "No speech engine available in this browser." };
+    return { ok: false, error: new AppError("errors.speechNoEngine") };
   }
 
   const utterance = new SpeechSynthesisUtterance(text);
@@ -50,12 +53,13 @@ export async function speakText(
       await native.speak({ text, lang });
       return { ok: true };
     } catch (error) {
-      const reason =
-        error instanceof Error && error.message
-          ? error.message
-          : "Speech engine is not available.";
-      return { ok: false, reason };
+      return {
+        ok: false,
+        error: new AppError("errors.speechUnavailable", undefined, {
+          cause: error,
+        }),
+      };
     }
   }
-  return { ok: false, reason: "No speech engine available on this device." };
+  return { ok: false, error: new AppError("errors.speechNoEngine") };
 }

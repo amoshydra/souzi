@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   BookOpen,
@@ -5,6 +6,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { Logo } from "./Logo";
 
 export function AboutView({
@@ -14,75 +16,64 @@ export function AboutView({
   onBack: () => void;
   onOpenSettings: () => void;
 }) {
+  const { t } = useTranslation();
+  useDocumentTitle(t("about.pageTitle"));
+
   return (
     <div className="page about-page">
       <button type="button" className="back-button" onClick={onBack}>
-        <ArrowLeft size={18} /> Back
+        <ArrowLeft size={18} aria-hidden="true" /> {t("common.back")}
       </button>
 
       <section className="hero about-hero">
         <div className="eyebrow">
-          <span className="eyebrow-line" />
-          About Souzi
-          <span className="eyebrow-line" />
+          <span className="eyebrow-line" aria-hidden="true" />
+          {t("about.kicker")}
+          <span className="eyebrow-line" aria-hidden="true" />
         </div>
-        <h1>
-          Every word,
-          <br />
-          both ways.
-        </h1>
-        <p className="hero-sub">
-          A simple dictionary made to be easy to read and easy to use.
-        </p>
+        <h1>{t("about.title")}</h1>
+        <p className="hero-sub">{t("about.subtitle")}</p>
       </section>
 
       <div className="about-content">
         <section className="panel about-panel">
-          <div className="panel-kicker">A dictionary first</div>
-          <p>
-            Search is the first thing you see. Type a word and tap the result to read the meaning.
-          </p>
-          <p>
-            Your dictionaries are saved on this device. There is no account and
-            no sign-in. After setup, Souzi works without internet.
-          </p>
+          <h2 className="panel-kicker">{t("about.dictionaryFirst")}</h2>
+          <p>{t("about.dictionaryFirstBody")}</p>
+          <p>{t("about.dictionaryFirstBody2")}</p>
         </section>
 
-        <section className="how-grid">
+        <section className="how-grid" aria-label={t("about.kicker")}>
           <article className="how-card">
             <div className="how-icon">
-              <BookOpen size={20} />
+              <BookOpen size={20} aria-hidden="true" />
             </div>
-            <h3>Two directions</h3>
-            <p>Look up English words and Chinese words in the same app.</p>
+            <h2>{t("about.twoDirectionsTitle")}</h2>
+            <p>{t("about.twoDirectionsBody")}</p>
           </article>
           <article className="how-card">
             <div className="how-icon">
-              <ShieldCheck size={20} />
+              <ShieldCheck size={20} aria-hidden="true" />
             </div>
-            <h3>Private</h3>
-            <p>Your words stay on your device. Nothing is sent to a server.</p>
+            <h2>{t("about.privateTitle")}</h2>
+            <p>{t("about.privateBody")}</p>
           </article>
           <article className="how-card">
             <div className="how-icon">
-              <Sparkles size={20} />
+              <Sparkles size={20} aria-hidden="true" />
             </div>
-            <h3>Works offline</h3>
-            <p>Once your dictionaries are installed, you do not need internet.</p>
+            <h2>{t("about.offlineTitle")}</h2>
+            <p>{t("about.offlineBody")}</p>
           </article>
         </section>
 
         <section className="panel about-panel">
-          <div className="panel-kicker">Data and credits</div>
-          <p>
-            The English dictionary is included with Souzi. The Chinese
-            dictionary is downloaded when you set up the app.
-          </p>
+          <h2 className="panel-kicker">{t("about.dataTitle")}</h2>
+          <p>{t("about.dataBody")}</p>
           <details className="english-details">
-            <summary>Data credits and licenses</summary>
+            <summary>{t("about.creditsSummary")}</summary>
             <ul>
               <li>
-                English dictionary:{" "}
+                {t("about.englishDictionary")}:{" "}
                 <a
                   href="https://github.com/skywind3000/ECDICT"
                   target="_blank"
@@ -90,10 +81,10 @@ export function AboutView({
                 >
                   ECDICT
                 </a>{" "}
-                (MIT license)
+                ({t("about.mitLicense")})
               </li>
               <li>
-                Chinese dictionary:{" "}
+                {t("about.chineseDictionary")}:{" "}
                 <a
                   href="https://www.mdbg.net/chinese/dictionary?page=cc-cedict"
                   target="_blank"
@@ -104,7 +95,7 @@ export function AboutView({
                 (CC BY-SA 4.0)
               </li>
               <li>
-                Word levels:{" "}
+                {t("about.wordLevels")}:{" "}
                 <a
                   href="https://github.com/ivankra/hsk30"
                   target="_blank"
@@ -112,10 +103,10 @@ export function AboutView({
                 >
                   HSK 3.0
                 </a>{" "}
-                (MIT license)
+                ({t("about.mitLicense")})
               </li>
               <li>
-                Word frequency data:{" "}
+                {t("about.wordFrequency")}:{" "}
                 <a
                   href="https://github.com/fxsjy/jieba"
                   target="_blank"
@@ -123,10 +114,10 @@ export function AboutView({
                 >
                   jieba
                 </a>{" "}
-                (MIT license)
+                ({t("about.mitLicense")})
               </li>
               <li>
-                Example sentences:{" "}
+                {t("about.exampleSentences")}:{" "}
                 <a
                   href="https://tatoeba.org"
                   target="_blank"
@@ -137,7 +128,7 @@ export function AboutView({
                 (CC BY 2.0 FR)
               </li>
               <li>
-                Related words:{" "}
+                {t("about.relatedWords")}:{" "}
                 <a
                   href="https://wordnet.princeton.edu"
                   target="_blank"
@@ -148,7 +139,7 @@ export function AboutView({
                 (WordNet License)
               </li>
               <li>
-                App code:{" "}
+                {t("about.appCode")}:{" "}
                 <a
                   href="https://github.com/amoshydra/souzi"
                   target="_blank"
@@ -168,9 +159,7 @@ export function AboutView({
               </li>
             </ul>
           </details>
-          <p className="about-source-note">
-            Source code, releases, and bug reports are on the GitHub project.
-          </p>
+          <p className="about-source-note">{t("about.sourceNote")}</p>
           <div className="button-row">
             <a
               className="button button-secondary"
@@ -178,24 +167,26 @@ export function AboutView({
               target="_blank"
               rel="noreferrer"
             >
-              <Github size={18} />
-              View on GitHub
+              <Github size={18} aria-hidden="true" />
+              {t("about.viewGithub")}
             </a>
             <button
               type="button"
               className="button button-secondary"
               onClick={onOpenSettings}
             >
-              Go to Settings
+              {t("about.goSettings")}
             </button>
           </div>
         </section>
 
         <div className="about-brand">
-          <Logo size={34} />
-          <span>Souzi 搜字</span>
+          <Logo size={34} decorative />
+          <span>{t("app.name")} {t("app.brandHan")}</span>
         </div>
-        <p className="fine-print">Version 0.1.0 · Works without internet after setup.</p>
+        <p className="fine-print">
+          {t("about.versionLine", { version: "0.1.0" })}
+        </p>
       </div>
     </div>
   );

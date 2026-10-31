@@ -47,18 +47,24 @@ export function exampleSentencesFor(
   return map[key.trim().toLowerCase()] ?? [];
 }
 
-export function exampleAttribution(examples: ExampleSentence[]): string {
+export type ExampleAttribution =
+  | "tatoebaAndStarter"
+  | "tatoeba"
+  | "starter"
+  | null;
+
+export function exampleAttribution(
+  examples: ExampleSentence[],
+): ExampleAttribution {
   const sources = new Set(
     examples.map((example) => example.source).filter(Boolean),
   );
   const tatoeba = sources.has("Tatoeba");
   const starter = sources.has("Starter");
 
-  if (tatoeba && starter) {
-    return "Examples from Tatoeba (CC BY 2.0 FR) and the starter set";
-  }
-  if (tatoeba) return "Examples from Tatoeba (CC BY 2.0 FR)";
-  return "Starter examples";
+  if (tatoeba && starter) return "tatoebaAndStarter";
+  if (tatoeba) return "tatoeba";
+  return examples.length > 0 ? "starter" : null;
 }
 
 export function exchangeForms(exchange: string): string[] {

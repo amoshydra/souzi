@@ -191,10 +191,13 @@ export interface ImportProgress {
   phase: "read" | "decompress" | "parse" | "index" | "store" | "done";
   current: number;
   total: number;
-  message: string;
 }
 
 export type ImportWorkerMessage =
   | { type: "progress"; progress: ImportProgress }
   | { type: "done"; count: number }
-  | { type: "error"; message: string };
+  | {
+      type: "error";
+      code: import("./i18n/errors").ErrorCode;
+      params?: import("./i18n/errors").ErrorParams;
+    };

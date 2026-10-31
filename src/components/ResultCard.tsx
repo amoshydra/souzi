@@ -15,14 +15,17 @@ export function ResultCard({
       type="button"
       className="result-card"
       onClick={() => onOpen(entry.id)}
-      aria-label={`Open ${entry.simp}, ${entry.pinyin}`}
     >
       <span className="result-card-main">
         <span className="result-card-top">
-          <span className="hanzi result-hanzi">{entry.simp}</span>
+          <span className="hanzi result-hanzi" lang="zh-Hans">
+            {entry.simp}
+          </span>
         </span>
-        <span className="pinyin">{entry.pinyin}</span>
-        <span className="gloss">
+        <span className="pinyin" lang="zh-Latn">
+          {entry.pinyin}
+        </span>
+        <span className="gloss" lang="en">
           {visibleDefinitions.join(" · ")}
           {remaining > 0 ? ` · +${remaining}` : ""}
         </span>

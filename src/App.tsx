@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Search, Settings, Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type {
   DictionaryMeta,
   EnglishCoreMeta,
@@ -36,28 +37,69 @@ import { useRelatedPack } from "./hooks/useRelatedPack";
 import { getFullEnglishStatus, removeFullEnglishPack, searchFullEnglish } from "./lib/full-english";
 import { ChineseDownloadBanner } from "./components/ChineseDownloadBanner";
 import { SearchPage } from "./components/SearchPage";
-import { EntryView } from "./components/EntryView";
-import { EnglishEntryView } from "./components/EnglishEntryView";
-import { ImportView } from "./components/ImportView";
-import { SavedView } from "./components/SavedView";
-import { SettingsView } from "./components/SettingsView";
-import { DownloadsView } from "./components/DownloadsView";
 import { InstallView } from "./components/InstallView";
-import { AboutView } from "./components/AboutView";
 import { SetupView } from "./components/SetupView";
 import { Logo } from "./components/Logo";
+import { RouteFallback } from "./components/RouteFallback";
 import { Toast, type ToastMessage } from "./components/Toast";
 import {
   backNavigation,
   createInitialNavigation,
   navigateTo,
   parseHash,
+  routeKey,
   routeToHash,
   syncNavigationState,
   type NavigationState,
   type Route,
   type Tab,
 } from "./lib/navigation";
+
+const EntryView = lazy(() =>
+  import("./components/EntryView").then((module) => ({
+    default: module.EntryView,
+  })),
+);
+const EnglishEntryView = lazy(() =>
+  import("./components/EnglishEntryView").then((module) => ({
+    default: module.EnglishEntryView,
+  })),
+);
+const SavedView = lazy(() =>
+  import("./components/SavedView").then((module) => ({
+    default: module.SavedView,
+  })),
+);
+const SettingsView = lazy(() =>
+  import("./components/SettingsView").then((module) => ({
+    default: module.SettingsView,
+  })),
+);
+const DownloadsView = lazy(() =>
+  import("./components/DownloadsView").then((module) => ({
+    default: module.DownloadsView,
+  })),
+);
+const ImportView = lazy(() =>
+  import("./components/ImportView").then((module) => ({
+    default: module.ImportView,
+  })),
+);
+const AboutView = lazy(() =>
+  import("./components/AboutView").then((module) => ({
+    default: module.AboutView,
+  })),
+);
+
+// Warm the two most-used lazy tabs on hover/focus. Errors are ignored; the
+// real route render will surface any loading problem through Suspense.
+function preloadSavedView(): void {
+  void import("./components/SavedView").catch(() => {});
+}
+
+function preloadSettingsView(): void {
+  void import("./components/SettingsView").catch(() => {});
+}
 
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem("souzi-theme");
@@ -89,6 +131,9 @@ function saveSetupChoice(choice: SetupChoice): void {
 
 export default function App() {
   useKeyboardViewport();
+  const { t } = useTranslation();
+  const mainRef = useRef<HTMLElement>(null);
+  const initialRouteRef = useRef(true);
   const [route, setRoute] = useState<Route>(parseHash);
   const navRef = useRef<NavigationState>(createInitialNavigation(route));
   const [activeTab, setActiveTab] = useState<Tab>(navRef.current.activeTab);
@@ -177,8 +222,8 @@ export default function App() {
 
   const handleChineseInstalled = useCallback(async () => {
     await reloadDictionary();
-    showToast("Chinese dictionary is ready");
-  }, [reloadDictionary, showToast]);
+    showToast(t("toast.chineseReady"));
+  }, [reloadDictionary, showToast, t]);
 
   const nativeDownload = useNativeCedictDownload({
     onInstalled: handleChineseInstalled,
@@ -187,9 +232,9 @@ export default function App() {
   const handleFullEnglishInstalled = useCallback(
     async (installedMeta: FullEnglishMeta) => {
       setFullEnglishMeta(installedMeta);
-      showToast("Full English dictionary is ready");
+      showToast(t("toast.fullEnglishReady"));
     },
-    [showToast],
+    [showToast, t],
   );
 
   const fullEnglishDownload = useFullEnglishDownload({
@@ -203,11 +248,16 @@ export default function App() {
     try {
       await removeFullEnglishPack();
       setFullEnglishMeta(null);
-      showToast("Full English dictionary removed");
+      showToast(t("toast.fullEnglishRemoved"));
     } catch {
-      showToast("The full dictionary could not be removed", "error");
+      showToast(t("toast.fullEnglishRemoveError"), "error");
     }
-  }, [showToast]);
+  }, [showToast, t]);
+
+  useEffect(() => {
+    if (ready) return;
+    document.title = t("meta.title");
+  }, [ready, t]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -342,13 +392,47 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (initialRouteRef.current) {
+      initialRouteRef.current = false;
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+
+    // Move focus to the page heading so screen reader and keyboard users know
+    // the route changed. Lazy routes briefly render a fallback, so wait a few
+    // frames for the real heading to appear.
+    let frame = 0;
+    let attempts = 0;
+    const key = routeKey(route);
+    const focusHeading = () => {
+      const heading = mainRef.current?.querySelector<HTMLElement>(
+        `[data-route="${key}"] h1`,
+      );
+      if (heading) {
+        if (!heading.hasAttribute("tabindex")) {
+          heading.setAttribute("tabindex", "-1");
+        }
+        heading.focus({ preventScroll: true });
+        return;
+      }
+      attempts += 1;
+      if (attempts < 60) {
+        frame = window.requestAnimationFrame(focusHeading);
+        return;
+      }
+      mainRef.current?.focus({ preventScroll: true });
+    };
+
+    frame = window.requestAnimationFrame(focusHeading);
+
+    return () => window.cancelAnimationFrame(frame);
   }, [route]);
 
   const openSimp = async (simp: string) => {
     const entry = await getEntryBySimp(simp);
     if (!entry) {
-      showToast("That word is no longer in the dictionary", "error");
+      showToast(t("toast.wordGone"), "error");
       return;
     }
     navigate({ name: "entry", kind: "zh", id: entry.id });
@@ -375,9 +459,9 @@ export default function App() {
           return;
         }
       }
-      showToast("That word is not in the dictionary", "error");
+      showToast(t("toast.wordNotFound"), "error");
     } catch {
-      showToast("Could not open that word", "error");
+      showToast(t("toast.wordOpenError"), "error");
     }
   };
 
@@ -422,10 +506,10 @@ export default function App() {
       <div className="app setup-app">
         <main className="main">
           <div className="shell">
-            <div className="loading-screen">
-              <Logo size={54} />
-              <div className="loading-title">Opening Souzi</div>
-              <div className="loading-sub">Getting your words ready…</div>
+            <div className="loading-screen" role="status" aria-live="polite">
+              <Logo size={54} decorative />
+              <div className="loading-title">{t("app.loadingTitle")}</div>
+              <div className="loading-sub">{t("app.loadingSub")}</div>
               <div className="loading-bar">
                 <div className="loading-bar-fill" />
               </div>
@@ -457,46 +541,62 @@ export default function App() {
 
   return (
     <div className="app">
+      <button
+        type="button"
+        className="skip-link"
+        onClick={() => mainRef.current?.focus()}
+      >
+        {t("a11y.skipToContent")}
+      </button>
       <header className="header">
         <div className="shell header-inner">
           <button
             type="button"
             className="brand"
             onClick={() => navigate({ name: "search" })}
-            aria-label="Souzi home"
           >
-            <Logo size={36} />
+            <Logo size={36} decorative />
             <span className="brand-text">
-              <span className="brand-name">Souzi</span>
-              <span className="brand-sub">搜字</span>
+              <span className="brand-name">{t("app.name")}</span>
+              <span className="brand-sub" lang="zh">
+                {t("app.brandHan")}
+              </span>
             </span>
+            <span className="sr-only">{t("nav.home")}</span>
           </button>
 
-          <nav className="header-nav" aria-label="Main">
+          <nav className="header-nav" aria-label={t("a11y.primaryNav")}>
             <button
               type="button"
               className={`nav-link ${isNavActive("search") ? "nav-link-active" : ""}`}
               onClick={() => navigate({ name: "search" })}
+              aria-current={isNavActive("search") ? "page" : undefined}
             >
-              <Search size={16} />
-              Search
+              <Search size={16} aria-hidden="true" />
+              {t("nav.search")}
             </button>
             <button
               type="button"
               className={`nav-link ${isNavActive("saved") ? "nav-link-active" : ""}`}
               onClick={() => navigate({ name: "saved" })}
+              onPointerEnter={preloadSavedView}
+              onFocus={preloadSavedView}
+              aria-current={isNavActive("saved") ? "page" : undefined}
             >
-              <Star size={16} />
-              Saved
+              <Star size={16} aria-hidden="true" />
+              {t("nav.saved")}
               {savedCount > 0 && <span className="nav-count">{savedCount}</span>}
             </button>
             <button
               type="button"
               className={`nav-link ${isNavActive("settings") ? "nav-link-active" : ""}`}
               onClick={() => navigate({ name: "settings" })}
+              onPointerEnter={preloadSettingsView}
+              onFocus={preloadSettingsView}
+              aria-current={isNavActive("settings") ? "page" : undefined}
             >
-              <Settings size={16} />
-              Settings
+              <Settings size={16} aria-hidden="true" />
+              {t("nav.settings")}
             </button>
           </nav>
         </div>
@@ -508,9 +608,15 @@ export default function App() {
         )}
       </header>
 
-      <main className="main">
+      <main className="main" id="main-content" ref={mainRef} tabIndex={-1}>
         <div className="shell">
-          {route.name === "search" ? (
+          <div
+            className="route-content"
+            key={routeKey(route)}
+            data-route={routeKey(route)}
+          >
+            <Suspense fallback={<RouteFallback />}>
+              {route.name === "search" ? (
             <SearchPage
               index={index}
               englishIndex={englishIndex}
@@ -557,12 +663,12 @@ export default function App() {
               onRemove={async (simp) => {
                 await removeFavorite(simp);
                 await refreshFavorites();
-                showToast("Removed from saved words");
+                showToast(t("toast.removedSaved"));
               }}
               onRemoveEnglish={async (key) => {
                 await removeEnglishFavorite(key);
                 await refreshEnglishFavorites();
-                showToast("Removed from saved words");
+                showToast(t("toast.removedSaved"));
               }}
               onBrowse={() => navigate({ name: "search" })}
             />
@@ -604,34 +710,43 @@ export default function App() {
               onToast={showToast}
             />
           )}
+            </Suspense>
+          </div>
         </div>
       </main>
 
-      <nav className="bottom-nav" aria-label="Main">
+      <nav className="bottom-nav" aria-label={t("a11y.mobileNav")}>
         <button
           type="button"
           className={`bottom-link ${isNavActive("search") ? "bottom-link-active" : ""}`}
           onClick={() => navigate({ name: "search" })}
+          aria-current={isNavActive("search") ? "page" : undefined}
         >
-          <Search size={21} />
-          <span>Search</span>
+          <Search size={21} aria-hidden="true" />
+          <span>{t("nav.search")}</span>
         </button>
         <button
           type="button"
           className={`bottom-link ${isNavActive("saved") ? "bottom-link-active" : ""}`}
           onClick={() => navigate({ name: "saved" })}
+          onPointerEnter={preloadSavedView}
+          onFocus={preloadSavedView}
+          aria-current={isNavActive("saved") ? "page" : undefined}
         >
-          <Star size={21} />
-          <span>Saved</span>
-          {savedCount > 0 && <span className="bottom-dot" />}
+          <Star size={21} aria-hidden="true" />
+          <span>{t("nav.saved")}</span>
+          {savedCount > 0 && <span className="bottom-dot" aria-hidden="true" />}
         </button>
         <button
           type="button"
           className={`bottom-link ${isNavActive("settings") ? "bottom-link-active" : ""}`}
           onClick={() => navigate({ name: "settings" })}
+          onPointerEnter={preloadSettingsView}
+          onFocus={preloadSettingsView}
+          aria-current={isNavActive("settings") ? "page" : undefined}
         >
-          <Settings size={21} />
-          <span>Settings</span>
+          <Settings size={21} aria-hidden="true" />
+          <span>{t("nav.settings")}</span>
         </button>
       </nav>
 

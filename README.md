@@ -44,6 +44,8 @@ All screenshots are from the mobile layout (390×844).
 - First-run setup: the bundled English→Chinese core installs automatically. The setup screen stays until the user chooses Continue or Skip, even across app restarts. Download runs inline in setup with progress and an editable Wi-Fi-only option; Continue opens the app while the download finishes. Settings has a dedicated Downloads page for progress, retry, pause, and cancel.
 - Native CC-CEDICT download manager on Android with progress, pause/resume, retry, cancel, and a Wi-Fi-only option. Active downloads are monitored at app level so setup does not need to stay open; interrupted downloads can be retried.
 - Large, high-contrast interface designed for comfortable reading. Typography uses distinct heading, body, and label roles; inputs and buttons use the label style. Layout and type use rem/em units and follow the browser or device text-size setting. Border widths, corner radii, and shadows intentionally use fixed px for crisp hairlines.
+- Interface in English, Simplified Chinese, and Traditional Chinese. Follow the system language or choose one in Settings or the first-run setup. The UI language is independent of dictionary content and text-to-speech.
+- Keyboard and screen-reader support: visible focus, route focus management, labelled live regions, language-tagged Chinese/English content, native dialog focus trapping, and Android system font scaling.
 - Favorites and search history for both directions, stored locally.
 - Installable PWA with an offline app shell.
 - Dark/light/system theme.
@@ -130,12 +132,31 @@ pnpm run data:ecdict -- /path/to/ecdict.csv
 
 That script selects exam-tagged / Collins / Oxford words first, then the most frequent remaining words, up to 30,000 entries.
 
+## Localisation
+
+The interface is available in English, Simplified Chinese, and Traditional
+Chinese. Catalogs live in `src/i18n/locales/`; the English catalog is the typed
+source of truth. `pnpm test` checks catalog parity, interpolation placeholders,
+and plural forms. See [`docs/i18n.md`](docs/i18n.md) for the string conventions,
+error-code model, and the steps to add another language.
+
+The app follows the system language by default. Users can change it in Settings
+or on the first-run setup screen. Dictionary content is not translated: English
+entries keep their Chinese definitions and Chinese entries keep their English
+definitions, regardless of the interface language.
+
+Locale catalogs and secondary views are code-split. English stays in the main
+chunk as the fallback; the active Chinese catalog is fetched before the first
+React render, and the other catalog and lazy routes are fetched only when
+needed. Vendor code is split into separate cacheable chunks.
+
 ## Architecture
 
 ```
 src/
   components/       UI views
   data/             HSK levels and word-frequency ranks
+  i18n/             typed en / zh-Hans / zh-Hant catalogs, locale detection, errors
   lib/
     cedict.ts       CC-CEDICT line parser
     pinyin.ts       numeric pinyin -> tone marks, search normalization

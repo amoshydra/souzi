@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import type { ImportProgress } from "../types";
 import { startCedictImportFromBuffer } from "../lib/cedict-import";
+import { AppError, asAppError, type AppError as AppErrorType } from "../i18n/errors";
 import {
   NativeDictionaryDownloader,
   type NativeDownloadStatus,
@@ -49,7 +50,7 @@ export function useNativeCedictDownload({
   const [bytesDownloaded, setBytesDownloaded] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
   const [speed, setSpeed] = useState(0);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<AppErrorType | null>(null);
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(
     null,
   );
@@ -114,18 +115,14 @@ export function useNativeCedictDownload({
             setPhase("done");
             await onInstalledRef.current();
           },
-          onError: (message) => {
+          onError: (importError) => {
             setImportProgress(null);
-            setError(message);
+            setError(importError);
             setPhase("error");
           },
         });
       } catch (reason) {
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "The downloaded dictionary could not be read. Please try again.",
-        );
+        setError(asAppError(reason, "errors.dictionaryRead"));
         setPhase("error");
       }
     },
@@ -168,7 +165,7 @@ export function useNativeCedictDownload({
 
         if (status.status === "failed") {
           setSpeed(0);
-          setError("The download did not finish. Please try again.");
+          setError(new AppError("errors.downloadIncomplete"));
           setPhase("error");
           return;
         }
@@ -184,11 +181,7 @@ export function useNativeCedictDownload({
       } catch (reason) {
         if (cancelled) return;
         setSpeed(0);
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "Could not read the download status.",
-        );
+        setError(asAppError(reason, "errors.downloadStatus"));
         setPhase("error");
       }
     };
@@ -222,7 +215,7 @@ export function useNativeCedictDownload({
   const start = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return;
 
-    setError("");
+    setError(null);
     setImportProgress(null);
     setBytesDownloaded(0);
     setTotalBytes(0);
@@ -257,11 +250,7 @@ export function useNativeCedictDownload({
       setDownloadId(id);
       setPollEpoch((value) => value + 1);
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Could not start the download. Please try again.",
-      );
+      setError(asAppError(reason, "errors.downloadStart"));
       setPhase("error");
     }
   }, [wifiOnly]);
@@ -273,9 +262,7 @@ export function useNativeCedictDownload({
       setPhase("paused");
       setSpeed(0);
     } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Could not pause the download.",
-      );
+      setError(asAppError(reason, "errors.downloadStatus"));
       setPhase("error");
     }
   }, [downloadId]);
@@ -287,11 +274,7 @@ export function useNativeCedictDownload({
       setPhase("downloading");
       setPollEpoch((value) => value + 1);
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Could not resume the download.",
-      );
+      setError(asAppError(reason, "errors.downloadStatus"));
       setPhase("error");
     }
   }, [downloadId]);
@@ -312,7 +295,7 @@ export function useNativeCedictDownload({
     setBytesDownloaded(0);
     setTotalBytes(0);
     setSpeed(0);
-    setError("");
+    setError(null);
     setImportProgress(null);
   }, [clearStoredDownload, downloadId]);
 

@@ -1,4 +1,5 @@
 import type { ExamplePack, ExamplePackMeta, ExampleSentence } from "../types";
+import { AppError } from "../i18n/errors";
 import {
   getInstalledExamplePack,
   putInstalledExamplePack,
@@ -44,12 +45,10 @@ export async function fetchExamplePackManifest(): Promise<ExamplePackManifest> {
       cache: "no-store",
     });
   } catch {
-    throw new Error(
-      "Could not reach the pack server. Check the internet connection or the app's network permission.",
-    );
+    throw new AppError("errors.network");
   }
   if (!response.ok) {
-    throw new Error("Could not check the example pack.");
+    throw new AppError("errors.checkPack");
   }
 
   const manifest = (await response.json()) as ExamplePackManifest;
@@ -59,7 +58,7 @@ export async function fetchExamplePackManifest(): Promise<ExamplePackManifest> {
     !manifest.url ||
     !manifest.sha256
   ) {
-    throw new Error("The example pack manifest is not supported.");
+    throw new AppError("errors.manifestUnsupported");
   }
 
   return manifest;
@@ -93,12 +92,10 @@ export async function installExamplePack(
     response = await fetch(manifest.url, { cache: "no-store", signal });
   } catch {
     if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
-    throw new Error(
-      "Could not download the example pack. Check the internet connection or the app's network permission.",
-    );
+    throw new AppError("errors.network");
   }
   if (!response.ok || !response.body) {
-    throw new Error("The example pack could not be downloaded.");
+    throw new AppError("errors.downloadPack");
   }
 
   const total = Number(response.headers.get("content-length")) || manifest.bytes;
@@ -127,7 +124,7 @@ export async function installExamplePack(
 
   const digest = toHex(await crypto.subtle.digest("SHA-256", compressed));
   if (digest !== manifest.sha256) {
-    throw new Error("The example pack failed its checksum check.");
+    throw new AppError("errors.checksum");
   }
 
   onProgress?.({ phase: "installing", loaded, total });
@@ -144,7 +141,7 @@ export async function installExamplePack(
   };
 
   if (!payload.examples || typeof payload.examples !== "object") {
-    throw new Error("The example pack is not valid.");
+    throw new AppError("errors.invalidPack");
   }
 
   const pack: ExamplePack = {

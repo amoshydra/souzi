@@ -8,6 +8,7 @@ import type {
 import { buildEnglishIndex } from "./english";
 import { definitionLines, translationLines } from "./ecdict-text";
 import { installEnglishCore, loadEnglishCore } from "./db";
+import { AppError, asAppError } from "../i18n/errors";
 
 export const ECDICT_CORE_VERSION = 1;
 
@@ -57,9 +58,7 @@ async function downloadCore(): Promise<CorePayload> {
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        lastError = new Error(
-          `Could not load the English core (HTTP ${response.status}).`,
-        );
+        lastError = new AppError("errors.englishCore", { status: response.status });
         continue;
       }
 
@@ -73,7 +72,7 @@ async function downloadCore(): Promise<CorePayload> {
         !Array.isArray(payload.entries) ||
         payload.entries.length === 0
       ) {
-        throw new Error("The bundled English core is empty or malformed.");
+        throw new AppError("errors.englishCoreMalformed");
       }
 
       return payload;
@@ -82,9 +81,7 @@ async function downloadCore(): Promise<CorePayload> {
     }
   }
 
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("Could not load the bundled English core.");
+  throw asAppError(lastError, "errors.englishCore");
 }
 
 /**

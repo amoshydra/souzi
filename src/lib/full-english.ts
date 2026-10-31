@@ -1,4 +1,5 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
+import { AppError } from "../i18n/errors";
 import type {
   EnglishEntry,
   EnglishMatchKind,
@@ -79,7 +80,7 @@ export async function installFullEnglishPack(
     deleteSource,
   });
   if (!result.installed || !result.meta) {
-    throw new Error("The full dictionary could not be installed.");
+    throw new AppError("errors.fullEnglishInstall");
   }
   return result.meta;
 }

@@ -8,6 +8,7 @@ import {
   putInstalledRelatedPack,
   removeInstalledRelatedPack,
 } from "./db";
+import { AppError } from "../i18n/errors";
 
 export const RELATED_PACK_MANIFEST_URL =
   "https://raw.githubusercontent.com/amoshydra/souzi/dict-manifest/related/manifest.json";
@@ -48,12 +49,10 @@ export async function fetchRelatedPackManifest(): Promise<RelatedPackManifest> {
       cache: "no-store",
     });
   } catch {
-    throw new Error(
-      "Could not reach the pack server. Check the internet connection or the app's network permission.",
-    );
+    throw new AppError("errors.network");
   }
   if (!response.ok) {
-    throw new Error("Could not check the related-words pack.");
+    throw new AppError("errors.checkPack");
   }
 
   const manifest = (await response.json()) as RelatedPackManifest;
@@ -63,7 +62,7 @@ export async function fetchRelatedPackManifest(): Promise<RelatedPackManifest> {
     !manifest.url ||
     !manifest.sha256
   ) {
-    throw new Error("The related-words pack manifest is not supported.");
+    throw new AppError("errors.manifestUnsupported");
   }
 
   return manifest;
@@ -97,12 +96,10 @@ export async function installRelatedPack(
     response = await fetch(manifest.url, { cache: "no-store", signal });
   } catch {
     if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
-    throw new Error(
-      "Could not download the related-words pack. Check the internet connection or the app's network permission.",
-    );
+    throw new AppError("errors.network");
   }
   if (!response.ok || !response.body) {
-    throw new Error("The related-words pack could not be downloaded.");
+    throw new AppError("errors.downloadPack");
   }
 
   const total = Number(response.headers.get("content-length")) || manifest.bytes;
@@ -131,7 +128,7 @@ export async function installRelatedPack(
 
   const digest = toHex(await crypto.subtle.digest("SHA-256", compressed));
   if (digest !== manifest.sha256) {
-    throw new Error("The related-words pack failed its checksum check.");
+    throw new AppError("errors.checksum");
   }
 
   onProgress?.({ phase: "installing", loaded, total });
@@ -148,7 +145,7 @@ export async function installRelatedPack(
   };
 
   if (!payload.relations || typeof payload.relations !== "object") {
-    throw new Error("The related-words pack is not valid.");
+    throw new AppError("errors.invalidPack");
   }
 
   const pack: RelatedPack = {

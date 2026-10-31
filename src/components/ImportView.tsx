@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertCircle,
   ArrowLeft,
@@ -14,34 +15,17 @@ import {
 import type {
   DictionaryMeta,
   ImportProgress,
-  ImportWorkerMessage,
 } from "../types";
 import { formatCount, formatDate } from "../lib/format";
+import { startCedictImport } from "../lib/cedict-import";
+import { AppError, translateError, type AppError as AppErrorType } from "../i18n/errors";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 const CEDICT_DIRECT =
   "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz";
 const CEDICT_PAGE = "https://www.mdbg.net/chinese/dictionary?page=cc-cedict";
 
 type Status = "idle" | "confirm" | "importing" | "done" | "error";
-
-function phaseLabel(phase: ImportProgress["phase"]): string {
-  switch (phase) {
-    case "read":
-      return "Reading file";
-    case "decompress":
-      return "Decompressing";
-    case "parse":
-      return "Preparing words";
-    case "index":
-      return "Preparing words";
-    case "store":
-      return "Saving dictionary";
-    case "done":
-      return "Installed";
-    default:
-      return "Working";
-  }
-}
 
 export function ImportView({
   meta,
@@ -56,14 +40,52 @@ export function ImportView({
   onBack: () => void;
   onToast: (message: string, tone?: "default" | "error") => void;
 }) {
+  const { t } = useTranslation();
+  useDocumentTitle(t("import.title"));
   const [status, setStatus] = useState<Status>("idle");
   const [dragging, setDragging] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [progress, setProgress] = useState<ImportProgress | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<AppErrorType | null>(null);
   const [installedCount, setInstalledCount] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const workerRef = useRef<Worker | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  const phaseLabel = (phase: ImportProgress["phase"]): string => {
+    switch (phase) {
+      case "read":
+        return t("import.phaseRead");
+      case "decompress":
+        return t("import.phaseDecompress");
+      case "parse":
+      case "index":
+        return t("import.phaseParse");
+      case "store":
+        return t("import.phaseStore");
+      case "done":
+        return t("import.phaseDone");
+      default:
+        return t("import.phaseDefault");
+    }
+  };
+
+  const progressDetail = (next: ImportProgress): string | null => {
+    if (next.total <= 1) return null;
+    if (next.phase === "parse") {
+      return t("import.parsingProgress", {
+        current: formatCount(next.current),
+        total: formatCount(next.total),
+      });
+    }
+    if (next.phase === "store") {
+      return t("import.savingProgress", {
+        current: formatCount(next.current),
+        total: formatCount(next.total),
+      });
+    }
+    return null;
+  };
 
   useEffect(() => {
     if (status !== "importing") return;
@@ -75,74 +97,53 @@ export function ImportView({
     return () => window.removeEventListener("beforeunload", handler);
   }, [status]);
 
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (status === "confirm" && pendingFile) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [status, pendingFile]);
+
+  useEffect(() => {
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
+
   const startImport = (file: File) => {
     setStatus("importing");
-    setError("");
+    setError(null);
     setInstalledCount(null);
     setProgress({
       phase: "read",
       current: 0,
       total: 1,
-      message: "Reading file…",
     });
 
-    const worker = new Worker(
-      new URL("../workers/import.worker.ts", import.meta.url),
-      { type: "module" },
-    );
-    workerRef.current = worker;
-
-    worker.onmessage = (event: MessageEvent<ImportWorkerMessage>) => {
-      const message = event.data;
-      if (message.type === "progress") {
-        setProgress(message.progress);
-        return;
-      }
-
-      if (message.type === "done") {
-        worker.terminate();
+    workerRef.current = startCedictImport(file, {
+      onProgress: setProgress,
+      onDone: (count) => {
         workerRef.current = null;
-        setInstalledCount(message.count);
+        setInstalledCount(count);
         setStatus("done");
-        onImported(message.count);
-        onToast("Dictionary installed");
-        return;
-      }
-
-      if (message.type === "error") {
-        worker.terminate();
+        onImported(count);
+        onToast(t("import.installedToast"));
+      },
+      onError: (importError) => {
         workerRef.current = null;
-        setError(message.message);
+        setError(importError);
         setStatus("error");
-      }
-    };
-
-    worker.onerror = (event) => {
-      worker.terminate();
-      workerRef.current = null;
-      setError(event.message || "The import worker crashed.");
-      setStatus("error");
-    };
-
-    file
-      .arrayBuffer()
-      .then((buffer) => {
-        worker.postMessage({ buffer, fileName: file.name }, [buffer]);
-      })
-      .catch((reason: unknown) => {
-        worker.terminate();
-        workerRef.current = null;
-        setError(
-          reason instanceof Error ? reason.message : "Could not read that file.",
-        );
-        setStatus("error");
-      });
+      },
+    });
   };
 
   const acceptFile = (file: File | undefined) => {
     if (!file) return;
     if (!/\.(txt|gz|zip)$/i.test(file.name)) {
-      setError("Choose a .txt, .gz, or .zip file.");
+      setError(new AppError("errors.importFileType"));
       setStatus("error");
       return;
     }
@@ -169,31 +170,33 @@ export function ImportView({
         onClick={onBack}
         disabled={status === "importing"}
       >
-        <ArrowLeft size={18} /> Back
+        <ArrowLeft size={18} aria-hidden="true" /> {t("common.back")}
       </button>
 
       <header className="page-heading">
-        <div className="section-kicker">Chinese dictionary</div>
-        <h1>Add the Chinese dictionary</h1>
-        <p>
-          English to Chinese is already included. This adds Chinese words and
-          their English meanings. Download the free dictionary, then choose the
-          file here. It stays on this device.
-        </p>
+        <div className="section-kicker">{t("import.kicker")}</div>
+        <h1>{t("import.title")}</h1>
+        <p>{t("import.body")}</p>
       </header>
 
       {meta && status !== "done" && (
         <div className={`current-data ${meta.kind === "cedict" ? "current-data-full" : ""}`}>
           <div className="current-data-icon">
-            <FileText size={18} />
+            <FileText size={18} aria-hidden="true" />
           </div>
           <div>
             <strong>
-              {meta.kind === "cedict" ? "Full dictionary installed" : "Starter set active"}
+              {meta.kind === "cedict"
+                ? t("import.fullInstalled")
+                : t("import.starterActive")}
             </strong>
             <span>
-              {formatCount(meta.count)} words
-              {meta.kind === "cedict" ? ` · ${formatDate(meta.importedAt)}` : " · sample content"}
+              {t("import.wordCount", { count: meta.count })}
+              {meta.kind === "cedict"
+                ? t("import.importedOn", {
+                    date: formatDate(meta.importedAt),
+                  })
+                : t("import.sampleContent")}
             </span>
           </div>
         </div>
@@ -202,16 +205,17 @@ export function ImportView({
       {status === "done" && (
         <section className="import-success">
           <div className="success-mark">
-            <CheckCircle2 size={30} />
+            <CheckCircle2 size={30} aria-hidden="true" />
           </div>
-          <h2>Dictionary installed</h2>
+          <h2>{t("import.successTitle")}</h2>
           <p>
-            {formatCount(installedCount ?? 0)} words are now available offline
-            on this device.
+            {t("import.successBody", {
+              count: installedCount ?? 0,
+            })}
           </p>
           <div className="button-row">
             <button type="button" className="button button-primary" onClick={onDone}>
-              Open dictionary
+              {t("import.openDictionary")}
             </button>
             <button
               type="button"
@@ -223,7 +227,7 @@ export function ImportView({
                 inputRef.current?.click();
               }}
             >
-              Import another file
+              {t("import.importAnother")}
             </button>
           </div>
         </section>
@@ -232,19 +236,17 @@ export function ImportView({
       {status !== "done" && (
         <div className="import-grid">
           <section className="step-card">
-            <div className="step-number">1</div>
-            <h2>Download the dictionary</h2>
-            <p>
-              The free Chinese dictionary. About 4 MB. It stays on your device.
-            </p>
+            <div className="step-number" aria-hidden="true">1</div>
+            <h2>{t("import.step1Title")}</h2>
+            <p>{t("import.step1Body")}</p>
             <a
               className="button button-primary"
               href={CEDICT_DIRECT}
               target="_blank"
               rel="noreferrer"
             >
-              <Download size={16} />
-              Download dictionary
+              <Download size={16} aria-hidden="true" />
+              {t("import.downloadDictionary")}
             </a>
             <a
               className="text-link"
@@ -252,19 +254,15 @@ export function ImportView({
               target="_blank"
               rel="noreferrer"
             >
-              Open the download page
+              {t("import.openDownloadPage")}
             </a>
-            <div className="license-note">
-              Free dictionary data. See About for credits.
-            </div>
+            <div className="license-note">{t("import.licenseNote")}</div>
           </section>
 
           <section className="step-card step-card-import">
-            <div className="step-number">2</div>
-            <h2>Choose the file</h2>
-            <p>
-              Choose the file you downloaded.
-            </p>
+            <div className="step-number" aria-hidden="true">2</div>
+            <h2>{t("import.step2Title")}</h2>
+            <p>{t("import.step2Body")}</p>
 
             <div
               className={`dropzone ${dragging ? "dropzone-active" : ""}`}
@@ -280,25 +278,27 @@ export function ImportView({
               }}
             >
               <div className="dropzone-icon">
-                <UploadCloud size={26} />
+                <UploadCloud size={26} aria-hidden="true" />
               </div>
-              <strong>Drop the file here</strong>
-              <span>or</span>
+              <strong>{t("import.dropHere")}</strong>
+              <span>{t("import.or")}</span>
               <button
                 type="button"
                 className="button button-secondary"
                 onClick={() => inputRef.current?.click()}
               >
-                Choose file
+                {t("import.chooseFile")}
               </button>
-              <span className="dropzone-hint">.txt.gz · .txt · .zip</span>
+              <span className="dropzone-hint">{t("import.fileTypes")}</span>
             </div>
 
             <input
               ref={inputRef}
+              id="import-cedict-file"
+              name="cedict-file"
               type="file"
               accept=".txt,.gz,.zip,application/gzip,text/plain"
-              className="sr-only"
+              hidden
               onChange={(event) => {
                 acceptFile(event.target.files?.[0]);
                 event.target.value = "";
@@ -306,78 +306,82 @@ export function ImportView({
             />
 
             <div className="privacy-note">
-              <ShieldCheck size={16} />
-              Saved on this device. Nothing is sent anywhere.
+              <ShieldCheck size={16} aria-hidden="true" />
+              {t("import.privacy")}
             </div>
           </section>
         </div>
       )}
 
-      {status === "confirm" && pendingFile && (
-        <div className="modal-backdrop" role="presentation">
-          <div
-            className="modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="replace-title"
-          >
+      <dialog
+        ref={dialogRef}
+        className="modal modal-dialog"
+        aria-labelledby="replace-title"
+        aria-describedby="replace-body"
+        onCancel={(event) => {
+          event.preventDefault();
+          dialogRef.current?.close();
+        }}
+        onClose={() => {
+          if (status === "confirm") {
+            setStatus("idle");
+            setPendingFile(null);
+          }
+        }}
+      >
+        {status === "confirm" && pendingFile ? (
+          <>
             <button
               type="button"
               className="modal-close"
-              onClick={() => {
-                setStatus("idle");
-                setPendingFile(null);
-              }}
-              aria-label="Cancel"
+              onClick={() => dialogRef.current?.close()}
+              aria-label={t("common.close")}
             >
-              <X size={18} />
+              <X size={18} aria-hidden="true" />
             </button>
             <div className="modal-icon">
-              <FileArchive size={24} />
+              <FileArchive size={24} aria-hidden="true" />
             </div>
-            <h2 id="replace-title">Replace the current dictionary?</h2>
-            <p>
-              <strong>{pendingFile.name}</strong> will replace the installed
-              dictionary. Saved words and history are kept.
+            <h2 id="replace-title">{t("import.replaceTitle")}</h2>
+            <p id="replace-body">
+              {t("import.replaceBody", { fileName: pendingFile.name })}
             </p>
             <div className="button-row">
               <button
                 type="button"
                 className="button button-primary"
+                autoFocus
                 onClick={() => {
                   const file = pendingFile;
                   setPendingFile(null);
                   startImport(file);
                 }}
               >
-                Replace dictionary
+                {t("import.replace")}
               </button>
               <button
                 type="button"
                 className="button button-secondary"
-                onClick={() => {
-                  setStatus("idle");
-                  setPendingFile(null);
-                }}
+                onClick={() => dialogRef.current?.close()}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        ) : null}
+      </dialog>
 
       {status === "importing" && progress && (
         <section className="import-progress">
           <div className="progress-head">
             <div>
-              <div className="section-kicker">Installing</div>
+              <div className="section-kicker">{t("import.installing")}</div>
               <h2>{phaseLabel(progress.phase)}</h2>
             </div>
             {percent !== null ? (
               <span className="progress-percent">{percent}%</span>
             ) : (
-              <Loader2 className="spin" size={20} />
+              <Loader2 className="spin" size={20} aria-hidden="true" />
             )}
           </div>
           <div
@@ -386,40 +390,46 @@ export function ImportView({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={percent ?? undefined}
-            aria-label="Dictionary import progress"
+            aria-valuetext={
+              percent !== null
+                ? `${phaseLabel(progress.phase)} ${percent}%`
+                : phaseLabel(progress.phase)
+            }
+            aria-label={t("a11y.dictionaryImportProgress")}
           >
             <div
               className="progress-fill"
               style={percent !== null ? { width: `${percent}%` } : undefined}
             />
           </div>
-          <p className="progress-message">{progress.message}</p>
-          <p className="progress-note">
-            Keep this tab open until the import finishes. It usually takes a few
-            seconds.
-          </p>
+          {progressDetail(progress) && (
+            <p className="progress-message">{progressDetail(progress)}</p>
+          )}
+          <p className="progress-note">{t("import.keepOpen")}</p>
         </section>
       )}
 
       {status === "error" && (
-        <section className="import-error" role="alert">
+        <section className="import-error">
           <div className="error-icon">
-            <AlertCircle size={22} />
+            <AlertCircle size={22} aria-hidden="true" />
           </div>
           <div>
-            <h2>Import failed</h2>
-            <p>{error}</p>
+            <div role="alert">
+              <h2>{t("import.importFailed")}</h2>
+              <p>{error ? translateError(t, error) : t("import.failed")}</p>
+            </div>
             <div className="button-row">
               <button
                 type="button"
                 className="button button-secondary"
                 onClick={() => {
                   setStatus("idle");
-                  setError("");
+                  setError(null);
                   inputRef.current?.click();
                 }}
               >
-                Choose another file
+                {t("import.chooseAnother")}
               </button>
               <a
                 className="button button-ghost"
@@ -427,7 +437,7 @@ export function ImportView({
                 target="_blank"
                 rel="noreferrer"
               >
-                Download again
+                {t("import.downloadAgain")}
               </a>
             </div>
           </div>
@@ -435,15 +445,9 @@ export function ImportView({
       )}
 
       <section className="import-faq">
-        <h2>Why is this a separate download?</h2>
-        <p>
-          The Chinese dictionary is large. Downloading it separately keeps the
-          app small and keeps the data on your device.
-        </p>
-        <p>
-          The file is prepared on this device and saved for offline use. It is
-          never sent to a server.
-        </p>
+        <h2>{t("import.faqTitle")}</h2>
+        <p>{t("import.faqBody1")}</p>
+        <p>{t("import.faqBody2")}</p>
       </section>
     </div>
   );

@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "i18n:check": "vitest run src/test/i18n.test.ts",
     "data:ecdict": "node scripts/build-ecdict-core.mjs",
     "cap:sync": "cap sync",
     "cap:sync:android": "cap sync android",
@@ -22,10 +23,12 @@
     "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.5.3",
     "fflate": "^0.8.2",
+    "i18next": "^26.5.12",
     "idb": "^8.0.3",
     "lucide-react": "^0.544.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-i18next": "^17.1.9",
     "workbox-window": "^7.4.1"
   },
   "devDependencies": {

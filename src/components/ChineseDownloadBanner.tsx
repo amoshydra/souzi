@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ChevronRight, Loader2, Pause, Play, RefreshCw, X } from "lucide-react";
 import type { NativeCedictDownload } from "../hooks/useNativeCedictDownload";
 
@@ -8,6 +9,8 @@ export function ChineseDownloadBanner({
   download: NativeCedictDownload;
   onOpenDownloads: () => void;
 }) {
+  const { t } = useTranslation();
+
   if (download.phase === "idle" || download.phase === "done") return null;
 
   const installing = download.phase === "installing";
@@ -42,33 +45,38 @@ export function ChineseDownloadBanner({
     !failed && (percent === null || download.phase === "checking");
 
   const title = failed
-    ? "Chinese dictionary not added."
+    ? t("packs.chineseNotAdded")
     : installing
-      ? "Preparing Chinese dictionary…"
+      ? t("common.preparingDictionary")
       : paused
-        ? "Chinese dictionary paused."
+        ? t("packs.chinesePaused")
         : download.phase === "checking"
-          ? "Getting Chinese dictionary ready…"
+          ? t("packs.gettingChineseReady")
           : waiting
-            ? "Waiting for Wi-Fi…"
-            : "Chinese dictionary";
+            ? t("common.waitingForWifi")
+            : t("packs.chineseDictionary");
 
   return (
     <div
       className={`download-banner ${failed ? "download-banner-error" : ""}`}
-      role="status"
-      aria-live="polite"
     >
+      <p className="sr-only" role="status" aria-live="polite">
+        {title}
+      </p>
       <div className="shell download-banner-inner">
         <button
           type="button"
           className="download-banner-copy"
           onClick={onOpenDownloads}
-          aria-label="Open downloads"
+          aria-label={t("a11y.openDownloads")}
         >
           <span className="download-banner-title">
             {(installing || download.phase === "checking") && (
-              <Loader2 size={15} className="spin" aria-hidden="true" />
+              <Loader2
+                size={15}
+                className="spin"
+                aria-hidden="true"
+              />
             )}
             {title}
           </span>
@@ -87,7 +95,12 @@ export function ChineseDownloadBanner({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={percent ?? undefined}
-            aria-label="Chinese dictionary download progress"
+            aria-valuetext={
+              percent !== null
+                ? t("common.downloadingDictionary") + ` ${percent}%`
+                : title
+            }
+            aria-label={t("a11y.chineseDownloadProgress")}
           >
             <div
               className="progress-fill"
@@ -104,17 +117,17 @@ export function ChineseDownloadBanner({
                 className="button button-primary button-small"
                 onClick={download.retry}
               >
-                <RefreshCw size={15} />
-                Try again
+                <RefreshCw size={15} aria-hidden="true" />
+                {t("common.retry")}
               </button>
               <button
                 type="button"
                 className="button button-secondary button-small download-icon-button"
                 onClick={download.cancel}
-                aria-label="Dismiss Chinese dictionary download"
-                title="Dismiss"
+                aria-label={t("a11y.dismissChineseDownload")}
+                title={t("a11y.dismiss")}
               >
-                <X size={17} />
+                <X size={17} aria-hidden="true" />
               </button>
             </>
           ) : installing ? null : paused ? (
@@ -123,19 +136,19 @@ export function ChineseDownloadBanner({
                 type="button"
                 className="button button-primary button-small download-icon-button"
                 onClick={download.resume}
-                aria-label="Continue Chinese dictionary download"
-                title="Continue"
+                aria-label={t("a11y.continueChineseDownload")}
+                title={t("common.resume")}
               >
-                <Play size={17} />
+                <Play size={17} aria-hidden="true" />
               </button>
               <button
                 type="button"
                 className="button button-secondary button-small download-icon-button"
                 onClick={download.cancel}
-                aria-label="Cancel Chinese dictionary download"
-                title="Cancel"
+                aria-label={t("a11y.cancelChineseDownload")}
+                title={t("common.cancel")}
               >
-                <X size={17} />
+                <X size={17} aria-hidden="true" />
               </button>
             </>
           ) : (
@@ -145,19 +158,19 @@ export function ChineseDownloadBanner({
                 className="button button-secondary button-small download-icon-button"
                 onClick={download.pause}
                 disabled={download.phase === "checking"}
-                aria-label="Pause Chinese dictionary download"
-                title="Pause"
+                aria-label={t("a11y.pauseChineseDownload")}
+                title={t("common.pause")}
               >
-                <Pause size={17} />
+                <Pause size={17} aria-hidden="true" />
               </button>
               <button
                 type="button"
                 className="button button-secondary button-small download-icon-button"
                 onClick={download.cancel}
-                aria-label="Cancel Chinese dictionary download"
-                title="Cancel"
+                aria-label={t("a11y.cancelChineseDownload")}
+                title={t("common.cancel")}
               >
-                <X size={17} />
+                <X size={17} aria-hidden="true" />
               </button>
             </>
           )}

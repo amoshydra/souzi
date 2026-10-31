@@ -1,4 +1,11 @@
-export function Logo({ size = 40 }: { size?: number }) {
+export function Logo({
+  size = 40,
+  decorative = false,
+}: {
+  size?: number;
+  /** Hide from assistive tech when the surrounding text already names Souzi. */
+  decorative?: boolean;
+}) {
   const remSize = `${size / 16}rem`;
 
   return (
@@ -6,8 +13,9 @@ export function Logo({ size = 40 }: { size?: number }) {
       width={remSize}
       height={remSize}
       viewBox="0 0 512 512"
-      role="img"
-      aria-label="Souzi"
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : "Souzi"}
+      aria-hidden={decorative ? true : undefined}
       className="logo"
       style={{ width: remSize, height: remSize }}
       fill="none"

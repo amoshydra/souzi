@@ -6,6 +6,8 @@
  * `dict-vN` release is published. The pack itself is served straight from that
  * Release asset.
  */
+import { AppError } from "../i18n/errors";
+
 export const FULL_ECDICT_MANIFEST_URL =
   import.meta.env.VITE_FULL_ECDICT_MANIFEST_URL ??
   "https://raw.githubusercontent.com/amoshydra/souzi/dict-manifest/ecdict/manifest.json";
@@ -30,7 +32,7 @@ export async function fetchFullEnglishManifest(): Promise<FullEnglishManifest> {
     { cache: "no-store" },
   );
   if (!response.ok) {
-    throw new Error(`Dictionary manifest HTTP ${response.status}`);
+    throw new AppError("errors.manifestHttp", { status: response.status });
   }
 
   const manifest = (await response.json()) as FullEnglishManifest;
@@ -42,7 +44,7 @@ export async function fetchFullEnglishManifest(): Promise<FullEnglishManifest> {
     typeof manifest.bytes !== "number" ||
     !manifest.url.startsWith("https://")
   ) {
-    throw new Error("Dictionary manifest is invalid.");
+    throw new AppError("errors.manifest");
   }
   return manifest;
 }

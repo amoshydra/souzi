@@ -1,5 +1,7 @@
+import { useTranslation } from "react-i18next";
 import { Star, Trash2 } from "lucide-react";
 import type { EnglishSavedWord, UserWord } from "../types";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export function SavedView({
   favorites,
@@ -18,39 +20,47 @@ export function SavedView({
   onRemoveEnglish: (key: string) => void;
   onBrowse: () => void;
 }) {
+  const { t } = useTranslation();
+  useDocumentTitle(t("saved.title"));
   const total = favorites.length + englishFavorites.length;
 
   return (
     <div className="page saved-page">
       <header className="page-heading">
-        <div className="section-kicker">Words you saved</div>
-        <h1>Saved words</h1>
+        <div className="section-kicker">{t("saved.kicker")}</div>
+        <h1>{t("saved.title")}</h1>
         <p>
           {total > 0
-            ? `${total} word${total === 1 ? "" : "s"} kept on this device.`
-            : "Tap Save on a word to keep it here."}
+            ? t("saved.count", { count: total })
+            : t("saved.headerEmpty")}
         </p>
       </header>
 
       {total === 0 ? (
         <div className="empty-card">
           <div className="empty-icon">
-            <Star size={22} />
+            <Star size={22} aria-hidden="true" />
           </div>
-          <h3>No saved words yet</h3>
-          <p>Open an entry and tap the star. Saved words stay offline.</p>
+          <h2>{t("saved.emptyTitle")}</h2>
+          <p>{t("saved.emptyBody")}</p>
           <button type="button" className="button button-primary" onClick={onBrowse}>
-            Find a word
+            {t("saved.findWord")}
           </button>
         </div>
       ) : (
         <>
           {favorites.length > 0 && (
-            <section className="saved-group">
-              <div className="result-group-head">
-                <span>Chinese words</span>
+            <section
+              className="saved-group"
+              aria-labelledby="saved-chinese-heading"
+            >
+              <h2
+                className="result-group-head"
+                id="saved-chinese-heading"
+              >
+                <span>{t("saved.chineseWords")}</span>
                 <span>{favorites.length}</span>
-              </div>
+              </h2>
               <div className="saved-list">
                 {favorites.map((item) => (
                   <article className="saved-item" key={item.simp}>
@@ -60,10 +70,14 @@ export function SavedView({
                       onClick={() => onOpenSimp(item.simp)}
                     >
                       <span className="saved-head">
-                        <span className="hanzi saved-hanzi">{item.simp}</span>
+                        <span className="hanzi saved-hanzi" lang="zh-Hans">
+                          {item.simp}
+                        </span>
                       </span>
-                      <span className="pinyin">{item.pinyin}</span>
-                      <span className="gloss">
+                      <span className="pinyin" lang="zh-Latn">
+                        {item.pinyin}
+                      </span>
+                      <span className="gloss" lang="en">
                         {item.definitions.slice(0, 2).join(" · ")}
                       </span>
                     </button>
@@ -71,10 +85,10 @@ export function SavedView({
                       type="button"
                       className="button button-ghost button-small saved-remove"
                       onClick={() => onRemove(item.simp)}
-                      aria-label={`Remove ${item.simp} from saved words`}
+                      aria-label={t("a11y.removeSaved", { word: item.simp })}
                     >
-                      <Trash2 size={17} />
-                      Remove
+                      <Trash2 size={17} aria-hidden="true" />
+                      {t("saved.remove")}
                     </button>
                   </article>
                 ))}
@@ -83,11 +97,17 @@ export function SavedView({
           )}
 
           {englishFavorites.length > 0 && (
-            <section className="saved-group">
-              <div className="result-group-head">
-                <span>English words</span>
+            <section
+              className="saved-group"
+              aria-labelledby="saved-english-heading"
+            >
+              <h2
+                className="result-group-head"
+                id="saved-english-heading"
+              >
+                <span>{t("saved.englishWords")}</span>
                 <span>{englishFavorites.length}</span>
-              </div>
+              </h2>
               <div className="saved-list">
                 {englishFavorites.map((item) => (
                   <article className="saved-item" key={item.key}>
@@ -97,12 +117,16 @@ export function SavedView({
                       onClick={() => onOpenEnglish(item.id)}
                     >
                       <span className="saved-head">
-                        <span className="en-word saved-en-word">{item.word}</span>
+                        <span className="en-word saved-en-word" lang="en">
+                          {item.word}
+                        </span>
                       </span>
-                      <span className="en-phonetic">
-                        {item.phonetic ? `/${item.phonetic}/` : "English"}
+                      <span className="en-phonetic" lang="en">
+                        {item.phonetic
+                          ? `/${item.phonetic}/`
+                          : t("common.english")}
                       </span>
-                      <span className="gloss">
+                      <span className="gloss" lang="zh">
                         {item.translations.slice(0, 2).join(" · ")}
                       </span>
                     </button>
@@ -110,10 +134,10 @@ export function SavedView({
                       type="button"
                       className="button button-ghost button-small saved-remove"
                       onClick={() => onRemoveEnglish(item.key)}
-                      aria-label={`Remove ${item.word} from saved words`}
+                      aria-label={t("a11y.removeSaved", { word: item.word })}
                     >
-                      <Trash2 size={17} />
-                      Remove
+                      <Trash2 size={17} aria-hidden="true" />
+                      {t("saved.remove")}
                     </button>
                   </article>
                 ))}

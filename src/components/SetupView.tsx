@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
+import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   ChevronRight,
@@ -18,28 +19,22 @@ import type { FullEnglishDownload } from "../hooks/useFullEnglishDownload";
 import type { FullEnglishMeta } from "../types";
 import { startCedictImport } from "../lib/cedict-import";
 import { getActivePercent } from "../lib/download-progress";
+import {
+  AppError,
+  translateError,
+  type AppError as AppErrorType,
+} from "../i18n/errors";
+import { useLocalePreference, getLocale } from "../i18n";
+import {
+  LOCALE_ENDONYMS,
+  SUPPORTED_LOCALES,
+  type LocalePreference,
+} from "../i18n/types";
 import { Logo } from "./Logo";
 import { InstallView } from "./InstallView";
 
 const CEDICT_DIRECT =
   "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz";
-
-function phaseLabel(phase: ImportProgress["phase"]): string {
-  switch (phase) {
-    case "read":
-      return "Opening file";
-    case "decompress":
-      return "Opening file";
-    case "parse":
-      return "Preparing words";
-    case "index":
-      return "Preparing words";
-    case "store":
-      return "Saving words";
-    default:
-      return "Adding words";
-  }
-}
 
 export function SetupView({
   chineseMeta,
@@ -62,14 +57,28 @@ export function SetupView({
   fullEnglishMeta: FullEnglishMeta | null;
   fullDownload: FullEnglishDownload;
 }) {
+  const { t, i18n } = useTranslation();
   const [dragging, setDragging] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState<ImportProgress | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<AppErrorType | null>(null);
+  const [languageAnnouncement, setLanguageAnnouncement] = useState("");
   const [showInstallGuide, setShowInstallGuide] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const workerRef = useRef<Worker | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);  const workerRef = useRef<Worker | null>(null);
+  const installGuideRef = useRef<HTMLElement>(null);
+  const installNoticeRef = useRef<HTMLButtonElement>(null);
+  const wasGuideOpen = useRef(false);
   const native = Capacitor.isNativePlatform();
+  const { preference, pending, change } = useLocalePreference();
+
+  const handleLanguageChange = async (next: LocalePreference) => {
+    await change(next);
+    setLanguageAnnouncement(
+      i18n.t("common.languageChanged", {
+        language: LOCALE_ENDONYMS[getLocale()],
+      }),
+    );
+  };
 
   const chineseReady = chineseMeta?.kind === "cedict";
   const downloadStarted = download.phase !== "idle";
@@ -77,8 +86,21 @@ export function SetupView({
   const waitingForWifi =
     download.downloadStatus === "waiting" ||
     (download.downloadStatus === "pending" && download.wifiOnly);
-  const fullDownloading =
-    fullDownload.phase === "downloading" || fullDownload.phase === "checking";
+
+  const phaseLabel = (phase: ImportProgress["phase"]): string => {
+    switch (phase) {
+      case "read":
+      case "decompress":
+        return t("setup.phaseRead");
+      case "parse":
+      case "index":
+        return t("setup.phaseParse");
+      case "store":
+        return t("setup.phaseStore");
+      default:
+        return t("setup.phaseDefault");
+    }
+  };
 
   useEffect(() => {
     if (!importing) return;
@@ -90,20 +112,47 @@ export function SetupView({
     return () => window.removeEventListener("beforeunload", handler);
   }, [importing]);
 
+  useEffect(() => {
+    if (showInstallGuide) return;
+    document.title = t("meta.titleWithPage", {
+      page: t("setup.pageTitle"),
+    });
+  }, [showInstallGuide, t]);
+
+  useEffect(() => {
+    if (showInstallGuide) {
+      wasGuideOpen.current = true;
+      const frame = window.requestAnimationFrame(() => {
+        const heading = installGuideRef.current?.querySelector<HTMLElement>("h1");
+        if (!heading) return;
+        heading.setAttribute("tabindex", "-1");
+        heading.focus({ preventScroll: true });
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    if (wasGuideOpen.current) {
+      wasGuideOpen.current = false;
+      const frame = window.requestAnimationFrame(() => {
+        installNoticeRef.current?.focus();
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, [showInstallGuide]);
+
   const startChineseImport = (file: File | undefined) => {
     if (!file) return;
     if (!/\.(txt|gz|zip)$/i.test(file.name)) {
-      setError("Please choose the file you downloaded.");
+      setError(new AppError("errors.importFileType"));
       return;
     }
 
-    setError("");
+    setError(null);
     setImporting(true);
     setProgress({
       phase: "read",
       current: 0,
       total: 1,
-      message: "Reading file…",
     });
 
     workerRef.current = startCedictImport(file, {
@@ -113,10 +162,10 @@ export function SetupView({
         setProgress(null);
         await onChineseImported();
       },
-      onError: (message) => {
+      onError: (importError) => {
         setImporting(false);
         setProgress(null);
-        setError(message);
+        setError(importError);
       },
     });
   };
@@ -138,43 +187,77 @@ export function SetupView({
 
   if (showInstallGuide) {
     return (
-      <div className="setup-page">
+      <main className="setup-page" ref={installGuideRef}>
         <div className="setup-shell">
           <InstallView onBack={() => setShowInstallGuide(false)} />
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="setup-page">
+    <main className="setup-page">
       <div className="setup-shell">
+        <h1 className="sr-only">{t("setup.title")}</h1>
+        <p className="sr-only" role="status" aria-live="polite">
+          {languageAnnouncement}
+        </p>
         <header className="setup-header">
-          <div className="setup-brand">
-            <span aria-hidden="true">
-              <Logo size={36} />
-            </span>
-            <div>
-              <div className="setup-brand-name">Souzi</div>
-              <div className="setup-brand-sub">搜字</div>
+          <div className="setup-brand-row">
+            <div className="setup-brand">
+              <span aria-hidden="true">
+                <Logo size={36} />
+              </span>
+              <div>
+                <div className="setup-brand-name">{t("app.name")}</div>
+                <div className="setup-brand-sub" lang="zh">
+                  {t("app.brandHan")}
+                </div>
+              </div>
             </div>
+            <label className="setup-language">
+              <span className="sr-only">{t("languages.label")}</span>
+              <select
+                id="setup-language"
+                name="app-language"
+                className="language-select"
+                value={preference}
+                onChange={(event) =>
+                  void handleLanguageChange(
+                    event.target.value as LocalePreference,
+                  )
+                }
+                aria-label={t("languages.label")}
+                aria-busy={pending}
+                disabled={pending}
+              >
+                <option value="system">{t("languages.system")}</option>
+                {SUPPORTED_LOCALES.map((locale) => (
+                  <option key={locale} value={locale} lang={locale}>
+                    {LOCALE_ENDONYMS[locale]}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-          <p>
+          <p aria-live="polite">
             {englishStatus === "error"
-              ? "English dictionary could not be prepared."
+              ? t("setup.englishError")
               : englishStatus === "loading"
-                ? "Getting English dictionary ready…"
-                : "English dictionary is ready."}
+                ? t("setup.englishLoading")
+                : t("setup.englishReady")}
           </p>
         </header>
 
-        <section className="setup-actions">
-          <h1 className="setup-title">
-            {chineseReady ? "Chinese dictionary" : "Add Chinese dictionary"}
-          </h1>
-          <p className="setup-size">About 4 MB download · 130k words</p>
+        <section className="setup-actions" aria-labelledby="setup-chinese-title">
+          <h2 className="setup-title" id="setup-chinese-title">
+            {chineseReady
+              ? t("setup.chineseTitle")
+              : t("setup.addChineseTitle")}
+          </h2>
+          <p className="setup-size">{t("setup.chineseSize")}</p>
           {chineseReady ? (
-            <p className="setup-installed">Chinese dictionary is ready.</p>
+            <p className="setup-installed">{t("setup.chineseReady")}</p>
           ) : native ? (
             <div className="setup-download">
               {download.phase === "idle" ? (
@@ -183,19 +266,26 @@ export function SetupView({
                   className="button button-primary setup-primary"
                   onClick={() => void download.start()}
                 >
-                  <Download size={16} />
-                  Download
+                  <Download size={16} aria-hidden="true" />
+                  {t("common.download")}
                 </button>
               ) : download.phase === "error" ? (
                 <>
-                  <p className="setup-download-state">Download stopped.</p>
+                  <p className="setup-download-state">
+                    {t("setup.downloadStopped")}
+                  </p>
+                  {download.error && (
+                    <p className="setup-error" role="alert">
+                      {translateError(t, download.error)}
+                    </p>
+                  )}
                   <button
                     type="button"
                     className="button button-primary setup-primary"
                     onClick={() => void download.retry()}
                   >
-                    <RefreshCw size={16} />
-                    Try again
+                    <RefreshCw size={16} aria-hidden="true" />
+                    {t("common.retry")}
                   </button>
                 </>
               ) : (
@@ -203,16 +293,16 @@ export function SetupView({
                   <div className="setup-progress-head">
                     <span>
                       {download.phase === "installing"
-                        ? "Preparing dictionary…"
+                        ? t("common.preparingDictionary")
                         : download.phase === "checking"
-                          ? "Starting download…"
+                          ? t("common.startingDownload")
                           : download.phase === "paused"
-                            ? "Download paused."
+                            ? t("setup.downloadPaused")
                             : waitingForWifi
-                              ? "Waiting for Wi-Fi…"
+                              ? t("common.waitingForWifi")
                               : download.phase === "done"
-                                ? "Download complete."
-                                : "Downloading dictionary…"}
+                                ? t("common.downloadComplete")
+                                : t("common.downloadingDictionary")}
                     </span>
                     {activePercent !== null && <span>{activePercent}%</span>}
                   </div>
@@ -226,7 +316,12 @@ export function SetupView({
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-valuenow={activePercent ?? undefined}
-                    aria-label="Chinese dictionary download progress"
+                    aria-valuetext={
+                      activePercent !== null
+                        ? `${t("common.downloadingDictionary")} ${activePercent}%`
+                        : t("common.preparingDictionary")
+                    }
+                    aria-label={t("a11y.chineseDownloadProgress")}
                   >
                     <div
                       className="progress-fill"
@@ -241,14 +336,16 @@ export function SetupView({
               )}
               <label className="setup-wifi-toggle">
                 <input
+                  id="setup-chinese-wifi"
+                  name="chinese-wifi-only"
                   type="checkbox"
                   checked={download.wifiOnly}
                   onChange={(event) =>
                     download.setWifiOnly(event.target.checked)
                   }
                 />
-                <Wifi size={14} />
-                Wi-Fi only
+                <Wifi size={14} aria-hidden="true" />
+                {t("common.wifiOnly")}
               </label>
             </div>
           ) : (
@@ -266,7 +363,7 @@ export function SetupView({
                     if (!importing) startChineseImport(event.dataTransfer.files[0]);
                   }}
                 >
-                  <span>Download the file first.</span>
+                  <span>{t("setup.fileFirst")}</span>
                   <span className="setup-dropzone-actions">
                     <a
                       className="button button-primary"
@@ -274,8 +371,8 @@ export function SetupView({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <Download size={14} />
-                      Download
+                      <Download size={14} aria-hidden="true" />
+                      {t("common.download")}
                     </a>
                     <button
                       type="button"
@@ -283,17 +380,19 @@ export function SetupView({
                       onClick={() => inputRef.current?.click()}
                       disabled={importing}
                     >
-                      <UploadCloud size={14} />
-                      Choose file
+                      <UploadCloud size={14} aria-hidden="true" />
+                      {t("setup.chooseFile")}
                     </button>
                   </span>
                 </div>
 
                 <input
                   ref={inputRef}
+                  id="setup-cedict-file"
+                  name="cedict-file"
                   type="file"
                   accept=".txt,.gz,.zip,application/gzip,text/plain"
-                  className="sr-only"
+                  hidden
                   onChange={(event) => {
                     startChineseImport(event.target.files?.[0]);
                     event.target.value = "";
@@ -312,7 +411,12 @@ export function SetupView({
                       aria-valuemin={0}
                       aria-valuemax={100}
                       aria-valuenow={percent ?? undefined}
-                      aria-label="Chinese dictionary import progress"
+                      aria-valuetext={
+                        percent !== null
+                          ? `${phaseLabel(progress.phase)} ${percent}%`
+                          : phaseLabel(progress.phase)
+                      }
+                      aria-label={t("a11y.chineseImportProgress")}
                     >
                       <div
                         className="progress-fill"
@@ -322,20 +426,24 @@ export function SetupView({
                   </div>
                 )}
 
-                {error && <div className="setup-error">{error}</div>}
+                {error && (
+                  <div className="setup-error" role="alert">
+                    {translateError(t, error)}
+                  </div>
+                )}
               </>
             )}
         </section>
 
-        <section className="setup-actions">
-          <h1 className="setup-title">
+        <section className="setup-actions" aria-labelledby="setup-english-title">
+          <h2 className="setup-title" id="setup-english-title">
             {fullEnglishMeta
-              ? "Full English dictionary"
-              : "Add full English dictionary"}
-          </h1>
-          <p className="setup-size">About 42 MB download · 770k words</p>
+              ? t("setup.fullEnglishTitle")
+              : t("setup.addFullEnglishTitle")}
+          </h2>
+          <p className="setup-size">{t("setup.fullEnglishSize")}</p>
           {fullEnglishMeta ? (
-            <p className="setup-installed">Full English dictionary is ready.</p>
+            <p className="setup-installed">{t("setup.fullEnglishReady")}</p>
           ) : native ? (
             <div className="setup-download">
               {fullDownload.phase === "idle" ? (
@@ -344,19 +452,26 @@ export function SetupView({
                   className="button button-primary setup-primary"
                   onClick={() => void fullDownload.start()}
                 >
-                  <Download size={16} />
-                  Download
+                  <Download size={16} aria-hidden="true" />
+                  {t("common.download")}
                 </button>
               ) : fullDownload.phase === "error" ? (
                 <>
-                  <p className="setup-download-state">Download stopped.</p>
+                  <p className="setup-download-state">
+                    {t("setup.downloadStopped")}
+                  </p>
+                  {fullDownload.error && (
+                    <p className="setup-error" role="alert">
+                      {translateError(t, fullDownload.error)}
+                    </p>
+                  )}
                   <button
                     type="button"
                     className="button button-primary setup-primary"
                     onClick={() => void fullDownload.retry()}
                   >
-                    <RefreshCw size={16} />
-                    Try again
+                    <RefreshCw size={16} aria-hidden="true" />
+                    {t("common.retry")}
                   </button>
                 </>
               ) : (
@@ -364,16 +479,16 @@ export function SetupView({
                   <div className="setup-progress-head">
                     <span>
                       {fullDownload.phase === "installing"
-                        ? "Preparing dictionary…"
+                        ? t("common.preparingDictionary")
                         : fullDownload.phase === "checking"
-                          ? "Starting download…"
+                          ? t("common.startingDownload")
                           : fullDownload.phase === "paused"
-                            ? "Download paused."
+                            ? t("setup.downloadPaused")
                             : fullDownload.downloadStatus === "waiting" ||
                                 (fullDownload.downloadStatus === "pending" &&
                                   fullDownload.wifiOnly)
-                              ? "Waiting for Wi-Fi…"
-                              : "Downloading dictionary…"}
+                              ? t("common.waitingForWifi")
+                              : t("common.downloadingDictionary")}
                     </span>
                     {(() => {
                       const fullPercent =
@@ -404,7 +519,31 @@ export function SetupView({
                     role="progressbar"
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-label="Full English dictionary download progress"
+                    aria-valuenow={
+                      fullDownload.totalBytes > 0
+                        ? Math.min(
+                            100,
+                            Math.round(
+                              (fullDownload.bytesDownloaded /
+                                fullDownload.totalBytes) *
+                                100,
+                            ),
+                          )
+                        : undefined
+                    }
+                    aria-valuetext={
+                      fullDownload.totalBytes > 0
+                        ? `${t("common.downloadingDictionary")} ${Math.min(
+                            100,
+                            Math.round(
+                              (fullDownload.bytesDownloaded /
+                                fullDownload.totalBytes) *
+                                100,
+                            ),
+                          )}%`
+                        : t("common.preparingDictionary")
+                    }
+                    aria-label={t("a11y.fullEnglishDownloadProgress")}
                   >
                     <div
                       className="progress-fill"
@@ -428,14 +567,16 @@ export function SetupView({
               )}
               <label className="setup-wifi-toggle">
                 <input
+                  id="setup-full-english-wifi"
+                  name="full-english-wifi-only"
                   type="checkbox"
                   checked={fullDownload.wifiOnly}
                   onChange={(event) =>
                     fullDownload.setWifiOnly(event.target.checked)
                   }
                 />
-                <Wifi size={14} />
-                Wi-Fi only
+                <Wifi size={14} aria-hidden="true" />
+                {t("common.wifiOnly")}
               </label>
             </div>
           ) : (
@@ -443,12 +584,15 @@ export function SetupView({
               type="button"
               className="download-install-notice setup-install-notice"
               onClick={() => setShowInstallGuide(true)}
+              ref={installNoticeRef}
             >
               <span>
-                The full English dictionary is available in the Android app.
-                <span className="download-install-cta">How to install</span>
+                {t("setup.fullAvailableAndroid")}
+                <span className="download-install-cta">
+                  {t("setup.howToInstall")}
+                </span>
               </span>
-              <ChevronRight size={18} />
+              <ChevronRight size={18} aria-hidden="true" />
             </button>
           )}
         </section>
@@ -460,8 +604,8 @@ export function SetupView({
               className="button button-primary setup-next"
               onClick={onInstallEnglish}
             >
-              <RefreshCw size={16} />
-              Try again
+              <RefreshCw size={16} aria-hidden="true" />
+              {t("common.retry")}
             </button>
           ) : englishStatus === "loading" ? (
             <button
@@ -469,7 +613,7 @@ export function SetupView({
               className="button button-primary setup-next"
               disabled
             >
-              Please wait…
+              {t("setup.pleaseWait")}
             </button>
           ) : chineseReady || downloadStarted ? (
             <button
@@ -477,8 +621,8 @@ export function SetupView({
               className="button button-primary setup-next"
               onClick={onNext}
             >
-              Continue
-              <ArrowRight size={16} />
+              {t("setup.continue")}
+              <ArrowRight size={16} aria-hidden="true" />
             </button>
           ) : (
             <button
@@ -486,14 +630,12 @@ export function SetupView({
               className="button button-secondary setup-next"
               onClick={skipSetup}
             >
-              {importing ? "Cancel and skip" : "Skip for now"}
+              {importing ? t("setup.cancelAndSkip") : t("setup.skip")}
             </button>
           )}
-          <p className="setup-privacy">
-            Your words never leave this device.
-          </p>
+          <p className="setup-privacy">{t("setup.privacy")}</p>
         </footer>
       </div>
-    </div>
+    </main>
   );
 }

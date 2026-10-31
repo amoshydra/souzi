@@ -7,6 +7,7 @@ import {
 import { installFullEnglishPack } from "../lib/full-english";
 import { NativeDictionaryDownloader } from "../lib/native-download";
 import type { FullEnglishMeta } from "../types";
+import { AppError, asAppError, type AppError as AppErrorType } from "../i18n/errors";
 
 const STORAGE_KEY = "souzi-full-english-download";
 const WIFI_KEY = "souzi-full-english-wifi-only";
@@ -32,7 +33,7 @@ export type FullEnglishDownload = {
   bytesDownloaded: number;
   totalBytes: number;
   speed: number;
-  error: string;
+  error: AppErrorType | null;
   wifiOnly: boolean;
   start: () => Promise<void>;
   pause: () => Promise<void>;
@@ -52,7 +53,7 @@ export function useFullEnglishDownload({
   const [bytesDownloaded, setBytesDownloaded] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
   const [speed, setSpeed] = useState(0);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<AppErrorType | null>(null);
   const [downloadId, setDownloadId] = useState<number | null>(null);
   const [storedManifest, setStoredManifest] =
     useState<FullEnglishManifest | null>(null);
@@ -122,11 +123,7 @@ export function useFullEnglishDownload({
         setPhase("done");
         await onInstalledRef.current(meta);
       } catch (reason) {
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "The full dictionary could not be installed. Please try again.",
-        );
+        setError(asAppError(reason, "errors.fullEnglishInstall"));
         setPhase("error");
       } finally {
         installingRef.current = false;
@@ -168,7 +165,7 @@ export function useFullEnglishDownload({
           if (storedManifest) {
             void installDownloadedPack(downloadId, storedManifest);
           } else {
-            setError("The download is complete, but its manifest is missing.");
+            setError(new AppError("errors.downloadManifestMissing"));
             setPhase("error");
           }
           return;
@@ -176,7 +173,7 @@ export function useFullEnglishDownload({
 
         if (status.status === "failed") {
           setSpeed(0);
-          setError("The download did not finish. Please try again.");
+          setError(new AppError("errors.downloadIncomplete"));
           setPhase("error");
           return;
         }
@@ -195,11 +192,7 @@ export function useFullEnglishDownload({
       } catch (reason) {
         if (cancelled) return;
         setSpeed(0);
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "Could not read the download status.",
-        );
+        setError(asAppError(reason, "errors.downloadStatus"));
         setPhase("error");
       }
     };
@@ -234,7 +227,7 @@ export function useFullEnglishDownload({
   const start = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return;
 
-    setError("");
+    setError(null);
     setBytesDownloaded(0);
     setTotalBytes(0);
     setSpeed(0);
@@ -274,26 +267,32 @@ export function useFullEnglishDownload({
       setDownloadId(id);
       setPollEpoch((value) => value + 1);
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "The full dictionary download could not start.",
-      );
+      setError(asAppError(reason, "errors.downloadStart"));
       setPhase("error");
     }
   }, [wifiOnly]);
 
   const pause = useCallback(async () => {
     if (downloadId === null) return;
-    await NativeDictionaryDownloader.pause({ id: downloadId });
-    setPhase("paused");
+    try {
+      await NativeDictionaryDownloader.pause({ id: downloadId });
+      setPhase("paused");
+    } catch (reason) {
+      setError(asAppError(reason, "errors.downloadStatus"));
+      setPhase("error");
+    }
   }, [downloadId]);
 
   const resume = useCallback(async () => {
     if (downloadId === null) return;
-    await NativeDictionaryDownloader.resume({ id: downloadId });
-    setPhase("downloading");
-    setPollEpoch((value) => value + 1);
+    try {
+      await NativeDictionaryDownloader.resume({ id: downloadId });
+      setPhase("downloading");
+      setPollEpoch((value) => value + 1);
+    } catch (reason) {
+      setError(asAppError(reason, "errors.downloadStatus"));
+      setPhase("error");
+    }
   }, [downloadId]);
 
   const cancel = useCallback(async () => {

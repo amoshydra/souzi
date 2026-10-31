@@ -8,6 +8,7 @@ import {
 } from "../lib/example-pack";
 import { clearExampleSentenceCache } from "../lib/example-sentences";
 import type { ExamplePackMeta } from "../types";
+import { asAppError, type AppError } from "../i18n/errors";
 
 export type ExamplePackPhase =
   | "loading"
@@ -23,7 +24,7 @@ export type ExamplePackState = {
   meta: ExamplePackMeta | null;
   remoteVersion: number | null;
   progress: ExamplePackProgress | null;
-  error: string;
+  error: AppError | null;
   install: () => Promise<void>;
   remove: () => Promise<void>;
   cancel: () => void;
@@ -34,7 +35,7 @@ export function useExamplePack(): ExamplePackState {
   const [meta, setMeta] = useState<ExamplePackMeta | null>(null);
   const [remoteVersion, setRemoteVersion] = useState<number | null>(null);
   const [progress, setProgress] = useState<ExamplePackProgress | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<AppError | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -65,7 +66,7 @@ export function useExamplePack(): ExamplePackState {
   }, [meta]);
 
   const install = useCallback(async () => {
-    setError("");
+    setError(null);
     setProgress(null);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -85,11 +86,7 @@ export function useExamplePack(): ExamplePackState {
         setPhase(meta ? "ready" : "idle");
         return;
       }
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "The example pack could not be installed.",
-      );
+      setError(asAppError(reason, "errors.exampleInstall"));
       setPhase("error");
     } finally {
       abortRef.current = null;

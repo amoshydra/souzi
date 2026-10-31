@@ -1,14 +1,15 @@
 import type { ImportProgress, ImportWorkerMessage } from "../types";
+import { AppError, asAppError } from "../i18n/errors";
 
 export type CedictImportHandlers = {
   onProgress?: (progress: ImportProgress) => void;
   onDone: (count: number) => void;
-  onError: (message: string) => void;
+  onError: (error: AppError) => void;
 };
 
 function createWorker(handlers: CedictImportHandlers): {
   worker: Worker;
-  fail: (message: string) => void;
+  fail: (error: AppError) => void;
   settled: () => boolean;
 } {
   const worker = new Worker(
@@ -17,11 +18,11 @@ function createWorker(handlers: CedictImportHandlers): {
   );
   let isSettled = false;
 
-  const fail = (message: string) => {
+  const fail = (error: AppError) => {
     if (isSettled) return;
     isSettled = true;
     worker.terminate();
-    handlers.onError(message);
+    handlers.onError(error);
   };
 
   worker.onmessage = (event: MessageEvent<ImportWorkerMessage>) => {
@@ -41,12 +42,12 @@ function createWorker(handlers: CedictImportHandlers): {
     }
 
     if (message.type === "error") {
-      fail(message.message);
+      fail(new AppError(message.code, message.params));
     }
   };
 
   worker.onerror = (event) => {
-    fail(event.message || "The import worker crashed.");
+    fail(asAppError(event.error, "errors.importWorker"));
   };
 
   return { worker, fail, settled: () => isSettled };
@@ -77,9 +78,7 @@ export function startCedictImport(
       worker.postMessage({ buffer, fileName: file.name }, [buffer]);
     })
     .catch((reason: unknown) => {
-      fail(
-        reason instanceof Error ? reason.message : "Could not read that file.",
-      );
+      fail(asAppError(reason, "errors.importRead"));
     });
 
   return worker;

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Copy,
@@ -12,9 +13,11 @@ import { speakChinese } from "../lib/speech";
 import {
   loadExampleSentences,
   exampleSentencesFor,
-  exampleAttribution,
 } from "../lib/example-sentences";
 import { loadRelatedWords, relatedWordsFor } from "../lib/related";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { translateError } from "../i18n/errors";
+import { ExampleAttribution } from "./ExampleAttribution";
 
 export function EntryView({
   id,
@@ -33,6 +36,8 @@ export function EntryView({
   onFavoriteChange: () => void;
   onToast: (message: string, tone?: "default" | "error") => void;
 }) {
+  const { t } = useTranslation();
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const [entry, setEntry] = useState<Entry | null>(null);
   const [characters, setCharacters] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +45,16 @@ export function EntryView({
     { text: string; translation: string; source?: string }[]
   >([]);
   const [related, setRelated] = useState<RelatedWordGroups>({});
+
+  useDocumentTitle(entry?.simp);
+
+  useEffect(() => {
+    if (!entry) return;
+    const heading = headingRef.current;
+    if (!heading) return;
+    heading.setAttribute("tabindex", "-1");
+    heading.focus({ preventScroll: true });
+  }, [entry]);
 
   useEffect(() => {
     let active = true;
@@ -85,7 +100,9 @@ export function EntryView({
     if (!entry) return;
     const saved = await toggleFavorite(entry);
     onFavoriteChange();
-    onToast(saved ? "Saved to your words" : "Removed from saved words");
+    onToast(
+      saved ? t("entry.savedToast") : t("entry.removedSavedToast"),
+    );
   };
 
   const handleCopy = async () => {
@@ -98,9 +115,9 @@ export function EntryView({
 
     try {
       await navigator.clipboard.writeText(text);
-      onToast("Copied entry");
+      onToast(t("entry.copied"));
     } catch {
-      onToast("Could not copy", "error");
+      onToast(t("entry.copyFailed"), "error");
     }
   };
 
@@ -108,7 +125,7 @@ export function EntryView({
     if (!entry) return;
     const result = await speakChinese(entry.simp);
     if (!result.ok) {
-      onToast(result.reason ?? "Speech is not available on this device", "error");
+      onToast(translateError(t, result.error), "error");
     }
   };
 
@@ -143,12 +160,13 @@ export function EntryView({
   if (loading) {
     return (
       <div className="page entry-page">
+        <h1 className="sr-only">{t("entry.opening")}</h1>
         <button type="button" className="back-button" onClick={onBack}>
-          <ArrowLeft size={18} /> Back
+          <ArrowLeft size={18} aria-hidden="true" /> {t("common.back")}
         </button>
-        <div className="entry-loading">
-          <Loader2 className="spin" size={24} />
-          <span>Opening entry…</span>
+        <div className="entry-loading" role="status">
+          <Loader2 className="spin" size={24} aria-hidden="true" />
+          <span>{t("entry.opening")}</span>
         </div>
       </div>
     );
@@ -157,12 +175,13 @@ export function EntryView({
   if (!entry) {
     return (
       <div className="page entry-page">
+        <h1 className="sr-only">{t("entry.notFound")}</h1>
         <button type="button" className="back-button" onClick={onBack}>
-          <ArrowLeft size={18} /> Back
+          <ArrowLeft size={18} aria-hidden="true" /> {t("common.back")}
         </button>
         <div className="empty-card">
-          <h3>Entry not found</h3>
-          <p>The dictionary may have been replaced. Search again to find it.</p>
+          <h2>{t("entry.notFound")}</h2>
+          <p>{t("entry.notFoundBody")}</p>
         </div>
       </div>
     );
@@ -171,11 +190,12 @@ export function EntryView({
   return (
     <div className="page entry-page">
       <button type="button" className="back-button" onClick={onBack}>
-        <ArrowLeft size={18} /> Back
+        <ArrowLeft size={18} aria-hidden="true" /> {t("common.back")}
       </button>
 
       <header className="entry-hero">
         <h1
+          ref={headingRef}
           className={`entry-hanzi ${
             entry.simp.length > 8
               ? "entry-hanzi-long"
@@ -188,15 +208,21 @@ export function EntryView({
           {entry.simp}
         </h1>
         <div className="entry-meta">
-          <span className="entry-pinyin">{entry.pinyin}</span>
+          <span className="entry-pinyin" lang="zh-Latn">
+            {entry.pinyin}
+          </span>
         </div>
         {entry.trad !== entry.simp && (
           <div className="entry-also">
-            Also written <span lang="zh-Hant">{entry.trad}</span>
+            <Trans
+              i18nKey="entry.alsoWritten"
+              values={{ traditional: entry.trad }}
+              components={{ trad: <span lang="zh-Hant" /> }}
+            />
           </div>
         )}
         {entry.source === "starter" && (
-          <div className="entry-note">Sample word</div>
+          <div className="entry-note">{t("entry.sampleWord")}</div>
         )}
 
         <div className="entry-actions">
@@ -204,10 +230,10 @@ export function EntryView({
             type="button"
             className="button button-secondary entry-action"
             onClick={handleSpeak}
-            aria-label={`Listen to ${entry.simp}`}
+            aria-label={t("a11y.listenTo", { word: entry.simp })}
           >
-            <Volume2 size={19} />
-            <span>Listen</span>
+            <Volume2 size={19} aria-hidden="true" />
+            <span>{t("entry.listen")}</span>
           </button>
           <button
             type="button"
@@ -215,41 +241,59 @@ export function EntryView({
               starred ? "entry-action-saved" : ""
             }`}
             onClick={handleFavorite}
-            aria-label={starred ? "Remove from saved words" : "Save word"}
+            aria-label={
+              starred ? t("a11y.savedRemove") : t("a11y.saveWord")
+            }
+            aria-pressed={starred}
           >
-            <Star size={19} fill={starred ? "currentColor" : "none"} />
-            <span>{starred ? "Saved" : "Save"}</span>
+            <Star
+              size={19}
+              fill={starred ? "currentColor" : "none"}
+              aria-hidden="true"
+            />
+            <span>{starred ? t("entry.saved") : t("entry.save")}</span>
           </button>
           <button
             type="button"
             className="button button-secondary entry-action"
             onClick={handleCopy}
-            aria-label="Copy word"
+            aria-label={t("a11y.copyWord")}
           >
-            <Copy size={18} />
-            <span>Copy</span>
+            <Copy size={18} aria-hidden="true" />
+            <span>{t("entry.copy")}</span>
           </button>
         </div>
       </header>
 
-      <section className="panel definitions-panel">
-        <div className="panel-kicker">Meaning</div>
+      <section
+        className="panel definitions-panel"
+        aria-labelledby="meaning-heading"
+      >
+        <h2 className="panel-kicker" id="meaning-heading">
+          {t("entry.meaning")}
+        </h2>
         {entry.definitions.length > 0 ? (
-          <ol className="definition-list">
+          <ol className="definition-list" lang="en">
             {entry.definitions.map((definition, index) => (
               <li key={`${definition}-${index}`}>{definition}</li>
             ))}
           </ol>
         ) : (
-          <p className="muted">No meaning is available for this word.</p>
+          <p className="muted">{t("entry.noMeaning")}</p>
         )}
 
         {entry.classifiers.length > 0 && (
           <div className="classifier-row">
-            <span className="classifier-label">Counting word</span>
+            <span className="classifier-label">
+              {t("entry.countingWord")}
+            </span>
             <div className="classifier-chips">
               {entry.classifiers.map((classifier) => (
-                <span className="classifier-chip" key={classifier} lang="zh">
+                <span
+                  className="classifier-chip"
+                  key={classifier}
+                  lang="zh"
+                >
                   {classifier}
                 </span>
               ))}
@@ -259,25 +303,34 @@ export function EntryView({
       </section>
 
       {examples.length > 0 && (
-        <section className="panel examples-panel">
-          <div className="panel-kicker">Examples</div>
+        <section className="panel examples-panel" aria-labelledby="examples-heading">
+          <h2 className="panel-kicker" id="examples-heading">
+            {t("entry.examples")}
+          </h2>
           <ul className="example-list">
             {examples.map((example, index) => (
               <li className="example-item" key={`${example.text}-${index}`}>
                 <p className="example-text" lang="zh">
                   {example.text}
                 </p>
-                <p className="example-translation">{example.translation}</p>
+                <p className="example-translation" lang="en">
+                  {example.translation}
+                </p>
               </li>
             ))}
           </ul>
-          <p className="content-attribution">{exampleAttribution(examples)}</p>
+          <ExampleAttribution examples={examples} />
         </section>
       )}
 
       {(related.related?.length ?? 0) > 0 && (
-        <section className="panel related-panel">
-          <div className="panel-kicker">Related words</div>
+        <section
+          className="panel related-panel"
+          aria-labelledby="related-heading"
+        >
+          <h2 className="panel-kicker" id="related-heading">
+            {t("entry.relatedWords")}
+          </h2>
           <div className="form-chips">
             {(related.related ?? []).map((word) => (
               <button
@@ -291,16 +344,23 @@ export function EntryView({
               </button>
             ))}
           </div>
-          <p className="content-attribution">Starter related words</p>
+          <p className="content-attribution">
+            {t("entry.starterRelatedWords")}
+          </p>
         </section>
       )}
 
       {characters.length > 0 && (
-        <section className="character-section">
+        <section
+          className="character-section"
+          aria-labelledby="characters-heading"
+        >
           <div className="section-head">
             <div>
-              <div className="section-kicker">Each character</div>
-              <h2 className="section-title">Character meanings</h2>
+              <div className="section-kicker">{t("entry.eachCharacter")}</div>
+              <h2 className="section-title" id="characters-heading">
+                {t("entry.characterMeanings")}
+              </h2>
             </div>
           </div>
           <div className="char-grid">
@@ -311,10 +371,14 @@ export function EntryView({
                 key={character.id}
                 onClick={() => onOpenEntry(character.id)}
               >
-                <span className="char-glyph" lang="zh">{character.simp}</span>
-                <span className="char-pinyin">{character.pinyin}</span>
-                <span className="char-gloss">
-                  {character.definitions[0] ?? "View entry"}
+                <span className="char-glyph" lang="zh-Hans">
+                  {character.simp}
+                </span>
+                <span className="char-pinyin" lang="zh-Latn">
+                  {character.pinyin}
+                </span>
+                <span className="char-gloss" lang="en">
+                  {character.definitions[0] ?? t("common.viewEntry")}
                 </span>
               </button>
             ))}
@@ -324,8 +388,8 @@ export function EntryView({
 
       <p className="entry-source">
         {entry.source === "cedict"
-          ? "From the Chinese dictionary on this device."
-          : "Sample word."}
+          ? t("entry.fromChineseDictionary")
+          : t("entry.sampleSource")}
       </p>
     </div>
   );

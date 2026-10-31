@@ -19,7 +19,7 @@ describe("exchangeForms", () => {
 describe("exampleAttribution", () => {
   it("attributes Tatoeba examples", () => {
     expect(exampleAttribution([{ text: "Run.", translation: "跑。", source: "Tatoeba" }])).toBe(
-      "Examples from Tatoeba (CC BY 2.0 FR)",
+      "tatoeba",
     );
   });
 
@@ -29,12 +29,16 @@ describe("exampleAttribution", () => {
         { text: "Run.", translation: "跑。", source: "Tatoeba" },
         { text: "I run.", translation: "我跑。", source: "Starter" },
       ]),
-    ).toBe("Examples from Tatoeba (CC BY 2.0 FR) and the starter set");
+    ).toBe("tatoebaAndStarter");
   });
 
   it("falls back to the starter label", () => {
     expect(exampleAttribution([{ text: "Run.", translation: "跑。", source: "Starter" }])).toBe(
-      "Starter examples",
+      "starter",
     );
+  });
+
+  it("returns null for no examples", () => {
+    expect(exampleAttribution([])).toBeNull();
   });
 });

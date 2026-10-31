@@ -15,7 +15,6 @@ export function EnglishResultCard({
       type="button"
       className="result-card en-result-card"
       onClick={() => onOpen(entry.id)}
-      aria-label={`Open English entry ${entry.word}`}
     >
       <span className="result-card-main">
         <span className="result-card-top">
@@ -24,9 +23,11 @@ export function EnglishResultCard({
           </span>
         </span>
         {entry.phonetic && (
-          <span className="en-phonetic">/{entry.phonetic}/</span>
+          <span className="en-phonetic" lang="en">
+            /{entry.phonetic}/
+          </span>
         )}
-        <span className="gloss">
+        <span className="gloss" lang="zh">
           {visibleTranslations.join(" · ")}
           {remaining > 0 ? ` · +${remaining}` : ""}
         </span>

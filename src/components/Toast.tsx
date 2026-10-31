@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { CheckCircle2, X, XCircle } from "lucide-react";
 
 export type ToastMessage = {
   message: string;
@@ -13,22 +14,40 @@ export function Toast({
   toast: ToastMessage | null;
   onDismiss: () => void;
 }) {
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(onDismiss, 3200);
+    // Errors stay longer and can also be dismissed manually.
+    const timer = window.setTimeout(
+      onDismiss,
+      toast.tone === "error" ? 8000 : 3200,
+    );
     return () => window.clearTimeout(timer);
   }, [toast, onDismiss]);
 
   if (!toast) return null;
 
   return (
-    <div className="toast" role="status" aria-live="polite">
+    <div
+      className="toast"
+      role={toast.tone === "error" ? "alert" : "status"}
+      aria-atomic="true"
+    >
       {toast.tone === "error" ? (
         <XCircle size={18} aria-hidden="true" />
       ) : (
         <CheckCircle2 size={18} aria-hidden="true" />
       )}
       <span>{toast.message}</span>
+      <button
+        type="button"
+        className="toast-close"
+        onClick={onDismiss}
+        aria-label={t("common.close")}
+      >
+        <X size={15} aria-hidden="true" />
+      </button>
     </div>
   );
 }
