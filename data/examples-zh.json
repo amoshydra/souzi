@@ -1,0 +1,23 @@
+{
+  "学": [
+    {
+      "text": "我学中文。",
+      "translation": "I study Chinese.",
+      "source": "starter"
+    }
+  ],
+  "跑": [
+    {
+      "text": "他每天跑步。",
+      "translation": "He runs every day.",
+      "source": "starter"
+    }
+  ],
+  "字": [
+    {
+      "text": "这个字怎么读？",
+      "translation": "How do you read this character?",
+      "source": "starter"
+    }
+  ]
+}
