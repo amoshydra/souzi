@@ -24,13 +24,8 @@ import {
   translateError,
   type AppError as AppErrorType,
 } from "../i18n/errors";
-import { useLocalePreference, getLocale } from "../i18n";
-import {
-  LOCALE_ENDONYMS,
-  SUPPORTED_LOCALES,
-  type LocalePreference,
-} from "../i18n/types";
 import { Logo } from "./Logo";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { InstallView } from "./InstallView";
 
 const CEDICT_DIRECT =
@@ -57,28 +52,18 @@ export function SetupView({
   fullEnglishMeta: FullEnglishMeta | null;
   fullDownload: FullEnglishDownload;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState<ImportProgress | null>(null);
   const [error, setError] = useState<AppErrorType | null>(null);
-  const [languageAnnouncement, setLanguageAnnouncement] = useState("");
   const [showInstallGuide, setShowInstallGuide] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);  const workerRef = useRef<Worker | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const workerRef = useRef<Worker | null>(null);
   const installGuideRef = useRef<HTMLElement>(null);
   const installNoticeRef = useRef<HTMLButtonElement>(null);
   const wasGuideOpen = useRef(false);
   const native = Capacitor.isNativePlatform();
-  const { preference, pending, change } = useLocalePreference();
-
-  const handleLanguageChange = async (next: LocalePreference) => {
-    await change(next);
-    setLanguageAnnouncement(
-      i18n.t("common.languageChanged", {
-        language: LOCALE_ENDONYMS[getLocale()],
-      }),
-    );
-  };
 
   const chineseReady = chineseMeta?.kind === "cedict";
   const downloadStarted = download.phase !== "idle";
@@ -199,9 +184,6 @@ export function SetupView({
     <main className="setup-page">
       <div className="setup-shell">
         <h1 className="sr-only">{t("setup.title")}</h1>
-        <p className="sr-only" role="status" aria-live="polite">
-          {languageAnnouncement}
-        </p>
         <header className="setup-header">
           <div className="setup-brand-row">
             <div className="setup-brand">
@@ -215,30 +197,13 @@ export function SetupView({
                 </div>
               </div>
             </div>
-            <label className="setup-language">
-              <span className="sr-only">{t("languages.label")}</span>
-              <select
-                id="setup-language"
-                name="app-language"
-                className="language-select"
-                value={preference}
-                onChange={(event) =>
-                  void handleLanguageChange(
-                    event.target.value as LocalePreference,
-                  )
-                }
-                aria-label={t("languages.label")}
-                aria-busy={pending}
-                disabled={pending}
-              >
-                <option value="system">{t("languages.system")}</option>
-                {SUPPORTED_LOCALES.map((locale) => (
-                  <option key={locale} value={locale} lang={locale}>
-                    {LOCALE_ENDONYMS[locale]}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="setup-language">
+              <LanguageSwitcher
+                compact
+                showAuto={false}
+                showHelp={false}
+              />
+            </div>
           </div>
           <p aria-live="polite">
             {englishStatus === "error"

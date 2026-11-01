@@ -40,19 +40,28 @@ function browserLanguages(): readonly string[] {
 
 /**
  * Map a browser language tag to one of the bundled app locales.
- * zh-TW / zh-HK / zh-MO / *-Hant use Traditional; other zh tags use Simplified.
+ *
+ * Script subtags win over region: zh-Hans-HK is Simplified, zh-Hant-CN is
+ * Traditional. Without a script, TW/HK/MO use Traditional and other zh tags
+ * use Simplified. Unsupported languages fall back to English.
  */
 export function resolveLocale(tags: readonly string[]): Locale {
   for (const raw of tags) {
     const tag = raw.toLowerCase();
-    if (tag.startsWith("zh")) {
-      return /(^|-)hant($|-)|(^|-)tw($|-)|(^|-)hk($|-)|(^|-)mo($|-)/.test(
-        tag,
-      )
-        ? "zh-Hant"
-        : "zh-Hans";
+    if (tag === "zh" || tag.startsWith("zh-")) {
+      const subtags = tag.split("-");
+      if (subtags.includes("hant")) return "zh-Hant";
+      if (subtags.includes("hans")) return "zh-Hans";
+      if (
+        subtags.includes("tw") ||
+        subtags.includes("hk") ||
+        subtags.includes("mo")
+      ) {
+        return "zh-Hant";
+      }
+      return "zh-Hans";
     }
-    if (tag.startsWith("en")) return "en";
+    if (tag === "en" || tag.startsWith("en-")) return "en";
   }
   return "en";
 }
@@ -88,6 +97,12 @@ const localeLoaders: Record<
 
 const loadedLocales = new Set<Locale>(["en"]);
 const loadingLocales = new Map<Locale, Promise<void>>();
+let localeLoadError: Locale | null = null;
+
+/** The locale whose chunk failed to load most recently, if any. */
+export function getLocaleLoadError(): Locale | null {
+  return localeLoadError;
+}
 
 export async function ensureLocale(locale: Locale): Promise<void> {
   if (locale === "en" || loadedLocales.has(locale)) return;
@@ -101,6 +116,7 @@ export async function ensureLocale(locale: Locale): Promise<void> {
       i18n.addResourceBundle(locale, "translation", messages, true, true);
       loadedLocales.add(locale);
       loadingLocales.delete(locale);
+      if (localeLoadError === locale) localeLoadError = null;
     })().catch((reason) => {
       loadingLocales.delete(locale);
       throw reason;
@@ -127,6 +143,7 @@ export function initI18n(): Promise<Locale> {
           await i18n.changeLanguage(locale);
         }
       } catch (reason) {
+        localeLoadError = locale;
         console.warn("Could not load locale; falling back to English.", reason);
       }
       applyDocumentLocale(getLocale());
@@ -166,9 +183,12 @@ export async function setLocalePreference(
       await i18n.changeLanguage(locale);
     }
   } catch (reason) {
+    localeLoadError = locale;
     console.warn("Could not switch locale; keeping the current language.", reason);
     return getLocale();
   }
+
+  localeLoadError = null;
 
   try {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, preference);
@@ -195,12 +215,14 @@ export function useLocalePreference(): {
   preference: LocalePreference;
   locale: Locale;
   pending: boolean;
+  error: Locale | null;
   change: (preference: LocalePreference) => Promise<void>;
 } {
   const [preference, setPreferenceState] =
     useState<LocalePreference>(readLocalePreference);
   const [locale, setLocaleState] = useState<Locale>(getLocale);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<Locale | null>(getLocaleLoadError);
 
   useEffect(() => {
     const sync = () => {
@@ -225,9 +247,11 @@ export function useLocalePreference(): {
         .then(() => {
           applyDocumentLocale(next);
           setLocaleState(next);
+          setError(null);
         })
         .catch(() => {
-          // Keep the current language if the chunk cannot be loaded.
+          localeLoadError = next;
+          setError(next);
         });
     };
 
@@ -240,20 +264,23 @@ export function useLocalePreference(): {
   }, [preference]);
 
   const change = useCallback(async (next: LocalePreference) => {
-    // Show the target immediately while its small chunk loads; revert to the
-    // stored preference if loading fails.
+    // Prefer the requested language while its chunk loads, but only if it
+    // actually resolves; otherwise revert to the stored preference.
+    const target = resolveLocalePreference(next);
     setPreferenceState(next);
     setPending(true);
+    setError(null);
     try {
       const resolved = await setLocalePreference(next);
       setPreferenceState(readLocalePreference());
       setLocaleState(resolved);
+      if (resolved !== target) setError(target);
     } finally {
       setPending(false);
     }
   }, []);
 
-  return { preference, locale, pending, change };
+  return { preference, locale, pending, error, change };
 }
 
 export { i18n };

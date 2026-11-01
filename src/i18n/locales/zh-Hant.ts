@@ -70,10 +70,10 @@ export const zhHant = {
   },
 
   languages: {
-    label: "語言",
     interfaceLanguage: "介面語言",
-    system: "跟隨系統",
-    systemWithLanguage: "跟隨系統（{{language}}）",
+    auto: "自動",
+    followSystem: "跟隨系統語言",
+    loadError: "無法載入{{language}}，目前顯示{{current}}。",
     help: "僅變更應用程式介面語言，詞典內容維持不變。",
   },
 

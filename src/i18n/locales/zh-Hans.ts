@@ -70,10 +70,10 @@ export const zhHans = {
   },
 
   languages: {
-    label: "语言",
     interfaceLanguage: "界面语言",
-    system: "跟随系统",
-    systemWithLanguage: "跟随系统（{{language}}）",
+    auto: "自动",
+    followSystem: "跟随系统语言",
+    loadError: "无法加载{{language}}，当前显示{{current}}。",
     help: "仅更改应用界面语言，词典内容保持不变。",
   },
 

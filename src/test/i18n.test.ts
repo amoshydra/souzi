@@ -40,16 +40,28 @@ describe("resolveLocale", () => {
   });
 
   it("maps Simplified and Traditional Chinese tags", () => {
+    expect(resolveLocale(["zh"])).toBe("zh-Hans");
     expect(resolveLocale(["zh-CN"])).toBe("zh-Hans");
     expect(resolveLocale(["zh-SG"])).toBe("zh-Hans");
+    expect(resolveLocale(["zh-Hans"])).toBe("zh-Hans");
     expect(resolveLocale(["zh-TW"])).toBe("zh-Hant");
     expect(resolveLocale(["zh-HK"])).toBe("zh-Hant");
+    expect(resolveLocale(["zh-MO"])).toBe("zh-Hant");
     expect(resolveLocale(["zh-Hant"])).toBe("zh-Hant");
+    expect(resolveLocale(["zh-hant-cn"])).toBe("zh-Hant");
+  });
+
+  it("prefers an explicit script over the region", () => {
+    expect(resolveLocale(["zh-Hans-HK"])).toBe("zh-Hans");
+    expect(resolveLocale(["zh-Hans-TW"])).toBe("zh-Hans");
+    expect(resolveLocale(["zh-Hant-CN"])).toBe("zh-Hant");
   });
 
   it("uses the first supported language and falls back to English", () => {
     expect(resolveLocale(["fr-FR", "zh-TW", "en"])).toBe("zh-Hant");
+    expect(resolveLocale(["ja-JP", "en-GB"])).toBe("en");
     expect(resolveLocale(["fr-FR"])).toBe("en");
+    expect(resolveLocale(["ja-JP"])).toBe("en");
     expect(resolveLocale([])).toBe("en");
   });
 });

@@ -74,10 +74,10 @@ export const en = {
   },
 
   languages: {
-    label: "Language",
     interfaceLanguage: "App language",
-    system: "System default",
-    systemWithLanguage: "System default ({{language}})",
+    auto: "Auto",
+    followSystem: "Follow system language",
+    loadError: "Couldn’t load {{language}}. Showing {{current}}.",
     help: "Changes the app interface only. Dictionary content stays the same.",
   },
 

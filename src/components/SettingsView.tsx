@@ -1,18 +1,8 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Monitor, Moon, Sun } from "lucide-react";
 import type { Theme } from "../types";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import {
-  detectSystemLocale,
-  getLocale,
-  useLocalePreference,
-} from "../i18n";
-import {
-  LOCALE_ENDONYMS,
-  SUPPORTED_LOCALES,
-  type LocalePreference,
-} from "../i18n/types";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 export function SettingsView({
   theme,
@@ -25,23 +15,8 @@ export function SettingsView({
   onDownloads: () => void;
   onAbout: () => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   useDocumentTitle(t("settings.title"));
-  const { preference, pending, change } = useLocalePreference();
-  const [languageAnnouncement, setLanguageAnnouncement] = useState("");
-  const systemLanguage = LOCALE_ENDONYMS[detectSystemLocale()];
-
-  const handleLanguageChange = async (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const next = event.target.value as LocalePreference;
-    await change(next);
-    setLanguageAnnouncement(
-      i18n.t("common.languageChanged", {
-        language: LOCALE_ENDONYMS[getLocale()],
-      }),
-    );
-  };
 
   return (
     <div className="page settings-page">
@@ -74,35 +49,7 @@ export function SettingsView({
             <p>{t("settings.languageBody")}</p>
           </div>
         </div>
-        <div className="settings-field">
-          <label className="settings-field-label" htmlFor="app-language">
-            {t("languages.interfaceLanguage")}
-          </label>
-          <select
-            id="app-language"
-            name="app-language"
-            className="language-select"
-            value={preference}
-            onChange={(event) => void handleLanguageChange(event)}
-            aria-describedby="app-language-help"
-            aria-busy={pending}
-            disabled={pending}
-          >
-            <option value="system">
-              {t("languages.systemWithLanguage", {
-                language: systemLanguage,
-              })}
-            </option>
-            {SUPPORTED_LOCALES.map((locale) => (
-              <option key={locale} value={locale} lang={locale}>
-                {LOCALE_ENDONYMS[locale]}
-              </option>
-            ))}
-          </select>
-          <p id="app-language-help" className="settings-field-help">
-            {t("languages.help")}
-          </p>
-        </div>
+        <LanguageSwitcher />
       </section>
 
       <section className="settings-card">
@@ -164,9 +111,6 @@ export function SettingsView({
         </button>
       </section>
 
-      <p className="sr-only" role="status" aria-live="polite">
-        {languageAnnouncement}
-      </p>
     </div>
   );
 }
