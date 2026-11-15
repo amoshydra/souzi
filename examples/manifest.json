@@ -1,16 +1,17 @@
 {
   "id": "examples-en-zh",
   "name": "Example Sentences",
-  "version": 1,
+  "version": 2,
   "schema": 1,
-  "entries": 25509,
-  "words": 11278,
-  "file": "souzi-examples-v1.json.gz",
-  "url": "https://raw.githubusercontent.com/amoshydra/souzi/dict-manifest/examples/v1/souzi-examples-v1.json.gz",
-  "bytes": 1019466,
-  "sha256": "cb447da7323bcb04ef2bf0d279744c9ffb02aa51bf739c59ebb2b114dbdb9bc2",
+  "entries": 46668,
+  "words": 19385,
+  "chineseWords": 8106,
+  "file": "souzi-examples-v2.json.gz",
+  "url": "https://raw.githubusercontent.com/amoshydra/souzi/dict-manifest/examples/v2/souzi-examples-v2.json.gz",
+  "bytes": 1856514,
+  "sha256": "ec1828a5fc2ccf362574076d3d23c43c0926a770aae3e776b4047db363968e64",
   "license": "CC BY 2.0 FR",
   "source": "Tatoeba",
   "sourceUrl": "https://tatoeba.org",
-  "builtAt": "2026-10-29T18:55:54Z"
+  "builtAt": "2026-11-15T20:19:38Z"
 }
