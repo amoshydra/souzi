@@ -7,6 +7,9 @@ dev-dist
 /data
 /ecdict.csv
 pnpm-debug.log*
+test-results
+playwright-report
+blob-report
 *.jks
 *.keystore
 key.properties
