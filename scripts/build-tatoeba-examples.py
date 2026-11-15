@@ -26,6 +26,8 @@ from pathlib import Path
 WORD_RE = re.compile(r"[A-Za-z][A-Za-z'’-]*")
 WHITESPACE_RE = re.compile(r"\s+")
 CJK_RE = re.compile(r"[\u3400-\u9fff]")
+LATIN_RE = re.compile(r"[A-Za-z]")
+HAN_WORD_RE = re.compile(r"^[\u3400-\u9fff]{1,4}$")
 MAX_EXAMPLES = 3
 
 STOPWORDS = {
@@ -111,6 +113,94 @@ def load_core(path: Path) -> tuple[set[str], dict[str, str]]:
     return words, form_to_base
 
 
+def load_opencc(chars_path: Path | None, phrases_path: Path | None):
+    chars: dict[str, str] = {}
+    if chars_path and chars_path.exists():
+        with chars_path.open("rt", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                source, _, values = line.partition("\t")
+                if source and values:
+                    chars[source] = values.split()[0]
+
+    phrase_by_first: dict[str, list[tuple[str, str]]] = {}
+    if phrases_path and phrases_path.exists():
+        with phrases_path.open("rt", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                source, _, values = line.partition("\t")
+                if not source or not values:
+                    continue
+                target = values.split()[0]
+                phrase_by_first.setdefault(source[0], []).append((source, target))
+        for items in phrase_by_first.values():
+            items.sort(key=lambda item: len(item[0]), reverse=True)
+
+    def convert(text: str) -> str:
+        out: list[str] = []
+        index = 0
+        while index < len(text):
+            replaced = False
+            for source, target in phrase_by_first.get(text[index], []):
+                if text.startswith(source, index):
+                    out.append(target)
+                    index += len(source)
+                    replaced = True
+                    break
+            if replaced:
+                continue
+            char = text[index]
+            out.append(chars.get(char, char))
+            index += 1
+        return "".join(out)
+
+    return convert
+
+
+def load_zh_vocabulary(
+    path: Path,
+    convert,
+    frequency_path: Path | None,
+    frequency_limit: int,
+) -> set[str]:
+    with path.open("rt", encoding="utf-8") as handle:
+        data = json.load(handle)
+    words: set[str] = set()
+    for raw in data:
+        word = convert(str(raw).strip())
+        if HAN_WORD_RE.fullmatch(word):
+            words.add(word)
+
+    if frequency_path and frequency_path.exists() and frequency_limit > 0:
+        with frequency_path.open("rt", encoding="utf-8") as handle:
+            frequency = json.load(handle)
+        for raw in list(frequency)[:frequency_limit]:
+            word = convert(str(raw).strip())
+            if HAN_WORD_RE.fullmatch(word):
+                words.add(word)
+
+    return words
+
+
+def chinese_matches(text: str, vocabulary: set[str]) -> set[str]:
+    matches: set[str] = set()
+    index = 0
+    while index < len(text):
+        for size in range(min(4, len(text) - index), 0, -1):
+            candidate = text[index : index + size]
+            if candidate in vocabulary:
+                matches.add(candidate)
+                index += size
+                break
+        else:
+            index += 1
+    return matches
+
+
 def sentence_tokens(text: str) -> list[str]:
     return [normalize_word(match.group(0)) for match in WORD_RE.finditer(text)]
 
@@ -139,9 +229,16 @@ def add_candidate(
 
 def build(
     links_path: Path,
+    zh_links_path: Path | None,
     eng_path: Path,
     cmn_path: Path,
     core_path: Path,
+    hsk_path: Path,
+    frequency_path: Path | None,
+    frequency_limit: int,
+    t2s_chars: Path | None,
+    t2s_phrases: Path | None,
+    min_zh_words: int,
     output_dir: Path,
     version: int,
     base_url: str,
@@ -204,6 +301,78 @@ def build(
 
     print(f"usable pairs: {usable:,}; words with examples: {len(examples):,}", flush=True)
 
+    chinese_words = 0
+    if zh_links_path:
+        print("loading OpenCC data…", flush=True)
+        convert = load_opencc(t2s_chars, t2s_phrases)
+        print("loading HSK vocabulary…", flush=True)
+        hsk_words = load_zh_vocabulary(
+            hsk_path, convert, frequency_path, frequency_limit
+        )
+        print(f"chinese vocabulary: {len(hsk_words):,}", flush=True)
+
+        print("loading Chinese links…", flush=True)
+        zh_links = load_links(zh_links_path)
+        print(f"chinese links: {len(zh_links):,}", flush=True)
+
+        zh_candidates: dict[str, list[tuple[tuple[int, int, int], str, str]]] = {}
+        zh_usable = 0
+
+        for cmn_id, eng_id in zh_links:
+            original = chinese.get(cmn_id, "")
+            translation = english.get(eng_id, "")
+            if not original or not translation:
+                continue
+            if LATIN_RE.search(original) or CJK_RE.search(translation):
+                continue
+            if not (4 <= len(original) <= 26) or not (8 <= len(translation) <= 110):
+                continue
+            if "..." in original or "…" in original:
+                continue
+
+            simplified = convert(original)
+            if LATIN_RE.search(simplified) or not CJK_RE.search(simplified):
+                continue
+
+            matched = chinese_matches(simplified, hsk_words)
+            if not matched:
+                continue
+
+            score = (
+                1 if original != simplified else 0,
+                abs(len(simplified) - 11),
+                len(translation),
+            )
+            for word in matched:
+                zh_candidates.setdefault(word, []).append(
+                    (score, simplified, translation)
+                )
+            zh_usable += 1
+
+        for word, candidates in sorted(zh_candidates.items()):
+            candidates.sort(key=lambda item: item[0])
+            seen_texts: set[str] = set()
+            for _, text, translation in candidates:
+                normalized = WHITESPACE_RE.sub("", text)
+                if normalized in seen_texts:
+                    continue
+                seen_texts.add(normalized)
+                add_candidate(examples, word, text, translation, seen)
+                if len(seen_texts) >= MAX_EXAMPLES:
+                    break
+            if examples.get(word):
+                chinese_words += 1
+
+        print(
+            f"chinese pairs: {zh_usable:,}; chinese words: {chinese_words:,}",
+            flush=True,
+        )
+        if min_zh_words and chinese_words < min_zh_words:
+            raise SystemExit(
+                f"Chinese coverage too low: {chinese_words:,} words "
+                f"(minimum {min_zh_words:,})"
+            )
+
     output_dir.mkdir(parents=True, exist_ok=True)
     pack_name = f"souzi-examples-v{version}.json.gz"
     pack_path = output_dir / pack_name
@@ -229,6 +398,7 @@ def build(
         "schema": 1,
         "entries": payload["entries"],
         "words": len(ordered),
+        "chineseWords": chinese_words,
         "file": pack_name,
         "url": f"{base_url.rstrip('/')}/{pack_name}",
         "bytes": pack_path.stat().st_size,
@@ -251,9 +421,16 @@ def build(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--links", required=True, type=Path)
+    parser.add_argument("--zh-links", type=Path)
     parser.add_argument("--eng", required=True, type=Path)
     parser.add_argument("--cmn", required=True, type=Path)
     parser.add_argument("--core", default=Path("public/data/ecdict-core.json.gz"), type=Path)
+    parser.add_argument("--hsk", default=Path("src/data/hsk30.json"), type=Path)
+    parser.add_argument("--frequency", default=Path("src/data/frequency.json"), type=Path)
+    parser.add_argument("--frequency-limit", default=10000, type=int)
+    parser.add_argument("--t2s-chars", type=Path)
+    parser.add_argument("--t2s-phrases", type=Path)
+    parser.add_argument("--min-zh-words", default=0, type=int)
     parser.add_argument("--output-dir", default=Path("build/examples"), type=Path)
     parser.add_argument("--version", default=1, type=int)
     parser.add_argument(
@@ -263,9 +440,16 @@ def main() -> None:
     args = parser.parse_args()
     build(
         args.links.resolve(),
+        args.zh_links.resolve() if args.zh_links else None,
         args.eng.resolve(),
         args.cmn.resolve(),
         args.core.resolve(),
+        args.hsk.resolve(),
+        args.frequency.resolve() if args.frequency else None,
+        args.frequency_limit,
+        args.t2s_chars.resolve() if args.t2s_chars else None,
+        args.t2s_phrases.resolve() if args.t2s_phrases else None,
+        args.min_zh_words,
         args.output_dir.resolve(),
         args.version,
         args.base_url,

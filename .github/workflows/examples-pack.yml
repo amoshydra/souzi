@@ -6,7 +6,7 @@ on:
       version:
         description: Pack version
         required: true
-        default: "1"
+        default: "2"
   push:
     tags:
       - "examples-v*"
@@ -54,14 +54,31 @@ jobs:
           curl -fsSL --retry 3 \
             -o /tmp/tatoeba/cmn_sentences.tsv.bz2 \
             https://downloads.tatoeba.org/exports/per_language/cmn/cmn_sentences.tsv.bz2
+          curl -fsSL --retry 3 \
+            -o /tmp/tatoeba/cmn-eng_links.tsv.bz2 \
+            https://downloads.tatoeba.org/exports/per_language/cmn/cmn-eng_links.tsv.bz2
+          mkdir -p /tmp/opencc
+          curl -fsSL --retry 3 \
+            -o /tmp/opencc/TSCharacters.txt \
+            https://raw.githubusercontent.com/BYVoid/OpenCC/ver.1.1.9/data/dictionary/TSCharacters.txt
+          curl -fsSL --retry 3 \
+            -o /tmp/opencc/TSPhrases.txt \
+            https://raw.githubusercontent.com/BYVoid/OpenCC/ver.1.1.9/data/dictionary/TSPhrases.txt
 
       - name: Build examples pack
         run: |
           version="${{ steps.version.outputs.value }}"
           python3 scripts/build-tatoeba-examples.py \
             --links /tmp/tatoeba/eng-cmn_links.tsv.bz2 \
+            --zh-links /tmp/tatoeba/cmn-eng_links.tsv.bz2 \
             --eng /tmp/tatoeba/eng_sentences.tsv.bz2 \
             --cmn /tmp/tatoeba/cmn_sentences.tsv.bz2 \
+            --hsk src/data/hsk30.json \
+            --frequency src/data/frequency.json \
+            --frequency-limit 10000 \
+            --t2s-chars /tmp/opencc/TSCharacters.txt \
+            --t2s-phrases /tmp/opencc/TSPhrases.txt \
+            --min-zh-words 5000 \
             --output-dir build/examples \
             --version "$version" \
             --base-url "https://raw.githubusercontent.com/amoshydra/souzi/dict-manifest/examples/v${version}"

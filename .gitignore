@@ -16,3 +16,4 @@ key.properties
 android/.kotlin/
 /build
 **/.secrets
+__pycache__/

@@ -41,7 +41,7 @@ All screenshots are from the mobile layout (390×844).
 - Chinese→English from a local CC-CEDICT import (`.txt.gz`, `.txt`, or `.zip`).
 - Look up by simplified/traditional characters, pinyin (with or without tones), or English.
 - Entry pages with pinyin, HSK level, classifiers, character breakdown, and text-to-speech.
-- First-run setup: the bundled English→Chinese core installs automatically. The setup screen stays until the user chooses Continue or Skip, even across app restarts. Download runs inline in setup with progress and an editable Wi-Fi-only option; Continue opens the app while the download finishes. Settings has a dedicated Downloads page for progress, retry, pause, and cancel.
+- First-run setup: the bundled English→Chinese core installs automatically. The setup screen stays until the user chooses Continue or Skip, even across app restarts. Download runs inline in setup with progress and an editable Wi-Fi-only option; Continue opens the app while the download finishes. Settings has a dedicated Packs page for progress, retry, pause, and cancel.
 - Native CC-CEDICT download manager on Android with progress, pause/resume, retry, cancel, and a Wi-Fi-only option. Active downloads are monitored at app level so setup does not need to stay open; interrupted downloads can be retried.
 - Large, high-contrast interface designed for comfortable reading. Typography uses distinct heading, body, and label roles; inputs and buttons use the label style. Layout and type use rem/em units and follow the browser or device text-size setting. Border widths, corner radii, and shadows intentionally use fixed px for crisp hairlines.
 - Interface in English, Simplified Chinese, and Traditional Chinese. Follow the system language or choose one in Settings or the first-run setup. The UI language is independent of dictionary content and text-to-speech.
@@ -104,7 +104,7 @@ does not have the native download bridge.
 
 English→Chinese is already included. This import adds the full Chinese→English side.
 
-On Android, open **Settings**, then **Downloads**, and tap **Download** under Chinese dictionary. The
+On Android, open **Settings**, then **Packs**, and tap **Download** under Chinese dictionary. The
 app downloads the official export directly, supports pause/resume and a
 Wi-Fi-only mode, and parses the file locally.
 
@@ -198,6 +198,9 @@ Covers pinyin conversion, CC-CEDICT parsing, Chinese and English index building,
 - **CC-CEDICT**: CC BY-SA 4.0, MDBG and contributors. Imported by the user; not bundled.
 - **HSK 3.0 word list**: MIT, [ivankra/hsk30](https://github.com/ivankra/hsk30).
 - **Word frequency ranks**: MIT, [jieba](https://github.com/fxsjy/jieba).
+- **Example sentences**: [Tatoeba](https://tatoeba.org), CC BY 2.0 FR. Optional pack.
+- **Related words**: [Princeton WordNet 3.1](https://wordnet.princeton.edu), WordNet License. Optional pack.
+- **Traditional-to-simplified conversion**: [OpenCC](https://github.com/BYVoid/OpenCC), Apache-2.0. Used at pack build time only.
 - **Starter set**: original sample entries written for Souzi.
 - **App code**: Apache-2.0. See `LICENSE` and `THIRD_PARTY_LICENSES.md`.
 
@@ -219,7 +222,6 @@ Do not add a server-side proxy that downloads CC-CEDICT on behalf of users. That
 
 - Full ECDICT import for power users, plus common phrasal verbs and idioms.
 - Full English dictionary support in the PWA (currently Android native SQLite; the web build ships the 30k core).
-- Example sentence pairs (Tatoeba).
 - Stroke-order data.
 - Handwriting and OCR.
 - Flashcards / Anki export.

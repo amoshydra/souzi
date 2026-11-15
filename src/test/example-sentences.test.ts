@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { exchangeForms, exampleAttribution } from "../lib/example-sentences";
+import {
+  exchangeForms,
+  exampleAttribution,
+  mergeExamples,
+} from "../lib/example-sentences";
 
 describe("exchangeForms", () => {
   it("extracts unique forms from an exchange string", () => {
@@ -38,7 +42,57 @@ describe("exampleAttribution", () => {
     );
   });
 
+  it("normalises lowercase starter sources", () => {
+    expect(exampleAttribution([{ text: "Run.", translation: "跑。", source: "starter" }])).toBe(
+      "starter",
+    );
+  });
+
   it("returns null for no examples", () => {
     expect(exampleAttribution([])).toBeNull();
+  });
+});
+
+
+describe("mergeExamples", () => {
+  it("puts installed examples first and dedupes", () => {
+    const merged = mergeExamples(
+      { run: [{ text: "I run daily.", translation: "我每天跑。", source: "Starter" }] },
+      {
+        run: [
+          { text: "I run.", translation: "我跑。", source: "Tatoeba" },
+          { text: "She runs.", translation: "她跑。", source: "Tatoeba" },
+        ],
+      },
+    );
+
+    expect(merged.run.map((example) => example.source)).toEqual([
+      "Tatoeba",
+      "Tatoeba",
+      "Starter",
+    ]);
+  });
+
+  it("caps merged examples at four", () => {
+    const merged = mergeExamples(
+      { run: Array.from({ length: 5 }, (_, index) => ({ text: `Starter ${index}`, translation: "x" })) },
+      { run: Array.from({ length: 5 }, (_, index) => ({ text: `Pack ${index}`, translation: "x" })) },
+    );
+
+    expect(merged.run).toHaveLength(4);
+    expect(merged.run[0].text).toBe("Pack 0");
+  });
+
+  it("keeps language-only keys and ignores empty values", () => {
+    const merged = mergeExamples(
+      { 学: [{ text: "我学中文。", translation: "I study Chinese." }] },
+      { run: [{ text: "I run.", translation: "我跑。" }] },
+    );
+
+    expect(Object.keys(merged).sort()).toEqual(["run", "学"]);
+  });
+
+  it("handles empty maps", () => {
+    expect(mergeExamples({}, {})).toEqual({});
   });
 });
