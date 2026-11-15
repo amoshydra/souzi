@@ -1,0 +1,196 @@
+{
+  "run": [
+    {
+      "text": "I run every morning before work.",
+      "translation": "我每天上班前跑步。",
+      "source": "Starter"
+    },
+    {
+      "text": "The program will run for three hours.",
+      "translation": "程序将运行三小时。",
+      "source": "Starter"
+    }
+  ],
+  "make": [
+    {
+      "text": "She made a cake for the party.",
+      "translation": "她为聚会做了一个蛋糕。",
+      "source": "Starter"
+    },
+    {
+      "text": "Make coffee.",
+      "translation": "煮咖啡。",
+      "source": "Tatoeba"
+    }
+  ],
+  "look": [
+    {
+      "text": "Look outside.",
+      "translation": "看外面！",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Look there!",
+      "translation": "看看！",
+      "source": "Tatoeba"
+    }
+  ],
+  "give": [
+    {
+      "text": "Give me water!",
+      "translation": "给我水！",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Give up!",
+      "translation": "放弃吧！",
+      "source": "Tatoeba"
+    }
+  ],
+  "learn": [
+    {
+      "text": "I learn.",
+      "translation": "我学习。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Learn Uyghur!",
+      "translation": "学维吾尔语。",
+      "source": "Tatoeba"
+    }
+  ],
+  "work": [
+    {
+      "text": "We work!",
+      "translation": "我们工作！",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Work faster.",
+      "translation": "快点干你的活。",
+      "source": "Tatoeba"
+    }
+  ],
+  "time": [
+    {
+      "text": "Time flies.",
+      "translation": "时间飞逝。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Time flew.",
+      "translation": "时间过得真快。",
+      "source": "Tatoeba"
+    }
+  ],
+  "book": [
+    {
+      "text": "Open the book.",
+      "translation": "打开书。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Read this book!",
+      "translation": "看这本书。",
+      "source": "Tatoeba"
+    }
+  ],
+  "water": [
+    {
+      "text": "Drink water.",
+      "translation": "喝水。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "I drink water.",
+      "translation": "我喝水。",
+      "source": "Tatoeba"
+    }
+  ],
+  "friend": [
+    {
+      "text": "We are friends.",
+      "translation": "我们是朋友。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Are you friends?",
+      "translation": "你们是朋友吗？",
+      "source": "Tatoeba"
+    }
+  ],
+  "read": [
+    {
+      "text": "He reads.",
+      "translation": "他在看书。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Read on.",
+      "translation": "继续看。",
+      "source": "Tatoeba"
+    }
+  ],
+  "write": [
+    {
+      "text": "Tom never writes.",
+      "translation": "汤姆从来不写字。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Are you writing?",
+      "translation": "你写吗？",
+      "source": "Tatoeba"
+    }
+  ],
+  "speak": [
+    {
+      "text": "Speak up.",
+      "translation": "说大声点。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "It speaks.",
+      "translation": "它说话。",
+      "source": "Tatoeba"
+    }
+  ],
+  "eat": [
+    {
+      "text": "Eat rice.",
+      "translation": "吃米饭。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Eat slowly!",
+      "translation": "慢慢吃！",
+      "source": "Tatoeba"
+    }
+  ],
+  "drink": [
+    {
+      "text": "Drink tea.",
+      "translation": "喝茶。",
+      "source": "Tatoeba"
+    },
+    {
+      "text": "Drink it.",
+      "translation": "喝吧。",
+      "source": "Tatoeba"
+    }
+  ],
+  "look up": [
+    {
+      "text": "Look up the word in the dictionary.",
+      "translation": "在字典里查这个词。",
+      "source": "Starter"
+    }
+  ],
+  "give up": [
+    {
+      "text": "Don't give up too easily.",
+      "translation": "不要轻易放弃。",
+      "source": "Starter"
+    }
+  ]
+}

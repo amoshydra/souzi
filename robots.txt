@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://amoshydra.github.io/souzi/sitemap.xml
